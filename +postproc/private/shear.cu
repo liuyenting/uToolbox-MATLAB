@@ -31,7 +31,7 @@ void Shear::setAcqParam(const mxArray *in) {
     acqParams.zStepWidth = parseFloatField(in, "ZStepWidth");
     acqParams.pixelWidth = parseFloatField(in, "PixelWidth");
 
-    mexPrintf(" >> Acquisition paramter parsed...\n    - Angle: %f[deg]\n    - Z Width: %f[rad]\n    - Px Size: %f[rad]\n",
+    mexPrintf(" ** Acquisition paramter parsed...\n    - Angle: %f[deg]\n    - Z Width: %f[rad]\n    - Px Size: %f[rad]\n",
               acqParams.objAngle, acqParams.zStepWidth, acqParams.pixelWidth);
 
     // Force reset in order to trigger reallocate the workspace.
@@ -60,7 +60,7 @@ void Shear::preallocateWorkspace(const size_t *_oriSize) {
     saveOldSize(_oriSize);
     estimateNewSize();
 
-    mexPrintf(" >> Input size [%d, %d, %d] ... Output size [%d, %d, %d]\n",
+    mexPrintf(" ** Input size [%d, %d, %d] ... Output size [%d, %d, %d]\n",
               oldSize[0], oldSize[1], nLayers,
               newSize[0], newSize[1], nLayers);
 
@@ -262,10 +262,8 @@ void Shear::retrieveResult(mxArray **out) {
 }
 
 Shear::~Shear() {
-    mexWarnMsgIdAndTxt(CORE_MSGID,
-                       "Destructor of Shear called.");
-
     releaseWorkspace();
+    mexPrintf(" ** GPU resources released\n");
 }
 
 void Shear::releaseWorkspace() {
