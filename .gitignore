@@ -2,6 +2,7 @@
 *~
 .*
 *.asv
+*.obj
 
 # Exception for wildcard
 !.gitignore
