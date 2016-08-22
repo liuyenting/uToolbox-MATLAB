@@ -1,0 +1,16 @@
+# Test folder
+data/
+
+# Temp file
+*~
+.*
+*.asv
+
+# Generated images
+*.tif*
+
+# Generated binaries
+*.mex*
+
+# Exception for wildcard
+!.gitignore
