@@ -1,4 +1,4 @@
-function localdemo
+function localizedemo
 %LOCALDEMO Demonstrate the basic usage of class Localize.
 %   LOCALDEMO will try to perform localization on presented image stack.
 
