@@ -1,0 +1,8 @@
+# Data
+data/
+
+# Unwanted directories
+deskew_deprecate/
+postproc_rev2/
+class_test/
+Unstructured\ Code\ Repository/
