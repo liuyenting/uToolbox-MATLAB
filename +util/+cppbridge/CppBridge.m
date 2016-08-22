@@ -21,7 +21,7 @@ classdef CppBridge < handle
             %
             %   Note: If the MEX file does not exist, we will have to
             %   compile it first.
-            
+
             %% Test the MEX file availability.
             [clsDir, ~, ~] = fileparts(clsPath);
             if ~util.cppbridge.CppBridge.ismexcompiled(clsDir, mexName)
@@ -30,7 +30,7 @@ classdef CppBridge < handle
 
             %% Retrieve the function handle.
             this.mexHandle = this.getfunchandle();
-            
+
             %% Create the class instance.
             this.objectHandle = this.mexHandle('new');
         end
@@ -46,7 +46,7 @@ classdef CppBridge < handle
     methods (Static, Access = private)
         function b = ismexcompiled(clsDir, mexName)
             %ISMEXCOMPILED Validate whether all the MEX files are compiled.
-            
+
             % Search for the MEX file in path.
             mexName = [mexName, '.', mexext];
             mexPath = fullfile(clsDir, 'private', mexName);
@@ -70,10 +70,10 @@ classdef CppBridge < handle
                 % Return to original directory.
                 cd(d);
             end
-            
+
             %% Generate object file of the C++/MATLAB bridge.
             brdIncPath = util.cppbridge.CppBridge.compilebridge(targetDir);
-            
+
             %% Setup compile paramter.
             % CUDA path is hard coded for SDK v7.5, CUDA_INC_PATH is not
             % created for later CUDA SDKs, so we have to generate it by
@@ -85,14 +85,14 @@ classdef CppBridge < handle
             else
                 cudaIncPath = ['-I"', cudaIncPath, '"'];
             end
-            
+
             %% Compile all the files.
             mexcuda('-v', ...
                     '-largeArrayDims', ...
                     '-c', ...
                     cudaIncPath, brdIncPath, ...
                     '*.cpp', '*.cu');
-                
+
             %% Link all the files.
             mexcuda('-v', ...
                     '-output', mexName, ...
@@ -114,15 +114,15 @@ classdef CppBridge < handle
             %% Generate the flag for include path.
             incPath = fullfile(brdDir, 'include');
             incPath = ['-I"', incPath, '"'];
-            
+
             %% Compile the file.
             mex('-v', '-largeArrayDims', '-c', incPath, '*.cpp');
-            
+
             %% Move the object file and calcaulte the include path.
             movefile('*.obj', outDir);
         end
     end
-    
+
     methods (Abstract, Static, Access = protected)
         hdl = getfunchandle();
         %GETFUNCHANDLE Return the proper function handle.
@@ -131,5 +131,5 @@ classdef CppBridge < handle
         %   private folder, somewhere the parent function won't have direct
         %   access to.
     end
-    
+
 end
