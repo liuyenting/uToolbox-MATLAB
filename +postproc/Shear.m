@@ -94,4 +94,5 @@ classdef Shear < util.cppbridge.CppBridge
         function hdl = getfunchandle()
             hdl = str2func(postproc.Shear.MEX_NAME);
         end
+    end
 end
