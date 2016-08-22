@@ -1,5 +1,19 @@
-# Data
+# Temp file
+*~
+.*
+*.asv
+
+# Exception for wildcard
+!.gitignore
+
+# Test folder
 data/
+
+# Generated images
+*.tif*
+
+# Generated binaries
+*.mex*
 
 # Unwanted directories
 deskew_deprecate/
