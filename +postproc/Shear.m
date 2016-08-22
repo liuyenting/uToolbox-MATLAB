@@ -13,7 +13,8 @@ classdef Shear < util.cppbridge.CppBridge
 
     methods
         function this = Shear()
-            this@util.cppbridge.CppBridge(postproc.Shear.MEX_NAME);
+            this@util.cppbridge.CppBridge(mfilename('fullpath'), ...
+                                          postproc.Shear.MEX_NAME);
         end
 
         function this = setacqparam(this, param)
