@@ -90,4 +90,8 @@ classdef Shear < util.cppbridge.CppBridge
         end
     end
 
+    methods (Static, Access = protected)
+        function hdl = getfunchandle()
+            hdl = str2func(postproc.Shear.MEX_NAME);
+        end
 end
