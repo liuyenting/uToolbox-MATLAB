@@ -23,7 +23,7 @@ int interpCmd(const char *cmd,
         }
         // Retrieve the class instance pointer.
         plhs[0] = convertPtr2Mat<Shear>(new Shear);
-        return;
+        return 0;
     }
 
     // If we are not creating an object, then the 2nd agrument should be the
@@ -41,7 +41,7 @@ int interpCmd(const char *cmd,
             mexWarnMsgIdAndTxt(INTERP_MSGID,
                                "Unexpected arguments ignored.");
         }
-        return;
+        return 0;
     }
 
     // Retrieve the class instance since we are neither creating nor deleting
