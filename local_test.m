@@ -1,10 +1,15 @@
 function local_test
 
-imgPath = 'data/local_seg_test/er.tif';
+imgPath = 'data/local_seg_test/sparse.tif';
 
 %% Load the image.
 [oriImgStack, imgStackSize] = tiff.imread(imgPath, true);
 imgStackSize
+
+splImg = oriImgStack(:, :, 14);
+
+weiImg = wiener2(single(splImg), [5, 5]);
+figure; imagesc(weiImg);
 
 %% Process
 % mask = ones(5);
