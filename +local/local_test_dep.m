@@ -1,4 +1,4 @@
-function local_test
+function local_test_dep
 
 imgPath = 'data/local_seg_test/sparse.tif';
 
