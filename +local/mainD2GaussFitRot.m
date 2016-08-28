@@ -63,6 +63,8 @@ else
     x(6) = 0;
 end
 
+resnorm
+
 %% ---------Plot 3D Image-------------
 figure(1)
 C = del2(Z);
