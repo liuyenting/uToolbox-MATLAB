@@ -18,13 +18,19 @@ showimg(rawImg, 'Raw Image');
 
 %% Filter the image.
 % Using DWT to denoise the image.
+tic;
 fltImg = dwtdenoise(rawImg);
+t = toc;
+fprintf(' ** %f seconds to filter the image\n', t);
 showimg(fltImg, 'Filtered Image');
 
 %% Find the peaks.
+tic;
 p = local.FastPeakFind(fltImg);
-np = size(p, 1);
-fprintf(' ** Found %d peaks in the view\n', np);
+t = toc;
+np = size(p, 1)/2;
+fprintf(' ** %f seconds to find %d peaks in the view\n', t, np);
+
 x = p(1:2:end);
 y = p(2:2:end);
       
