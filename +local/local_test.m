@@ -1,9 +1,10 @@
 function local_test
 
 close all;
+clearvars;
 
 %% Load the stack.
-imgStackPath = 'C:\Users\Lattice\Documents\MATLAB\data\local_seg_test\sparse.tif';
+imgStackPath = 'C:\Users\Lattice\Documents\MATLAB\data\local_seg_test\art.tif';
 tic;
 [rawImgStack, rawStackSize] = tiff.imread(imgStackPath, true);
 t = toc;
@@ -33,19 +34,29 @@ fprintf(' ** %f seconds to find %d peaks in the view\n', t, np);
 
 x = p(1:2:end);
 y = p(2:2:end);
-      
-%% Fit the result.
-% Size of the bounding box.
-boxSize = 7;
 
-boxHalfSize = floor(boxSize/2);
+%% Open CSV file for saving.
+fid = fopen('C:\Users\Lattice\Documents\MATLAB\data\local_seg_test\art_my.csv', 'w');
+fprintf(fid, 'x [nm], y [nm], sigma x [nm], sigma y [nm], intensity [au]\n');
+%% Fit the result.
+avh = figure('Name', 'Aerial View', 'NumberTitle', 'off');
+set(avh, 'Position', [500, 100, 600, 800]);
+zih = figure('Name', 'Region of Interest', 'NumberTitle', 'off');
+set(zih, 'Position', [1200, 200, 600, 600]);
+
+% Size of the bounding box.
+boxPxLen = 3;   % [px]
+pxLen = 102;    % [nm]
 for i = 1:np
+    tic;
+    
     x0 = x(i); 
     y0 = y(i);
     
-    % Calculate the bounding box range, [Xmin, Xmax, Ymin, Ymax].
-    bBox = [x0 - boxHalfSize, x0 + boxHalfSize, ...
-            y0 - boxHalfSize, y0 + boxHalfSize];
+    %% Extract ROI.
+    % Calculate the bounding box, [Xmin, Xmax, Ymin, Ymax].
+    hs = floor(boxPxLen/2);
+    bBox = [x0-hs, x0+hs, y0-hs, y0+hs];
     % Extract the ROI.
     roiImg = extractroi(fltImg, bBox);
     % Skip this particle if valid ROI is too small.
@@ -53,9 +64,46 @@ for i = 1:np
         continue;
     end
     
+    %% Fitting.
     % Fit the ROI by LSE.
-    [xf, yf] = 
+    fitParm = fitgauss(roiImg, x0, y0, boxPxLen);
+   
+    t = toc;
+    fprintf(' ** %f seconds to process\n', t);
+    
+    %% Plot the result.
+    % Aerial view.
+    figure(avh);
+    imagesc(fltImg);
+    title(['Particle ', num2str(i)]);
+    hold on;
+    % Note: First point is included, therefore the N-0.5f
+    rBox = [x0-hs-0.5, y0-hs-0.5, boxPxLen, boxPxLen];
+    rectangle('Position', rBox, 'EdgeColor', 'w');
+    axis tight equal;
+    
+    % Zoom in.
+    figure(zih);
+    imagesc(roiImg);
+    hold on;
+    plot(x0-rBox(1), y0-rBox(2), 'Marker', 'x', 'MarkerEdgeColor', 'w');
+    xf = fitParm(2);
+    yf = fitParm(4);
+    plot(xf-rBox(1), yf-rBox(2), 'Marker', 's', 'MarkerEdgeColor', 'w');
+    axis tight equal;
+    hold off;
+    xf = xf * 102;
+    yf = yf * 102;
+    ti = sprintf('(%.3f, %.3f)', xf, yf);
+    title(ti);
+    
+    drawnow;
+    
+    %% Write to file.
+    fprintf(fid, '%.3f, %.3f, %.3f, %.3f, %.3f\n', ...
+            xf, yf, fitParm(3)*102, fitParm(5)*102, fitParm(1));
 end
+fclose(fid);
 
 end
 
@@ -127,28 +175,88 @@ yMin = roi(3);
 yMax = roi(4);
 
 % Boundary check.
-[nx, ny] = size(I);
+[ny, nx] = size(I);
 if (xMin < 1) || (yMin < 1) || (xMax > nx) || (yMax > ny)
     J = [];
 else
-    J = I(xMin:xMax, yMin:yMax);
+    J = I(yMin:yMax, xMin:xMax);
 end
 
 end
 
-function parm = fitgauss(x, y)
+function parm = fitgauss(I, x0, y0, roiLen)
 %FITGAUSS Fit the Gaussian peak.
 
-%% Default parameter.
-A_def = 1;
-x0_def = 
+persistent problem;
 
+%% Initialize.
+if ~exist('problem', 'var') || ...
+   ~isstruct(problem) || isempty(fieldnames(problem))
+    % Objective function.
+    problem.objective = @gaussfunc;
+    
+    % Initial guess, [A, x0, wx, y0, wy, theta].
+    problem.x0 = [-1, -1, roiLen, -1, roiLen, 0];
+
+    % Boundaries.
+    problem.lb = [0, -1, 0, -1, 0, -pi/4];
+    w = (roiLen/2)^2;
+    problem.ub = [realmax('double'), -1, w, -1, w, pi/4];
+    
+    % Solver, default string.
+    problem.solver = 'lsqcurvefit';
+    % Solver optimization options.
+    options = optimoptions('lsqcurvefit', ...
+                           'FiniteDifferenceType', 'central'); 
+    problem.options = options;
+    
+    fprintf(' ** Solver constant parameters initialized!\n');
 end
 
-function F = gaussfunc(parm, data)
+%% Setup parameters for current round.
+problem.xdata = gengrid(x0, y0, roiLen);
+% Guess amplitude.
+problem.x0(1) = max(I(:));
+% Initial center.
+problem.x0(2) = x0;
+problem.x0(4) = y0;
+% Lower bound.
+problem.lb(2) = x0 - roiLen/2;
+problem.lb(4) = y0 - roiLen/2;
+% Upper bound.
+problem.ub(2) = x0 + roiLen/2;
+problem.ub(4) = y0 + roiLen/2;
+% Raw data.
+problem.ydata = double(I);
+
+%% Processing.
+[parm, ~, ~, flag] = lsqcurvefit(problem);
+
+% Interpret the flag.
+switch(flag)
+    case 1
+        msg = 'converged';
+    case {2, 3, 4}
+        msg = 'in tolerance range';
+    otherwise
+        msg = 'failed';
+end
+x = parm(2);
+y = parm(4);
+fprintf(' .. (%d, %d) -> (%.10f, %.10f), %s\n', x0, y0, x, y, msg);
+    
+end
+
+function F = gaussfunc(parm, grid)
 %GAUSSFUNC Generate a 2-D Gaussian matrix using specified parameters.
+%   F = GAUSSFUNC(PARM, GRID) generates a 2-D Gaussian peak using the PARM
+%   configuration on a grid assigned by GRID.
 %
-%   Note: parm = [A, x0, wx, y0, wy, theta]
+%   Note: 
+%   PARM is a vector that contains all the possible variables in the form 
+%   of
+%       PARM = [A, x0, wx, y0, wy, theta]
+%   with each element denotes
 %       A       Amplitude
 %       x0, y0  Center of the peak
 %       wx, wy  Spread of the peak
@@ -163,15 +271,26 @@ wy = parm(5);
 theta = parm(6);
 
 % Rotate the data points.
-dataRot(:, :, 1) = data(:, :, 1)*cos(theta) - data(:, :, 2)*sin(theta);
-dataRot(:, :, 2) = data(:, :, 1)*sin(theta) + data(:, :, 2)*cos(theta);
+rotGrid(:, :, 1) = grid(:, :, 1)*cos(theta) - grid(:, :, 2)*sin(theta);
+rotGrid(:, :, 2) = grid(:, :, 1)*sin(theta) + grid(:, :, 2)*cos(theta);
 
 % Rotate the estimated center.
 xRot = x0*cos(theta) - y0*sin(theta);
 yRot = x0*cos(theta) + y0*sin(theta);
 
 % Apply the Gaussian function.
-F = A * exp( -( ((dataRot(:, :, 1)-xRot).^2)/(2*wx^2) + ...
-                ((dataRot(:, :, 2)-yRot).^2)/(2*wy^2) ) );
+F = A * exp( -( ((rotGrid(:, :, 1)-xRot).^2)/(2*wx^2) + ...
+                ((rotGrid(:, :, 2)-yRot).^2)/(2*wy^2) ) );
             
+end
+
+function grid = gengrid(x0, y0, sz)
+%GENGRID Generate fitting grid for the solver.
+
+hs = floor(sz/2);
+[x, y] = meshgrid(x0-hs:x0+hs, y0-hs:y0+hs);
+grid = zeros(size(x, 1), size(y, 1), 2);
+grid(:, :, 1) = x;
+grid(:, :, 2) = y;
+
 end

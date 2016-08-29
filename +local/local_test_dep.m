@@ -1,12 +1,12 @@
 function local_test_dep
 
-imgPath = 'data/local_seg_test/sparse.tif';
+imgPath = 'data/local_seg_test/dense2.tif';
 
 %% Load the image.
 [oriImgStack, imgStackSize] = tiff.imread(imgPath, true);
 imgStackSize
 
-splImg = oriImgStack(:, :, 14);
+splImg = oriImgStack(:, :, 1);
 
 weiImg = wiener2(single(splImg), [5, 5]);
 figure; imagesc(weiImg);
@@ -23,7 +23,7 @@ figure; imagesc(weiImg);
         fltImg = fltImg / max(fltImg(:)) * 65535;
         fltImg = uint16(fltImg);
         
-        p = FastPeakFind(fltImg);
+        p = local.FastPeakFind(fltImg);
         col = p(1:2:end);
         row = p(2:2:end);
         
