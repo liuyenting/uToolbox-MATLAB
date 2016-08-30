@@ -58,7 +58,7 @@ t = toc;
 fprintf(' ** %f seconds to perform wavelet filtering\n', t);
 
 %% Thresholding.
-ratio = 1.5;
+ratio = 1;
 thImg = imgF2;
 thImg(thImg < ratio*sd1) = 0;
 % Show the image
@@ -67,7 +67,7 @@ imagesc(thImg); axis tight equal;
 title('Masked');
 
 %% Finding peaks.
-rmImg = imregionalmax(thImg);
+[p, rmImg] = local.FastPeakFind(imgF2, ratio*sd1);
 im = imfuse(rawImg, rmImg);
 % Show the image
 subplot(1, 5, 5);
@@ -77,8 +77,9 @@ title('Peaks');
 %% Count the peaks.
 tic;
 
-[row, col] = find(rmImg);
-np = numel(row);
+np = numel(p)/2;
+col = p(1:2:end);
+row = p(2:2:end);
 
 t = toc;
 fprintf(' ** %d peaks are found in %f seconds\n', np, t);
@@ -89,12 +90,20 @@ set(avh, 'Position', [300, 250, 600, 600]);
 zih = figure('Name', 'Zoom In', 'NumberTitle', 'off');
 set(zih, 'Position', [1000, 250, 600, 600]);
 
+tic;
+
 boxsz = 11;
 boxhsz = floor(boxsz/2);
-tplImg = padarray(rawImg, [boxhsz, boxhsz], 'both');
 for i = 1:np
     r = row(i);
     c = col(i);
+    
+    roi = extractroi(rawImg, [c-boxhsz, c+boxhsz, r-boxhsz, r+boxhsz]);
+    if isempty(roi)
+        row(i) = -1;
+        col(i) = -1;
+        continue;
+    end
     
     % Show current location.
     figure(avh);
@@ -103,29 +112,58 @@ for i = 1:np
     rectangle('Position', [c-boxhsz-0.5, r-boxhsz-0.5, boxsz, boxsz], ...
               'EdgeColor', 'w');
     hold off;
-    
-    r = r+boxhsz;
-    c = c+boxhsz;
-    roi = tplImg(r-boxhsz:r+boxhsz, c-boxhsz:c+boxhsz);
+
     % Show ROI.
     figure(zih);
     imagesc(roi); axis tight equal manual;
     hold on;
     plot(1+boxhsz, 1+boxhsz, ...
-         'Marker', 's', 'MarkerEdgeColor', 'w', 'MarkerSize', 20);
+         'Marker', 's', 'MarkerEdgeColor', 'r', 'MarkerSize', 20);
     
     % Fit.
-    parm = fitgauss(roi, boxsz);
-    r = parm(2)+boxhsz;
-    c = parm(4)+boxhsz;
-    plot(c, r, ...
-         'Marker', 'x', 'MarkerEdgeColor', 'w', 'MarkerSize', 10);
-    hold off;
+    tic;
     
+    parm = fitgauss(roi, boxsz);
+    dr = parm(4);
+    dc = parm(2);
+    
+    t = toc;
+    
+    r = (1+boxhsz)+dr;
+    c = (1+boxhsz)+dc;
+    plot(c, r, ...
+         'Marker', 'x', 'MarkerEdgeColor', 'k', 'MarkerSize', 10);
+    hold off;
+
     drawnow;
     
-    pause(0.5);
+    % Write back.
+    row(i) = row(i)+dr;
+    col(i) = col(i)+dc;
 end
+
+t = toc;
+fprintf(' ** %f seconds to localize all the local maxima\n', t);
+
+%% Write result to file.
+% Convert the unit.
+pxRealSz = 102; % [nm]
+row = row * pxRealSz;
+col = col * pxRealSz;
+
+% Get path string.
+[dname, fname, ~] = fileparts(imgStackPath);
+csvPath = fullfile(dname, [fname, '.csv']);
+
+% Open the file.
+fid = fopen(csvPath, 'w');
+fprintf(fid, 'x [nm], y [nm]\n');
+% Write all the values.
+for i = 1:np
+    fprintf(fid, '%.3f, %.3f\n', col(i), row(i));
+end
+% Close the file.
+fclose(fid);
 
 end
 
@@ -211,6 +249,24 @@ end
 
 end
 
+function J = extractroi(I, roi)
+%EXTRACTROI Extract region of interest from specified image.
+
+cMin = roi(1); 
+cMax = roi(2);
+rMin = roi(3); 
+rMax = roi(4);
+
+% Boundary check.
+[ncol, nrow] = size(I);
+if (cMin < 1) || (rMin < 1) || (cMax > ncol) || (rMax > nrow)
+    J = [];
+else
+    J = I(rMin:rMax, cMin:cMax);
+end
+
+end
+
 function parm = fitgauss(I, boxsz)
 %FITGAUSS Fit the Gaussian peak.
 
@@ -223,13 +279,13 @@ if ~exist('problem', 'var') || ...
     problem.objective = @gaussfunc;
     
     % Initial guess, [A, x0, wx, y0, wy, theta].
-    problem.x0 = [-1, 0, boxsz, 0, boxsz, 0];
+    problem.x0 = [-1, 0, boxsz, 0, boxsz];
 
     % Boundaries.
     boxhsz = floor(boxsz/2);
-    problem.lb = [0, -boxhsz, 0, -boxhsz, 0, -pi/4];
+    problem.lb = [0, -boxhsz, 0, -boxhsz, 0];
     w = boxhsz^2;
-    problem.ub = [realmax('double'), boxhsz, w, boxhsz, w, pi/4];
+    problem.ub = [realmax('double'), boxhsz, w, boxhsz, w];
     
     % Grid.
     problem.xdata = gengrid(boxhsz);
@@ -238,7 +294,8 @@ if ~exist('problem', 'var') || ...
     problem.solver = 'lsqcurvefit';
     % Solver optimization options.
     options = optimoptions('lsqcurvefit', ...
-                           'FiniteDifferenceType', 'central'); 
+                           'FiniteDifferenceType', 'central', ...
+                           'Display', 'off'); 
     problem.options = options;
     
     fprintf(' ** Solver constant parameters initialized!\n');
@@ -251,20 +308,10 @@ problem.x0(1) = max(I(:));
 problem.ydata = double(I);
 
 %% Processing.
-[parm, ~, ~, flag] = lsqnonlin(problem);
+[parm, ~, ~, flag] = lsqcurvefit(problem); %#ok<ASGLU>
 
-% Interpret the flag.
-switch(flag)
-    case 1
-        msg = 'converged';
-    case {2, 3, 4}
-        msg = 'in tolerance range';
-    otherwise
-        msg = 'failed';
-end
 x = parm(2);
 y = parm(4);
-fprintf(' .. (%d, %d) -> (%.10f, %.10f), %s\n', 0, 0, x, y, msg);
     
 end
 
@@ -281,7 +328,6 @@ function F = gaussfunc(parm, grid)
 %       A       Amplitude
 %       x0, y0  Center of the peak
 %       wx, wy  Spread of the peak
-%       theta   Rotation angle of the peak
 
 % Extract the parameter.
 A = parm(1);
@@ -289,19 +335,10 @@ x0 = parm(2);
 y0 = parm(4);
 wx = parm(3);
 wy = parm(5);
-theta = parm(6);
-
-% Rotate the data points.
-rotGrid(:, :, 1) = grid(:, :, 1)*cos(theta) - grid(:, :, 2)*sin(theta);
-rotGrid(:, :, 2) = grid(:, :, 1)*sin(theta) + grid(:, :, 2)*cos(theta);
-
-% Rotate the estimated center.
-xRot = x0*cos(theta) - y0*sin(theta);
-yRot = x0*cos(theta) + y0*sin(theta);
 
 % Apply the Gaussian function.
-F = A * exp( -( ((rotGrid(:, :, 1)-xRot).^2)/(2*wx^2) + ...
-                ((rotGrid(:, :, 2)-yRot).^2)/(2*wy^2) ) );
+F = A * exp( -( ((grid(:, :, 1)-x0).^2)/(2*wx^2) + ...
+                ((grid(:, :, 2)-y0).^2)/(2*wy^2) ) );
             
 end
 
