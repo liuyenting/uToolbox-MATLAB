@@ -19,7 +19,9 @@ classdef Shear < util.cppbridge.CppBridge
 
         function this = setacqparam(this, param)
             %SETPARAM Set the acquisition paramter.
-
+            
+            %TODO: Field existance check.
+            
             % All the fields should be of type SINGLE.
             param = structfun(@single, param, 'UniformOutput', false);
 

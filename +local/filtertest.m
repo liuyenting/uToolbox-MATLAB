@@ -5,7 +5,7 @@ close all;
 clearvars;
 
 %% Load the stack.
-imgStackPath = 'C:\Users\Lattice\Documents\MATLAB\data\local_seg_test\art.tif';
+imgStackPath = 'C:\Users\Lattice\Documents\MATLAB\data\local_seg_test\astig.tif';
 tic;
 [rawImgStack, rawStackSize] = tiff.imread(imgStackPath, true);
 t = toc;
@@ -67,6 +67,8 @@ imagesc(thImg); axis tight equal;
 title('Masked');
 
 %% Finding peaks.
+tic;
+
 [p, rmImg] = local.FastPeakFind(imgF2, ratio*sd1);
 im = imfuse(rawImg, rmImg);
 % Show the image
@@ -75,8 +77,6 @@ imagesc(im); axis tight equal;
 title('Peaks');
 
 %% Count the peaks.
-tic;
-
 np = numel(p)/2;
 col = p(1:2:end);
 row = p(2:2:end);
@@ -105,37 +105,33 @@ for i = 1:np
         continue;
     end
     
-    % Show current location.
-    figure(avh);
-    imagesc(rawImg); axis tight equal manual;
-    hold on;
-    rectangle('Position', [c-boxhsz-0.5, r-boxhsz-0.5, boxsz, boxsz], ...
-              'EdgeColor', 'w');
-    hold off;
-
-    % Show ROI.
-    figure(zih);
-    imagesc(roi); axis tight equal manual;
-    hold on;
-    plot(1+boxhsz, 1+boxhsz, ...
-         'Marker', 's', 'MarkerEdgeColor', 'r', 'MarkerSize', 20);
+%     % Show current location.
+%     figure(avh);
+%     imagesc(rawImg); axis tight equal manual;
+%     hold on;
+%     rectangle('Position', [c-boxhsz-0.5, r-boxhsz-0.5, boxsz, boxsz], ...
+%               'EdgeColor', 'w');
+%     hold off;
+% 
+%     % Show ROI.
+%     figure(zih);
+%     imagesc(roi); axis tight equal manual;
+%     hold on;
+%     plot(1+boxhsz, 1+boxhsz, ...
+%          'Marker', 's', 'MarkerEdgeColor', 'r', 'MarkerSize', 20);
     
     % Fit.
-    tic;
-    
     parm = fitgauss(roi, boxsz);
     dr = parm(4);
     dc = parm(2);
     
-    t = toc;
-    
-    r = (1+boxhsz)+dr;
-    c = (1+boxhsz)+dc;
-    plot(c, r, ...
-         'Marker', 'x', 'MarkerEdgeColor', 'k', 'MarkerSize', 10);
-    hold off;
-
-    drawnow;
+%     r = (1+boxhsz)+dr;
+%     c = (1+boxhsz)+dc;
+%     plot(c, r, ...
+%          'Marker', 'x', 'MarkerEdgeColor', 'k', 'MarkerSize', 10);
+%     hold off;
+% 
+%     drawnow;
     
     % Write back.
     row(i) = row(i)+dr;
