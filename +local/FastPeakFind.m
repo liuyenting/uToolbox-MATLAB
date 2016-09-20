@@ -98,7 +98,7 @@ end
 %% Analyze image
 if any(d(:))  ; %for the case of non zero raw image
     
-%     d = medfilt2(d,[3,3]);
+%      d = medfilt2(d,[3,3]);
     
     % apply threshold
     if isa(d,'uint8')

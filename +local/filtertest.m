@@ -5,7 +5,7 @@ close all;
 clearvars;
 
 %% Load the stack.
-imgStackPath = 'C:\Users\Lattice\Documents\MATLAB\data\local_seg_test\astig.tif';
+imgStackPath = 'C:\Users\Lattice\Documents\MATLAB\data\local_seg_test\art.tif';
 tic;
 [rawImgStack, rawStackSize] = tiff.imread(imgStackPath, true);
 t = toc;

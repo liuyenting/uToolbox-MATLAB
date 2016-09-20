@@ -5,7 +5,7 @@ function batchshear
 
 % Acquisition paramters.
 acqParam.ObjectiveAngle = 32.8; % [deg]
-acqParam.ZStepWidth = 0.5;      % [um]
+acqParam.ZStepWidth = 0.8;      % [um]
 acqParam.PixelWidth = 0.102;    % [um]
 
 %% Verify input.
