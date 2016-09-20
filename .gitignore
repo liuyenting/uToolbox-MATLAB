@@ -12,6 +12,7 @@ data/
 
 # Generated images
 *.tif*
+*.bmp
 
 # Generated binaries
 *.mex*
