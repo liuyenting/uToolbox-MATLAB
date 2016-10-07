@@ -103,7 +103,8 @@ pPat = uipanel('Units', 'pixels', 'Position', [830, 246, 220, 170]);
     tPatTh = uicontrol('Style', 'text', 'Parent', pPat, 'Position', [10, 10, 90, 20]);
         set(tPatTh, 'String', 'Threshold', 'FontSize', 14, 'HorizontalAlignment', 'right');
     hPatTh = uicontrol('Style', 'slider', 'Parent', pPat, 'Position', [110, 10, 90, 20]);
-
+        set(hPatTh, 'Min', 0, 'Max', 1, 'Value', 0.5);
+        
 hApply = uicontrol('Style', 'pushbutton', 'Position', [830, 80, 100, 20]);
     set(hApply, 'String', 'Apply', 'FontSize', 14);
     
@@ -112,7 +113,9 @@ hSave = uicontrol('Style', 'pushbutton', 'Position', [830, 50, 100, 20]);
 
 hExit = uicontrol('Style', 'pushbutton', 'Position', [830, 20, 100, 20]);
     set(hExit, 'String', 'Exit', 'FontSize', 14);
-    
+
+% Center the window.
+movegui(f, 'center');
 % Show the settled figure.
 f.Visible = 'on';
 
