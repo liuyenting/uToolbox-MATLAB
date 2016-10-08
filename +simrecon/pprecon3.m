@@ -36,7 +36,8 @@ kpInit = [337, 400, 337, 463];
 % Apodization radius (1/nm).
 rApo = 336;
 % Radius of the mask.
-rMask = 39;
+maskOD = 85.8;
+maskID = 70.2;
 % Pixel size of the PSF (nm).
 pxSize = 102;
 
@@ -85,7 +86,7 @@ psf = centerpsf(psf);
 % Calibrated Kp value.
 kpCal = [];
 % Parse the width and height info using the first raw data.
-info = imfinfo(filepath(inDir, posInit, 1));
+info = imfinfo(filepath(inDir, posInit, 0, 1));
 % Raw image dimension, [width, height].
 rawDim = [info.Width, info.Height];
 
@@ -93,6 +94,20 @@ rawDim = [info.Width, info.Height];
 Iapo = cosapo(rawDim, rApo);
 
 %% Create the mask for cross correlation.
+Imask = crossmask(rawDim*2-1);
+
+%% Generate phase coefficient matrix.
+% NOTE: Aphase can be improved with the precise intensity of each beam.
+% A x = b
+Aphase = zeros(illMax);
+for i = 1:illMax
+    Aphase(:, i) = [3, ...
+                    exp(-1i * phase(i) * 2*pi), ...
+                    exp( 1i * phase(i) * 2*pi), ...
+                    exp(-1i * phase(i) *   pi), ...
+                    exp( 1i * phase(i) *   pi)];
+end
+Aphase = Aphase / 9;
 
 %% Start processing through files.
 for fIdx = 1:nData
@@ -109,7 +124,7 @@ for fIdx = 1:nData
             fPath = filepath(inDir, zPos, oriIdx, illIdx);
             Iraw(:, :, illIdx) = single(imread(fPath));
         end
-        % TODO: Why divide by 4?
+        % NOTE: Why divide by 4?
         Iraw = Iraw / 4;
         % Sum up the raw data to provide wide field result.
         Isum = sum(Iraw, 3);
@@ -165,15 +180,15 @@ function pstr = filepath(dstr, pos, ori, ill)
 %measurement position and target orientation.
 
 posStr = sprintf('%.3f', pos);
-illPat = ['%', ori, '4d.tif'];
+illPat = ['%', num2str(ori), '4d.tif'];
 illStr = sprintf(illPat, ill);
 
 pstr = fullfile(dstr, posStr, illStr);
 
 end
 
-function J = cosapo(sz, r)
-%COSAPO Generates a cosine apodization function.
+function [vx, vy] = origingrid(sz)
+%ORIGINGRID Generate a meshgrid, centered at zero.
 
 szHalf = floor(sz/2);
 % Shift the grid range to center at zero instead of sz/2.
@@ -184,11 +199,29 @@ szMax = szHalf - xor(mod(sz, 2), 1);
 % Meshgrid correspond to the provided dimension.
 [vx, vy] = meshgrid(szMin(1):szMax(1), szMin(2):szMax(2));
 
-% Fill with distance.
-J = sqrt( vx.^2 + vy.^2 );
-J = cos((pi/2) * (sqrt( vx.^2 + vy.^2 )/r));
+end
 
+function J = cosapo(sz, r)
+%COSAPO Generates a cosine apodization function.
+
+[vx, vy] = origingrid(sz);
+
+J = cos((pi/2) * (sqrt( vx.^2 + vy.^2 )/r));
 % Clamp the value to [0, +inf).
 J(J < 0) = 0;
+
+end
+
+function M = crossmask(sz, od, id)
+%CROSSMASK Generate the annular mask for cross-correlation.
+
+% Calculate squared radius from inner/outer diameter.
+or = (od/2)^2;
+ir = (id/2)^2;
+
+[vx, vy] = origingrid(sz);
+% Calculate the squared distance for each cell.
+R2 = vx.^2 + vy.^2;
+M = (R2 > ir) & (R2 < or);
 
 end
