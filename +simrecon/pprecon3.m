@@ -12,11 +12,23 @@ psfFilename = '~/Documents/SIM/ygbead_zp1um_NAp55nap44_ExpPsf.tif';
 [path, name, ~] = fileparts(inDir);
 outDir = fullfile(path, [name, '_recon']);
 
+% === Data Sets ===
+% Initial position (um).
+posInit = 100;
+% Position increment (nm).
+posDelta = 250;
+% Maximum of orientation types, IT STARTS FROM 0.
+oriMax = 1;
+% Maximum of illumination types.
+illMax = 5;
+
+% === Optics ===
 % Wavelength (nm).
 wavelength = 488;
 % Refractive index.
 refInd = 1.33;
 
+% === Reconstruct ===
 % List of phase shifts.
 phase = [0, -(2/5)*pi, -(4/5)*pi, -(6/5)*pi, -(8/5)*pi];
 % Initial Kp values.
@@ -28,18 +40,17 @@ rMask = 39;
 % Pixel size of the PSF (nm).
 pxSize = 102;
 
-% Maximum of orientation.
-oriMax = 5;
-
 %% List the dataset.
 if ~exist(inDir, 'dir')
     error(MSG_ID, 'Input directory does not exist.');
 else
-    dirList = dir(inDir);
-    dirList = rmhiddendir(dirList);
+    l = dir(inDir);
+    l = rmhiddendir(l);
+    
+    nData = numel(l);
     
     % Check if it's empty.
-    if numel(dirList) == 0
+    if nData == 0
         warning(MSG_ID, 'No data in the input directory.');
         return;
     end
@@ -55,7 +66,7 @@ else
     
     % Check if it's empty.
     if numel(l) ~= 0
-        error(MSG_ID, 'Output directory is not empty.');
+        warning(MSG_ID, 'Output directory is not empty.');
     end
 end
 
@@ -70,14 +81,50 @@ cleanObj = onCleanup(@()fclose(fid));
 psf = single(imread(psfFilename));
 psf = centerpsf(psf);
 
-end
-
 %% Retrieve the geometry of the file.
 % Calibrated Kp value.
 kpCal = [];
-% Dummy read the file.
+% Parse the width and height info using the first raw data.
+info = imfinfo(filepath(inDir, posInit, 1));
+% Raw image dimension, [width, height].
+rawDim = [info.Width, info.Height];
 
-eField = single(tiff.imread());
+%% Generate apodization function.
+Iapo = cosapo(rawDim, rApo);
+
+%% Create the mask for cross correlation.
+
+%% Start processing through files.
+for fIdx = 1:nData
+    zPos = posInit + posDelta*fIdx;
+    % Iterate through the orientations, index starts from 0 instead of 1.
+    for oriIdx = 0:oriMax-1
+        % Summed image, wiped out the illumination pattern.
+        Isum = zeros(rawDim);
+        % Raw images, illumination differences are stored plane by plane.
+        Iraw = zeros([rawDim, illMax], 'single');
+        
+        % Load the patterns.
+        for illIdx = 1:illMax
+            fPath = filepath(inDir, zPos, oriIdx, illIdx);
+            Iraw(:, :, illIdx) = single(imread(fPath));
+        end
+        % TODO: Why divide by 4?
+        Iraw = Iraw / 4;
+        % Sum up the raw data to provide wide field result.
+        Isum = sum(Iraw, 3);
+        
+        % 1st deconvolution.
+        for illIdx = 1:illMax
+            Iraw(:, :, illIdx) = deconvlucy(Iraw(:, :, illIdx), psf, 10);
+        end
+        
+        % FT and retrieve the domains.
+        
+    end
+end
+
+end
 
 function list = rmhiddendir(list)
 %RMHIDDENDIR Remove directories that start with '.'
@@ -110,5 +157,38 @@ sd = std(psf(:));
 psf = abs(psf - (me-sd));
 % Scale the PSF to have an integral value of one.
 psf = psf / sum(psf(:));
+
+end
+
+function pstr = filepath(dstr, pos, ori, ill)
+%FILEPATH Retrieve the filepath in the data set according to the
+%measurement position and target orientation.
+
+posStr = sprintf('%.3f', pos);
+illPat = ['%', ori, '4d.tif'];
+illStr = sprintf(illPat, ill);
+
+pstr = fullfile(dstr, posStr, illStr);
+
+end
+
+function J = cosapo(sz, r)
+%COSAPO Generates a cosine apodization function.
+
+szHalf = floor(sz/2);
+% Shift the grid range to center at zero instead of sz/2.
+%   i) Odd: -floor(sz/2):floor(sz/2)
+%   ii) Even: -floor(sz/2):floor(sz/2)-1
+szMin = -szHalf;
+szMax = szHalf - xor(mod(sz, 2), 1);
+% Meshgrid correspond to the provided dimension.
+[vx, vy] = meshgrid(szMin(1):szMax(1), szMin(2):szMax(2));
+
+% Fill with distance.
+J = sqrt( vx.^2 + vy.^2 );
+J = cos((pi/2) * (sqrt( vx.^2 + vy.^2 )/r));
+
+% Clamp the value to [0, +inf).
+J(J < 0) = 0;
 
 end
