@@ -10,7 +10,8 @@ inDir = '~/Documents/SIM/RAWcell1';
 psfFilename = '~/Documents/SIM/ygbead_zp1um_NAp55nap44_ExpPsf.tif';
 
 [path, name, ~] = fileparts(inDir);
-outDir = fullfile(path, [name, '_recon']);
+dateStr = datestr(now, 'yyyymmddHHMMss');
+outDir = fullfile(path, [name, '_', dateStr]);
 
 % === Data Sets ===
 % Initial position (um).
@@ -76,11 +77,20 @@ fid = fopen(fullfile(outDir, 'recon.log'), 'w');
 
 %% Register the cleanup function.
 % Must close the file on exit.
+% TODO: Modify to rename the directory from UUID to datetime-based.
 cleanObj = onCleanup(@()fclose(fid));
 
 %% Load the PSF. 
 psf = single(imread(psfFilename));
 psf = centerpsf(psf);
+
+% f = figure('Name', 'PSF', 'NumberTitle', 'off');
+% f.Position = [100, 100, 3*size(psf)];
+% f.MenuBar = 'none'; 
+% f.ToolBar = 'none';
+% subplot('Position', [0 0 1 1]);
+%     imagesc(psf);
+%     axis equal off;
 
 %% Retrieve the geometry of the file.
 % Calibrated Kp value.
@@ -94,24 +104,25 @@ rawDim = [info.Width, info.Height];
 Iapo = cosapo(rawDim, rApo);
 
 %% Create the mask for cross correlation.
-Imask = crossmask(rawDim*2-1);
+Imask = crossmask(rawDim*2-1, maskOD, maskID);
 
 %% Generate phase coefficient matrix.
 % NOTE: Aphase can be improved with the precise intensity of each beam.
 % A x = b
 Aphase = zeros(illMax);
 for i = 1:illMax
+    p = phase(i);
     Aphase(:, i) = [3, ...
-                    exp(-1i * phase(i) * 2*pi), ...
-                    exp( 1i * phase(i) * 2*pi), ...
-                    exp(-1i * phase(i) *   pi), ...
-                    exp( 1i * phase(i) *   pi)];
+                    exp(-1i * p * 2*pi), exp(1i * p * 2*pi), ...
+                    exp(-1i * p * pi),  exp(1i * p * pi)];
 end
 Aphase = Aphase / 9;
 
 %% Start processing through files.
+% DEBUG
+nData = 1;
 for fIdx = 1:nData
-    zPos = posInit + posDelta*fIdx;
+    zPos = posInit + (posDelta*1e-3)*fIdx;
     % Iterate through the orientations, index starts from 0 instead of 1.
     for oriIdx = 0:oriMax-1
         % Summed image, wiped out the illumination pattern.
@@ -127,7 +138,7 @@ for fIdx = 1:nData
         % NOTE: Why divide by 4?
         Iraw = Iraw / 4;
         % Sum up the raw data to provide wide field result.
-        Isum = sum(Iraw, 3);
+        Isum = mean(Iraw, 3);
         
         % 1st deconvolution.
         for illIdx = 1:illMax
@@ -135,7 +146,12 @@ for fIdx = 1:nData
         end
         
         % FT and retrieve the domains.
-        
+        Ief = zeros(size(Iraw));
+        for illIdx = 1:illMax
+            Ief(:, :, illIdx) = fftshift(fft2(Iraw(:, :, illIdx)));
+            % Limit by the apodization function.
+            Ief(:, :, illIdx) = Ief(:, :, illIdx) .* Iapo;
+        end
     end
 end
 
