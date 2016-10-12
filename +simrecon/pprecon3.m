@@ -3,6 +3,7 @@ function pprecon3
 
 clearvars; close all;
 
+global MSG_ID;
 MSG_ID = 'simrecon:pprecon3';
 
 %% Preset the parameters.
@@ -18,7 +19,7 @@ outDir = fullfile(path, [name, '_', dateStr]);
 posInit = 100;
 % Position increment (nm).
 posDelta = 250;
-% Maximum of orientation types, IT STARTS FROM 0.
+% Maximum of orientation types.
 oriMax = 1;
 % Maximum of illumination types.
 illMax = 5;
@@ -31,9 +32,9 @@ refInd = 1.33;
 
 % === Reconstruct ===
 % List of phase shifts.
-phase = [0, -(2/5)*pi, -(4/5)*pi, -(6/5)*pi, -(8/5)*pi];
-% Initial Kp values.
-kpInit = [337, 400, 337, 463];
+phaseCoeff = [0, -2/5, -4/5, -6/5, -8/5];
+% Initial Kp values, each row represents an orientation.
+kpInit = [337, 463, 337, 400]; % Inverted.
 % Apodization radius (1/nm).
 rApo = 336;
 % Radius of the mask.
@@ -98,7 +99,7 @@ psf = centerpsf(psf);
 % Calibrated Kp value.
 kpCal = [];
 % Parse the width and height info using the first raw data.
-info = imfinfo(filepath(inDir, posInit, 0, 1));
+info = imfinfo(filepath(inDir, posInit, 1, 1));
 % Raw image dimension, [width, height].
 rawDim = [info.Width, info.Height];
 % N elements in a single plane.
@@ -115,11 +116,12 @@ Imask = crossmask(rawDim*2-1, maskOD, maskID);
 % A x = b
 Aphase = zeros(illMax);
 for i = 1:illMax
-    p = phase(i);
-    Aphase(:, i) = [3, ...
+    p = phaseCoeff(i);
+    Aphase(i, :) = [3, ...
                     exp(-1i * p * 2*pi), exp(1i * p * 2*pi), ...
                     exp(-1i * p * pi),  exp(1i * p * pi)];
 end
+% TODO: Why divide by 9.
 Aphase = Aphase / 9;
 
 %% Start processing through files.
@@ -130,18 +132,18 @@ for fIdx = 1:nData
     
     zPos = posInit + (posDelta*1e-3)*fIdx;
     % Iterate through the orientations, index starts from 0 instead of 1.
-    for oriIdx = 0:oriMax-1
+    for oriIdx = 1:oriMax
         % Summed image, wiped out the illumination pattern.
-        Isum = zeros(rawDim, 'single');
+        Isum = zeros(rawDim);
         % Raw images, illumination differences are stored plane by plane.
-        Iraw = zeros([rawDim, illMax], 'single');
+        Iraw = zeros([rawDim, illMax]);
 
         % Load the patterns.
         for illIdx = 1:illMax
             fPath = filepath(inDir, zPos, oriIdx, illIdx);
             Iraw(:, :, illIdx) = single(imread(fPath));
         end
-        % NOTE: Why divide by 4?
+        %TODO: Scale to [0, 1] and remember the min/max.
         Iraw = Iraw / 4;
         % Sum up the raw data to provide wide field result.
         Isum = mean(Iraw, 3);
@@ -152,94 +154,85 @@ for fIdx = 1:nData
         end
 
         % FT and retrieve the domains.
-        E = zeros(size(Iraw), 'single');
+        E = zeros(size(Iraw));
         for illIdx = 1:illMax
             E(:, :, illIdx) = fftshift(fft2(Iraw(:, :, illIdx)));
             % Limit by the apodization function.
             E(:, :, illIdx) = E(:, :, illIdx) .* Iapo;
         end
 
-        % Isolate the results.
-        %TODO: Directly reshape from 3D to 2D.
-        Eflat = zeros([nElem, illMax], 'single');
-        for illIdx = 1:illMax
-            Eflat(:, illIdx) = reshape(E(:, :, illIdx), [nElem, 1]);
-        end
-        Dflat = Aphase \ Eflat.';
-        Dflat = Dflat.';
-
-        % Resize back the frequency domains, and re-use E.
-        %TODO: Directly reshape from 3D to 2D.
-        D = zeros([rawDim, illMax], 'single');
-        for illIdx = 1:illMax
-            D(:, :, illIdx) = reshape(Dflat(:, illIdx), rawDim);
-        end
+        % Solve by the coefficients.
+        E = reshape(E, [nElem, illMax]);
+        D = Aphase \ E.';
+        D = D.';
+        D = reshape(D, size(Iraw));
         
         % Pad the images, only pad along the image planes.
-        D = padarray(D, [rawDim/2, 0]);
-    
-        % Using cross-correlation to find the Kp through the m1 terms.
-        %Icross = zeros([2*rawDim, ilMax], 'single');
-        % TODO: Bypass.
-        
-        shift = zeros([2, 4], 'single');
-        phaseInit = zeros([1, 4], 'single');
+        S = padarray(D, [rawDim/2, 0]);
         
         % Restore the wide field image for comparison.
-        Iwf = abs(ifft2(ifftshift(D(:, :, 1))));
+        Iwf = abs(ifft2(ifftshift(S(:, :, 1))));
+        figure('Name', 'Wide-field', 'NumberTitle', 'off');
+            imagesc(Iwf);
+            axis equal tight;
+        % Flatten the WF image, so we won't tamper with Itmp later on.
+        Iwf = Iwf(:);
         
-        % Preset the figure for temporary result.
-        f = figure('Name', '', 'NumberTitle', 'off');
-        f.Position = [100, 100, 1024, 512];
-%         f.MenuBar = 'none';
-%         f.ToolBar = 'none';
-        % Delta phase.
-        dp = 2*pi / phStepRes;
-        phaseOpt = zeros(2, phStepRes);
-        for pIdx = 1:phStepRes
-            s = sprintf('Localize @ %.3frad', pIdx*dp);
-            f.Name = s;
-            
-            % Iterate through m2~m4 terms.
-            sgn = 1;
-            for m = 2:illMax
-                % "Increment" the phase.
-                %TODO: Apply at the shifted region instead of overall
-                %region.
-                D(:, :, m) = D(:, :, m) * exp(sgn * 1i * dp);
-                % Toggle the sign for next cycle.
-                sgn = -sgn;
+        % TODO: Calibrate the kp and generate kpCal.
+        % Calculate the shift positions for the terms.
+        mShift = zeros(illMax, 2);
+        for i = 2:2:illMax
+            mShift(i, :) = [kpInit(oriIdx, i/2+1)-1, kpInit(oriIdx, i/2)-1];
+            mShift(i+1, :) = rawDim - mShift(i, :);
+        end
+        kpCal = kpInit;
+
+        % Optimal phased image.
+        Iopt = zeros(rawDim*2);
+        % Plus/Minus temporary phased image.
+        Sp = zeros(rawDim*2);
+        Sm = zeros(rawDim*2);
+        % Search for the inital phase offsets.
+        phaseOff = linspace(0, 2*pi, phStepRes);
+        for m = 2:2:illMax
+            maxCorrVal = 0;
+            maxCorrPh = 0;
+            for p = phaseOff
+                Sp(mShift(m, 1)+1:mShift(m, 1)+rawDim(1), ...
+                   mShift(m, 2)+1:mShift(m, 2)+rawDim(2)) ...
+                    = D(:, :, m) * exp(1i * p);
+                Sm(mShift(m+1, 1)+1:mShift(m+1, 1)+rawDim(1), ...
+                   mShift(m+1, 2)+1:mShift(m+1, 2)+rawDim(2))...
+                    = D(:, :, m+1) * exp(-1i * p);
+                
+                % Test for correlation result, update if overlapped more.
+                Stmp = S(:, :, 1) + Sp + Sm;
+                Itmp = abs(ifft2(ifftshift(Stmp)));
+                s = sum(Itmp(:) .* Iwf);
+                % Update the maximum result if greater.
+                if s > maxCorrVal
+                    % Update the maximum thresholds.
+                    maxCorrVal = s;
+                    maxCorrPh = p;
+                    % Update the m-terms.
+                    S(:, :, m) = Sp;
+                    S(:, :, m+1) = Sm;
+                    % Save the latest optimal result.
+                    Iopt = Itmp;
+                end
             end
             
-            % Test for m2/m3 terms.
-            Itmp = D(:, :, 1) + D(:, :, 2) + D(:, :, 3);
-            % Revert to spatial domain.
-            Itmp = abs(ifft2(ifftshift(Itmp)));
-            Itmp = Itmp .* Iwf;
-            phaseOpt(1, pIdx) = sum(Itmp(:));
-            
-            % Test for m4/m5 terms;
-            Itmp = D(:, :, 1) + D(:, :, 4) + D(:, :, 5);
-            % Revert to spatial domain.   
-            Itmp = abs(ifft2(ifftshift(Itmp)));
-            Itmp = Itmp .* Iwf;
-            phaseOpt(2, pIdx) = sum(Itmp(:));
-        end
-        % Move the data to the optimal phase.
-        [~, maxIdx] = max(phaseOpt, [], 2);
-        dp = (phStepRes-maxIdx) * dp;
-        % Apply through m2~m4 terms.
-        sgn = -1;
-        for m = 2:illMax
-            % "Increment" the phase.
-            D(:, :, m) = D(:, :, m) * exp(sgn * 1i * dp);
-            % Toggle the sign for next cycle.
-            sgn = -sgn;
+            ts = sprintf('phase = %.3f\ncorr = %.5e', maxCorrPh, maxCorrVal);
+            figure('Name', ['m', num2str(m/2), ' term'], 'NumberTitle', 'off');
+                imagesc(Iopt);
+                axis equal tight;
+                title(ts, 'FontSize', 14);
         end
         
         % Create SIM reconstructed PSF.
+        k = 2*pi / (wavelength/refInd);
         
-        % Create the pattern and their respective raw data.
+        % Create the patterns.
         
         % Reconstruct the result.
         
@@ -291,12 +284,29 @@ function psf = centerpsf(psf)
 [x, y] = ind2sub(size(psf), idx);
 % Crop the image to the center.
 psf = psf(1:2*(x-1), 1:2*(y-1));
-% Remove the background (1 S.D.).
+% Remove the background (1 adjusted S.D.).
 me = mean(psf(:));
-sd = std(psf(:));
+sd = estnoise(psf);
 psf = abs(psf - (me-sd));
 % Scale the PSF to have an integral value of one.
 psf = psf / sum(psf(:));
+
+end
+
+function s = estnoise(I)
+%ESTNOISE Estimate the background noise level in terms of sigma.
+%   J. Immerkær, Fast Noise Variance Estimation
+%   Computer Vision and Image Understanding, Vol. 64, No. 2, Pg. 300-302
+
+[h, w] = size(I);
+
+% Compute sum of absolute values of Laplacian.
+k = [1, -2, 1; -2, 4, -2; 1, -2, 1];
+I = abs(conv2(I, k));
+s = sum(I(:));
+
+% Scale the sigma with proposed coefficients.
+s = s * sqrt(pi/2) / (6*(w-2)*(h-2));
 
 end
 
@@ -304,8 +314,12 @@ function pstr = filepath(dstr, pos, ori, ill)
 %FILEPATH Retrieve the filepath in the data set according to the
 %measurement position and target orientation.
 
+global MSG_ID;
+
+assert(ori > 0, MSG_ID, 'Orientation ID should be positive.');
+
 posStr = sprintf('%.3f', pos);
-illPat = ['%', num2str(ori), '4d.tif'];
+illPat = ['%', num2str(ori-1), '4d.tif'];
 illStr = sprintf(illPat, ill);
 
 pstr = fullfile(dstr, posStr, illStr);
