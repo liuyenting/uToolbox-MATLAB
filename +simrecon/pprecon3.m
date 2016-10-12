@@ -71,7 +71,7 @@ else
 
     % Check if it's empty.
     if numel(l) ~= 0
-        warning(MSG_ID, 'Output directory is not empty.');
+        error(MSG_ID, 'Output directory is not empty.');
     end
 end
 
@@ -138,7 +138,7 @@ for fIdx = 1:nData
         % Raw images, illumination differences are stored plane by plane.
         Iraw = zeros([rawDim, illMax]);
 
-        % Load the patterns.
+        %% Load the patterns.
         for illIdx = 1:illMax
             fPath = filepath(inDir, zPos, oriIdx, illIdx);
             Iraw(:, :, illIdx) = single(imread(fPath));
@@ -148,12 +148,12 @@ for fIdx = 1:nData
         % Sum up the raw data to provide wide field result.
         Isum = mean(Iraw, 3);
 
-        % 1st deconvolution.
+        %% 1st deconvolution.
         for illIdx = 1:illMax
             Iraw(:, :, illIdx) = deconvlucy(Iraw(:, :, illIdx), psf, 10);
         end
 
-        % FT and retrieve the domains.
+        %% FT and retrieve the domains.
         E = zeros(size(Iraw));
         for illIdx = 1:illMax
             E(:, :, illIdx) = fftshift(fft2(Iraw(:, :, illIdx)));
@@ -161,7 +161,7 @@ for fIdx = 1:nData
             E(:, :, illIdx) = E(:, :, illIdx) .* Iapo;
         end
 
-        % Solve by the coefficients.
+        %% Solve by the coefficients.
         E = reshape(E, [nElem, illMax]);
         D = Aphase \ E.';
         D = D.';
@@ -170,7 +170,7 @@ for fIdx = 1:nData
         % Pad the images, only pad along the image planes.
         S = padarray(D, [rawDim/2, 0]);
         
-        % Restore the wide field image for comparison.
+        %% Restore the wide field image for comparison.
         Iwf = abs(ifft2(ifftshift(S(:, :, 1))));
         figure('Name', 'Wide-field', 'NumberTitle', 'off');
             imagesc(Iwf);
@@ -178,8 +178,8 @@ for fIdx = 1:nData
         % Flatten the WF image, so we won't tamper with Itmp later on.
         Iwf = Iwf(:);
         
+        %% Calculate the shift positions for the terms.
         % TODO: Calibrate the kp and generate kpCal.
-        % Calculate the shift positions for the terms.
         mShift = zeros(illMax, 2);
         for i = 2:2:illMax
             mShift(i, :) = [kpInit(oriIdx, i/2+1)-1, kpInit(oriIdx, i/2)-1];
@@ -187,13 +187,14 @@ for fIdx = 1:nData
         end
         kpCal = kpInit;
 
+        %% Search for the inital phase offsets.
+        % List of phases to test for.
+        phaseOff = linspace(0, 2*pi, phStepRes);
         % Optimal phased image.
         Iopt = zeros(rawDim*2);
         % Plus/Minus temporary phased image.
         Sp = zeros(rawDim*2);
         Sm = zeros(rawDim*2);
-        % Search for the inital phase offsets.
-        phaseOff = linspace(0, 2*pi, phStepRes);
         for m = 2:2:illMax
             maxCorrVal = 0;
             maxCorrPh = 0;
@@ -228,27 +229,21 @@ for fIdx = 1:nData
                 axis equal tight;
                 title(ts, 'FontSize', 14);
         end
-        
-        % Create SIM reconstructed PSF.
+
+        %% Create the patterns.
         k = 2*pi / (wavelength/refInd);
         
-        % Create the patterns.
+        %% Reconstruct the result.
         
-        % Reconstruct the result.
+        %% Export SIM image with all the orientations.
         
-        % Find the initial phases for m_i terms.
+        %% Create reconstructed PSF.
         
-        % Save the frequency domain results.
+        %% Second deconvolution.
         
-        % Reconstruct the PSF.
+        %% Export the final image.
         
-        % Export the final image.
-        
-        % Export SIM image with all the orientations.
-        
-        % Second deconvolution.
-        
-        % Write back the Kp.
+        %% Write back the Kp.
         
     end
     
