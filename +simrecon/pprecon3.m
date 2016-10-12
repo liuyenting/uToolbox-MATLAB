@@ -39,6 +39,8 @@ rApo = 336;
 % Radius of the mask.
 maskOD = 85.8;
 maskID = 70.2;
+% Resolution of phase steps (#).
+phStepRes = 20;
 % Pixel size of the PSF (nm).
 pxSize = 102;
 
@@ -48,9 +50,9 @@ if ~exist(inDir, 'dir')
 else
     l = dir(inDir);
     l = rmhiddendir(l);
-    
+
     nData = numel(l);
-    
+
     % Check if it's empty.
     if nData == 0
         warning(MSG_ID, 'No data in the input directory.');
@@ -65,7 +67,7 @@ if ~exist(outDir, 'dir')
 else
     l = dir(outDir);
     l = rmhiddendir(l);
-    
+
     % Check if it's empty.
     if numel(l) ~= 0
         warning(MSG_ID, 'Output directory is not empty.');
@@ -80,13 +82,13 @@ fid = fopen(fullfile(outDir, 'recon.log'), 'w');
 % TODO: Modify to rename the directory from UUID to datetime-based.
 cleanObj = onCleanup(@()fclose(fid));
 
-%% Load the PSF. 
+%% Load the PSF.
 psf = single(imread(psfFilename));
 psf = centerpsf(psf);
 
 % f = figure('Name', 'PSF', 'NumberTitle', 'off');
 % f.Position = [100, 100, 3*size(psf)];
-% f.MenuBar = 'none'; 
+% f.MenuBar = 'none';
 % f.ToolBar = 'none';
 % subplot('Position', [0 0 1 1]);
 %     imagesc(psf);
@@ -99,6 +101,8 @@ kpCal = [];
 info = imfinfo(filepath(inDir, posInit, 0, 1));
 % Raw image dimension, [width, height].
 rawDim = [info.Width, info.Height];
+% N elements in a single plane.
+nElem = prod(rawDim);
 
 %% Generate apodization function.
 Iapo = cosapo(rawDim, rApo);
@@ -122,14 +126,16 @@ Aphase = Aphase / 9;
 % DEBUG
 nData = 1;
 for fIdx = 1:nData
+    tic;
+    
     zPos = posInit + (posDelta*1e-3)*fIdx;
     % Iterate through the orientations, index starts from 0 instead of 1.
     for oriIdx = 0:oriMax-1
         % Summed image, wiped out the illumination pattern.
-        Isum = zeros(rawDim);
+        Isum = zeros(rawDim, 'single');
         % Raw images, illumination differences are stored plane by plane.
         Iraw = zeros([rawDim, illMax], 'single');
-        
+
         % Load the patterns.
         for illIdx = 1:illMax
             fPath = filepath(inDir, zPos, oriIdx, illIdx);
@@ -139,20 +145,123 @@ for fIdx = 1:nData
         Iraw = Iraw / 4;
         % Sum up the raw data to provide wide field result.
         Isum = mean(Iraw, 3);
-        
+
         % 1st deconvolution.
         for illIdx = 1:illMax
             Iraw(:, :, illIdx) = deconvlucy(Iraw(:, :, illIdx), psf, 10);
         end
-        
+
         % FT and retrieve the domains.
-        Ief = zeros(size(Iraw));
+        E = zeros(size(Iraw), 'single');
         for illIdx = 1:illMax
-            Ief(:, :, illIdx) = fftshift(fft2(Iraw(:, :, illIdx)));
+            E(:, :, illIdx) = fftshift(fft2(Iraw(:, :, illIdx)));
             % Limit by the apodization function.
-            Ief(:, :, illIdx) = Ief(:, :, illIdx) .* Iapo;
+            E(:, :, illIdx) = E(:, :, illIdx) .* Iapo;
         end
+
+        % Isolate the results.
+        %TODO: Directly reshape from 3D to 2D.
+        Eflat = zeros([nElem, illMax], 'single');
+        for illIdx = 1:illMax
+            Eflat(:, illIdx) = reshape(E(:, :, illIdx), [nElem, 1]);
+        end
+        Dflat = Aphase \ Eflat.';
+        Dflat = Dflat.';
+
+        % Resize back the frequency domains, and re-use E.
+        %TODO: Directly reshape from 3D to 2D.
+        D = zeros([rawDim, illMax], 'single');
+        for illIdx = 1:illMax
+            D(:, :, illIdx) = reshape(Dflat(:, illIdx), rawDim);
+        end
+        
+        % Pad the images, only pad along the image planes.
+        D = padarray(D, [rawDim/2, 0]);
+    
+        % Using cross-correlation to find the Kp through the m1 terms.
+        %Icross = zeros([2*rawDim, ilMax], 'single');
+        % TODO: Bypass.
+        
+        shift = zeros([2, 4], 'single');
+        phaseInit = zeros([1, 4], 'single');
+        
+        % Restore the wide field image for comparison.
+        Iwf = abs(ifft2(ifftshift(D(:, :, 1))));
+        
+        % Preset the figure for temporary result.
+        f = figure('Name', '', 'NumberTitle', 'off');
+        f.Position = [100, 100, 1024, 512];
+%         f.MenuBar = 'none';
+%         f.ToolBar = 'none';
+        % Delta phase.
+        dp = 2*pi / phStepRes;
+        phaseOpt = zeros(2, phStepRes);
+        for pIdx = 1:phStepRes
+            s = sprintf('Localize @ %.3frad', pIdx*dp);
+            f.Name = s;
+            
+            % Iterate through m2~m4 terms.
+            sgn = 1;
+            for m = 2:illMax
+                % "Increment" the phase.
+                %TODO: Apply at the shifted region instead of overall
+                %region.
+                D(:, :, m) = D(:, :, m) * exp(sgn * 1i * dp);
+                % Toggle the sign for next cycle.
+                sgn = -sgn;
+            end
+            
+            % Test for m2/m3 terms.
+            Itmp = D(:, :, 1) + D(:, :, 2) + D(:, :, 3);
+            % Revert to spatial domain.
+            Itmp = abs(ifft2(ifftshift(Itmp)));
+            Itmp = Itmp .* Iwf;
+            phaseOpt(1, pIdx) = sum(Itmp(:));
+            
+            % Test for m4/m5 terms;
+            Itmp = D(:, :, 1) + D(:, :, 4) + D(:, :, 5);
+            % Revert to spatial domain.   
+            Itmp = abs(ifft2(ifftshift(Itmp)));
+            Itmp = Itmp .* Iwf;
+            phaseOpt(2, pIdx) = sum(Itmp(:));
+        end
+        % Move the data to the optimal phase.
+        [~, maxIdx] = max(phaseOpt, [], 2);
+        dp = (phStepRes-maxIdx) * dp;
+        % Apply through m2~m4 terms.
+        sgn = -1;
+        for m = 2:illMax
+            % "Increment" the phase.
+            D(:, :, m) = D(:, :, m) * exp(sgn * 1i * dp);
+            % Toggle the sign for next cycle.
+            sgn = -sgn;
+        end
+        
+        % Create SIM reconstructed PSF.
+        
+        % Create the pattern and their respective raw data.
+        
+        % Reconstruct the result.
+        
+        % Find the initial phases for m_i terms.
+        
+        % Save the frequency domain results.
+        
+        % Reconstruct the PSF.
+        
+        % Export the final image.
+        
+        % Export SIM image with all the orientations.
+        
+        % Second deconvolution.
+        
+        % Write back the Kp.
+        
     end
+    
+    t = toc;
+    s = sprintf('%.3fs to process layer %d', t, fIdx);
+    disp(s);
 end
 
 end
