@@ -1,7 +1,7 @@
 function pprecon3
 %PPRECON3 Reconstruct the 3D SIM dataset using plane-by-plane method.
 
-clearvars; close all;
+clearvars; %close all;
 
 global MSG_ID;
 MSG_ID = 'simrecon:pprecon3';
