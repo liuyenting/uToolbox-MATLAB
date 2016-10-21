@@ -3,6 +3,7 @@ clear
 tic
 
 %% inpout parameters
+cd('C:\Users\Avizo\Downloads\sim_test_data\');
 dir_rowdata='RAWcell1'; %Input the folder of the raw dataset
 PSF='ygbead_zp1um_NAp55nap44_ExpPsf.tif'; %Input the file of PSF
 dir_SI=['SI_',[dir_rowdata],'PbyP_v10initalDeckKpExpPSF-100_Abs_centerPSFttt']; %Specify the reconstructed folder
@@ -19,9 +20,9 @@ n=1.33 %Check the medium refractive index
 mr=39; %specify the radius of mask
 
 mkdir(dir_SI) 
-mkdir([dir_SI,'/summedWF']);
+mkdir([dir_SI,'\summedWF']);
 sz=size(dir(dir_rowdata),1)-2;
-fileID=fopen([dir_SI,'/info.txt'],'w');
+fileID=fopen([dir_SI,'\info.txt'],'w');
 
 %% load PSF
 psf=single(imread([PSF]));
@@ -33,7 +34,7 @@ psf=psf./sum(sum(psf));
 
 %% SIM reconstruction
 kpcal=[];
-E0001=single(imread([dir_rowdata,'/',firstz,'/',num2str(orientation(1),'%05.3d'),'1','.tif']));
+E0001=single(imread([dir_rowdata,'\',firstz,'\',num2str(orientation(1),'%05.3d'),'1','.tif']));
 dim=size(E0001,1);
 
 %% Apodization function
@@ -79,11 +80,11 @@ for z=1:1
 for r=1:size(orientation,2)
 r
     %% load row images
-    E0001=single(imread([dir_rowdata,'/',subdir,'/',num2str(orientation(r),'%05.3d'),'1','.tif']));
-    E0002=single(imread([dir_rowdata,'/',subdir,'/',num2str(orientation(r),'%05.3d'),'2','.tif']));
-    E0003=single(imread([dir_rowdata,'/',subdir,'/',num2str(orientation(r),'%05.3d'),'3','.tif']));
-    E0004=single(imread([dir_rowdata,'/',subdir,'/',num2str(orientation(r),'%05.3d'),'4','.tif']));
-    E0005=single(imread([dir_rowdata,'/',subdir,'/',num2str(orientation(r),'%05.3d'),'5','.tif']));
+    E0001=single(imread([dir_rowdata,'\',subdir,'\',num2str(orientation(r),'%05.3d'),'1','.tif']));
+    E0002=single(imread([dir_rowdata,'\',subdir,'\',num2str(orientation(r),'%05.3d'),'2','.tif']));
+    E0003=single(imread([dir_rowdata,'\',subdir,'\',num2str(orientation(r),'%05.3d'),'3','.tif']));
+    E0004=single(imread([dir_rowdata,'\',subdir,'\',num2str(orientation(r),'%05.3d'),'4','.tif']));
+    E0005=single(imread([dir_rowdata,'\',subdir,'\',num2str(orientation(r),'%05.3d'),'5','.tif']));
     E0001=E0001./4;
     E0002=E0002./4;
     E0003=E0003./4;
@@ -486,13 +487,13 @@ for r=1:size(orientation,2)
 end
 
 SIMpsf=abs(ifft2(ifftshift(SIMSP)));
-mkdir([dir_SI,'/SIMpsf']);
-imwrite(uint16(SIMpsf),[dir_SI,'/SIMpsf/',num2str(z),'.tif'])
+mkdir([dir_SI,'\SIMpsf']);
+imwrite(uint16(SIMpsf),[dir_SI,'\SIMpsf\',num2str(z),'.tif'])
 
 end
 %% Export final image
     summedWF=summedWF./size(orientation,2);
-    imwrite(uint16(summedWF),[dir_SI,'/summedWF/',num2str(z),'.tif'])
+    imwrite(uint16(summedWF),[dir_SI,'\summedWF\',num2str(z),'.tif'])
 
     %% SIM image with all orientations
 WF2x=zeros(2*dim,2*dim);
@@ -515,17 +516,17 @@ imagesc(abs(SIall))
 %SIallA=SIall.*FAall;
 
 WF2x=abs(ifft2(ifftshift(WF2x)));
-mkdir([dir_SI,'/recWF']);
-imwrite(uint16(WF2x),[dir_SI,'/recWF/',num2str(z),'.tif'])
+mkdir([dir_SI,'\recWF']);
+imwrite(uint16(WF2x),[dir_SI,'\recWF\',num2str(z),'.tif'])
 SIm1=abs(ifft2(ifftshift(SIm1)));
-mkdir([dir_SI,'/SIm1']);
-imwrite(uint16(SIm1),[dir_SI,'/SIm1/',num2str(z),'.tif'])
+mkdir([dir_SI,'\SIm1']);
+imwrite(uint16(SIm1),[dir_SI,'\SIm1\',num2str(z),'.tif'])
 SIm2=abs(ifft2(ifftshift(SIm2)));
-mkdir([dir_SI,'/SIm2'])
+mkdir([dir_SI,'\SIm2'])
 imwrite(uint16(SIm2),[dir_SI,'/SIm2/',num2str(z),'.tif'])
 SIall=abs(ifft2(ifftshift(SIall)));
-mkdir([dir_SI,'/SIall'])
-imwrite(uint16(SIall),[dir_SI,'/SIall/',num2str(z),'.tif'])
+mkdir([dir_SI,'\SIall'])
+imwrite(uint16(SIall),[dir_SI,'\SIall\',num2str(z),'.tif'])
 
 %WF2xA=abs(ifft2(ifftshift(WF2xA)));
 %mkdir([dir_SI,'\recWFA']);
@@ -541,8 +542,8 @@ SIallSecondDec=SIallSecondDec./4;
 %SIallSecondDecA=fftshift(fft2(SIallSecondDec));
 %SIallSecondDecA=SIallSecondDecA.*FAall;
 %SIallSecondDecA=abs(ifft2(ifftshift(SIallSecondDecA)));
-mkdir([dir_SI,'/SIallSecondDec']);
-imwrite(uint16(SIallSecondDec),[dir_SI,'/SIallSecondDec/',num2str(z),'.tif'])
+mkdir([dir_SI,'\SIallSecondDec']);
+imwrite(uint16(SIallSecondDec),[dir_SI,'\SIallSecondDec\',num2str(z),'.tif'])
 %mkdir([dir_SI,'\SIallSecondDecA'])
 %imwrite(uint16(SIallSecondDecA),[dir_SI,'\SIallSecondDecA\',num2str(z),'.tif'])
 
