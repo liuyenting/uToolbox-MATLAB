@@ -27,7 +27,7 @@ end
 
 % verify compression type
 if nargin < 5
-    comp = 'Ascii'; %TODO: no compression, type string?
+    comp = 'Raw'; %TODO: no compression, type string?
 else
     switch(comp)
         case 'RLE'
@@ -95,7 +95,7 @@ arr = arr(:);
 arr = typecast(arr, 'uint8');
 % compress the data if required
 switch comp
-    case { 'Ascii' }
+    case { 'Raw' }
         data = arr;
     case { 'HxByteRLE' }
         data = rleEncode(arr);
