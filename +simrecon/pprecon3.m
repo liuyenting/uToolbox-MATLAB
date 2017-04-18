@@ -1,14 +1,16 @@
 function pprecon3
 %PPRECON3 Reconstruct the 3D SIM dataset using plane-by-plane method.
 
-clearvars; %close all;
+clearvars; close all;
 
 global MSG_ID;
 MSG_ID = 'simrecon:pprecon3';
 
 %% Preset the parameters.
-inDir = '~/Documents/SIM/RAWcell1';
-psfFilename = '~/Documents/SIM/ygbead_zp1um_NAp55nap44_ExpPsf.tif';
+%inDir = '~/Documents/SIM/RAWcell1';
+%psfFilename = '~/Documents/SIM/ygbead_zp1um_NAp55nap44_ExpPsf.tif';
+inDir = 'C:\Users\Avizo\Downloads\sim_test_data\RAWcell1';
+psfFilename = 'C:\Users\Avizo\Downloads\sim_test_data\ygbead_zp1um_NAp55nap44_ExpPsf.tif';
 
 [path, name, ~] = fileparts(inDir);
 dateStr = datestr(now, 'yyyymmddHHMMss');
@@ -146,6 +148,7 @@ for fIdx = 1:nData
         %TODO: Scale to [0, 1] and remember the min/max.
         Iraw = Iraw / 4;
         % Sum up the raw data to provide wide field result.
+        %TODO: Move out the mean procedure.
         Isum = mean(Iraw, 3);
 
         %% 1st deconvolution.
