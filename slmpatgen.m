@@ -115,7 +115,7 @@ hExit = uicontrol('Style', 'pushbutton', 'Position', [830, 20, 100, 20]);
     set(hExit, 'String', 'Exit', 'FontSize', 14);
 
 % Center the window.
-movegui(f, 'center');
+movegui(f, [-50, -50]);
 % Show the settled figure.
 f.Visible = 'on';
 

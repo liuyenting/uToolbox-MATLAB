@@ -5,7 +5,7 @@ close all;
 clearvars;
 
 %% Load the stack.
-imgStackPath = 'C:\Users\Lattice\Documents\MATLAB\data\local_seg_test\art.tif';
+imgStackPath = '/Users/Andy/Documents/tracking/cell6_WOTAT_zp3um_a4s_rp5s/cell5_ch0_stack0000_638nm_0000000msec_0019186513msecAbs_decon.tif';
 tic;
 [rawImgStack, rawStackSize] = tiff.imread(imgStackPath, true);
 t = toc;
@@ -18,8 +18,9 @@ h = figure('Name', 'Result', 'NumberTitle', 'off');
 set(h, 'Position', [100, 300, 2400, 600]);
 
 %% Select specific image and region.
-layer = 42;
+layer = 40;
 rawImg = rawImgStack(:, :, layer);
+%rawImg = rawImg(200:400, 150:250);
 
 % Convert to DOUBLE for calculation.
 rawImg = double(rawImg);
@@ -58,7 +59,7 @@ t = toc;
 fprintf(' ** %f seconds to perform wavelet filtering\n', t);
 
 %% Thresholding.
-ratio = 1;
+ratio = 5;
 thImg = imgF2;
 thImg(thImg < ratio*sd1) = 0;
 % Show the image

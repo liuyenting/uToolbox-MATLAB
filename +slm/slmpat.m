@@ -1,7 +1,7 @@
 function P = slmpat
 %SLMPAT Generates the SLM template.
 
-clearvars; %close all;
+clearvars; close all;
 
 %% Parameters.
 
@@ -19,7 +19,7 @@ pxSize = 8;
 % Optics
 %
 % Wavelength (nm).
-wavelength = 561;
+wavelength = 488;
 % Magnification.
 mag = 116.9;
 % Aperture diameter (mm).
@@ -32,9 +32,9 @@ naOD = 0.4;
 % Oversampling ratio.
 ovrSmpl = 1;
 % Number of repetitive patterns.
-nBeam = 5;
+nBeam = 10;
 % Spacing (um).
-spacing = 1.71;
+spacing = 1.35;
 % Tilt (rad).
 tilt = 0.01;
 % Clamp threshold, [0, 1].
@@ -137,7 +137,7 @@ end
 % Clamp the value.
 slmPat(abs(slmPat) < clamp) = 0;
 % Show the negative region only.
-slmPat = slmPat > 0;
+slmPat = slmPat < 0;
 
 figure('Name', 'SLM Pattern', 'NumberTitle', 'off');
     imagesc(slmPat);
