@@ -78,7 +78,7 @@ classdef CppBridge < handle
             % CUDA path is hard coded for SDK v7.5, CUDA_INC_PATH is not
             % created for later CUDA SDKs, so we have to generate it by
             % ourselves.
-            cudaIncPath = fullfile(getenv('CUDA_PATH_V7_5'), 'include');
+            cudaIncPath = fullfile(getenv('CUDA_PATH_V8_0'), 'include');
             if exist(cudaIncPath, 'dir') ~= 7
                 error(util.cppbridge.CppBridge.MSGID, ...
                       'CUDA_PATH is not properly configured.');
