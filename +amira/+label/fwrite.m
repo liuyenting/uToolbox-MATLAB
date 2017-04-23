@@ -155,7 +155,7 @@ while (i <= nBytes)
     elseif in(i) == in(i+1)
         j = 2;
         while (j < 127)
-            if (i+j+1) > nBytes
+            if (i+j+1) > nBytes 
                 break
             elseif in(i) ~= in(i+j)
                 break
