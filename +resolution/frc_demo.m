@@ -23,8 +23,8 @@ coords = coords(permInd, :);
 
 tic;
 
-I0 = frc.binlocal(coords(2:2:end, :), npx, pxsize);
-I1 = frc.binlocal(coords(1:2:end, :), npx, pxsize);
+I0 = resolution.binlocal(coords(2:2:end, :), npx, pxsize);
+I1 = resolution.binlocal(coords(1:2:end, :), npx, pxsize);
 
 t = toc;
 
