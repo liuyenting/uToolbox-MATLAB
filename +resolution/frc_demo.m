@@ -2,7 +2,7 @@ clear all; close all; %#ok<CLALL>
 
 %% loading the data
 fprintf('\n -- loading the data --\n');
-coords = dlmread(fullfile(userpath, 'FRC1.dat'));
+coords = dlmread(fullfile(userpath, 'FRC2.dat'));
 
 % resolution [dx, dy, dz] in nm
 pxsize = [103, 103, 1000];
@@ -55,13 +55,37 @@ I1p = I1p .* mask;
 fprintf('\n -- calculate FRC --\n');
 
 % acquire the FFT
-F0p = fft2(fftshift(I0p));
-F1p = fft2(fftshift(I1p));
+F0 = fft2(fftshift(I0p));
+F1 = fft2(fftshift(I1p));
 subplot(2, 2, 3);
-imagesc(100*log(1+abs(fftshift(F0p))));
+imagesc(100*log(1+abs(fftshift(F0))));
 axis image;
 subplot(2, 2, 4);
-imagesc(100*log(1+abs(fftshift(F1p))));
+imagesc(100*log(1+abs(fftshift(F1))));
 axis image;
 
 % calcluate the radial sum and their correlations
+
+minscale = min(npx(1), npx(2));
+
+oversmpl = 5;
+frcres = linspace(0, minscale, minscale*oversmpl);
+for i = 1:length(frcres)
+    r = frcres(i);
+
+    % numerator
+    num = radialsum(F0 .* conj(F1), r);
+    num = real(num);
+
+    % denominator
+    S1 = radialsum(abs(F0).^2, r);
+    S2 = radialsum(abs(F1).^2, r);
+    den = sqrt(abs(S1 .* S2));
+
+    % result
+    frcres(i) = double(num) / double(den);
+    %% remove NaN
+    %frc_out(isnan(frc_out)) = 0;
+end
+figure('Name', 'FRC resolution', 'NumberTitle', 'off');
+plot(frcres);
