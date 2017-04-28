@@ -11,10 +11,10 @@ mag = 5;
 
 %% prepare the data set
 % offset back to the origin and drop the t-axis
-coords = frc.offsetorigin(coords(:, 2:4));
+coords = offsetorigin(coords(:, 2:4));
 
 % estimate the output size
-[npx, pxsize] = frc.estsize(coords, pxsize, mag)
+[npx, pxsize] = estsize(coords, pxsize, mag)
 
 % permuted indices
 permInd = randperm(size(coords, 1));
@@ -41,8 +41,20 @@ subplot(2, 2, 2);
 imagesc(I1p);
 axis image;
 
+%% masking spatial domain
+fprintf('\n -- masking spatial domain --\n');
+
+% generate Tukey window
+mask = tukeywin2(npx, 8);
+
+% mask the binned images
+I0p = I0p .* mask;
+I1p = I1p .* mask;
+
 %% calculate FRC
 fprintf('\n -- calculate FRC --\n');
+
+% acquire the FFT
 F0p = fft2(fftshift(I0p));
 F1p = fft2(fftshift(I1p));
 subplot(2, 2, 3);
@@ -51,3 +63,5 @@ axis image;
 subplot(2, 2, 4);
 imagesc(100*log(1+abs(fftshift(F1p))));
 axis image;
+
+% calcluate the radial sum and their correlations
