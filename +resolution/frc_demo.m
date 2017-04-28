@@ -2,7 +2,9 @@ clear all; close all; %#ok<CLALL>
 
 %% loading the data
 fprintf('\n -- loading the data --\n');
-coords = dlmread(fullfile(userpath, 'FRC2.dat'));
+coords = dlmread(fullfile(userpath, 'subarea3_frc.dat'));
+
+fprintf(' %d samples loaded\n', size(coords, 1));
 
 % resolution [dx, dy, dz] in nm
 pxsize = [103, 103, 1000];
@@ -10,11 +12,13 @@ pxsize = [103, 103, 1000];
 mag = 5;
 
 %% prepare the data set
+fprintf('\n -- prepare the data set --\n');
+
 % offset back to the origin and drop the t-axis
-coords = offsetorigin(coords(:, 2:4));
+coords = offsetorigin(coords);
 
 % estimate the output size
-[npx, pxsize] = estsize(coords, pxsize, mag)
+[npx, pxsize] = estsize(coords, pxsize, mag);
 
 % permuted indices
 permInd = randperm(size(coords, 1));
@@ -84,7 +88,7 @@ for i = 1:length(frcres)
 
     % result
     frcres(i) = double(num) / double(den);
-    %% remove NaN
+    % remove NaN
     %frc_out(isnan(frc_out)) = 0;
 end
 figure('Name', 'FRC resolution', 'NumberTitle', 'off');
