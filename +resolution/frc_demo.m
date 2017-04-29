@@ -4,13 +4,12 @@ clear all; close all; %#ok<CLALL>
 fprintf('\n -- loading the data --\n');
 coords = dlmread(fullfile(userpath, 'subarea3_frc.dat'));
 
-fprintf(' %d samples loaded\n', size(coords, 1));
-
 % resolution [dx, dy, dz] in nm
 pxsize = [103, 103, 1000];
-%pxsize = [0.89, 0.81, 10000];
 % magnification
 mag = 10;
+
+fprintf(' %d samples loaded\n', size(coords, 1));
 
 %% prepare the data set
 fprintf('\n -- prepare the data set --\n');
@@ -36,54 +35,14 @@ t = toc;
 fprintf(' x=%d, y=%d, z=%d\n', npx(1), npx(2), npx(3));
 fprintf(' %.2fms to bin the image\n', t*1e3);
 
-figure('Name', 'Binned', 'NumberTitle', 'off');
+% generate Z projection
 I0p = sum(I0, 3);
 I1p = sum(I1, 3);
-subplot(2, 2, 1);
-imagesc(I0p);
-axis image;
-subplot(2, 2, 2);
-imagesc(I1p);
-axis image;
-
-%% masking spatial domain
-fprintf('\n -- masking spatial domain --\n');
-
-% generate Tukey window
-mask = tukeywin2(npx, 8);
-
-% mask the binned images
-I0p = I0p .* mask;
-I1p = I1p .* mask;
 
 %% calculate FRC
 fprintf('\n -- calculate FRC --\n');
 
-% acquire the FFT
-F0 = fft2(fftshift(I0p));
-F1 = fft2(fftshift(I1p));
-subplot(2, 2, 3);
-imagesc(100*log(1+abs(fftshift(F0))));
-axis image;
-subplot(2, 2, 4);
-imagesc(100*log(1+abs(fftshift(F1))));
-axis image;
-
-drawnow;
-
-% numerator
-frc_num = radialsum(F0 .* conj(F1));
-frc_num = real(frc_num);
-
-% denominator
-S1 = radialsum(abs(F0).^2);
-S2 = radialsum(abs(F1).^2);
-frc_den = sqrt(abs(S1 .* S2));
-
-% result
-frc_res = double(frc_num) ./ double(frc_den);
-% remove NaN
-frc_res(isnan(frc_res)) = 0;
+frc_res = resolution.frc(I0p, I1p, npx, pxsize);
 
 figure('Name', 'FRC resolution', 'NumberTitle', 'off');
 

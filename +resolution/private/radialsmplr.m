@@ -39,7 +39,7 @@ end
 function printsmpltrace(A, x, y, m) %#ok<DEFNU>
 %PRINTSMPLTRACE Print the sampled trace on source array.
 
-figure('Name', 'Sampling Trace', 'NumberTitle', 'off'); 
+figure('Name', '[DEBUG] Sampling Trace', 'NumberTitle', 'off'); 
 
 % convert the log-scale magnitude if input array is complex
 if ~isreal(A)
