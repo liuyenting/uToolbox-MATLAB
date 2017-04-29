@@ -68,28 +68,26 @@ subplot(2, 2, 4);
 imagesc(100*log(1+abs(fftshift(F1))));
 axis image;
 
-% calcluate the radial sum and their correlations
+% numerator
+frc_num = radialsum(F0 .* conj(F1));
+frc_num = real(frc_num);
 
-minscale = min(npx(1), npx(2));
+% denominator
+S1 = radialsum(abs(F0).^2);
+S2 = radialsum(abs(F1).^2);
+frc_den = sqrt(abs(S1 .* S2));
 
-oversmpl = 5;
-frcres = linspace(0, minscale, minscale*oversmpl);
-for i = 1:length(frcres)
-    r = frcres(i);
+% result
+frc_res = double(frc_num) ./ double(frc_den);
+% remove NaN
+frc_res(isnan(frc_res)) = 0;
 
-    % numerator
-    num = radialsum(F0 .* conj(F1), r);
-    num = real(num);
+% calculate the sampled pixel counts
+nr = radialsum(ones(size(I0p)));
 
-    % denominator
-    S1 = radialsum(abs(F0).^2, r);
-    S2 = radialsum(abs(F1).^2, r);
-    den = sqrt(abs(S1 .* S2));
-
-    % result
-    frcres(i) = double(num) / double(den);
-    % remove NaN
-    %frc_out(isnan(frc_out)) = 0;
-end
 figure('Name', 'FRC resolution', 'NumberTitle', 'off');
-plot(frcres);
+subplot(2, 1, 1);
+plot(frc_res);
+
+subplot(2, 1, 2);
+plot(nr);
