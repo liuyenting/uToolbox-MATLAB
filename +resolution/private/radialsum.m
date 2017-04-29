@@ -19,8 +19,9 @@ end
 % TODO: crop the image
 
 r = 0:floor(nrows/2);
-s = zeros([L, 1]);
-for i = 1:length(L)
+nr = length(r);
+s = zeros([nr, 1]);
+for i = 1:nr
     smpl = radialsmplr(I, r(i), pres);
     s(i) = sum(smpl);
 end
