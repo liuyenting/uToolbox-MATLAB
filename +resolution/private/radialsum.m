@@ -15,8 +15,8 @@ end
 if nrows ~= ncols
     warning('resolution:radialsum', ...
             'Not a square matrix, cropped to the minimal square.');
+    I = sqcrop(I);
 end
-% TODO: crop the image
 
 r = 0:floor(nrows/2);
 nr = length(r);
@@ -24,6 +24,28 @@ s = zeros([nr, 1]);
 for i = 1:nr
     smpl = radialsmplr(I, r(i), pres);
     s(i) = sum(smpl);
+end
+
+end
+
+function Iout = sqcrop(Iin)
+%SQCROP Crop input array to square array.
+
+[nrows, ncols] = size(Iin);
+if nrows == ncols
+    Iout = Iin;
+else
+    sz = min(nrows, ncols);
+    redsz = max(nrows, ncols) - sz;
+    
+    % padded size is half of the redundant size
+    padsz = floor(redsz/2);
+    
+    if sz == nrows
+        Iout = Iin(:, padsz:padsz+sz-1);
+    else
+        Iout = Iin(padsz:padsz+sz-1, :);
+    end
 end
 
 end

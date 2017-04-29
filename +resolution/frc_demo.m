@@ -8,8 +8,9 @@ fprintf(' %d samples loaded\n', size(coords, 1));
 
 % resolution [dx, dy, dz] in nm
 pxsize = [103, 103, 1000];
+%pxsize = [0.89, 0.81, 10000];
 % magnification
-mag = 5;
+mag = 10;
 
 %% prepare the data set
 fprintf('\n -- prepare the data set --\n');
@@ -32,7 +33,7 @@ I1 = resolution.binlocal(coords(1:2:end, :), npx, pxsize);
 
 t = toc;
 
-fprintf(' x=%d, y=%d, z=% d\n', npx(1), npx(2), npx(3));
+fprintf(' x=%d, y=%d, z=%d\n', npx(1), npx(2), npx(3));
 fprintf(' %.2fms to bin the image\n', t*1e3);
 
 figure('Name', 'Binned', 'NumberTitle', 'off');
@@ -68,6 +69,8 @@ subplot(2, 2, 4);
 imagesc(100*log(1+abs(fftshift(F1))));
 axis image;
 
+drawnow;
+
 % numerator
 frc_num = radialsum(F0 .* conj(F1));
 frc_num = real(frc_num);
@@ -82,12 +85,12 @@ frc_res = double(frc_num) ./ double(frc_den);
 % remove NaN
 frc_res(isnan(frc_res)) = 0;
 
-% calculate the sampled pixel counts
-nr = radialsum(ones(size(I0p)));
-
 figure('Name', 'FRC resolution', 'NumberTitle', 'off');
-subplot(2, 1, 1);
-plot(frc_res);
 
-subplot(2, 1, 2);
-plot(nr);
+frc_frq = 0:length(frc_res)-1;
+frc_frq = frc_frq / size(I0p, 1);
+plot(frc_frq, frc_res);
+axis([frc_frq(1), frc_frq(end), -0.5, 1]);
+xlabel('Spatial Frequency (nm^{-1})');
+
+nr = radialsum(ones(size(I0p)));
