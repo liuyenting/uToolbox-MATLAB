@@ -19,37 +19,53 @@ coords = offsetorigin(coords);
 
 % estimate the output size
 [npx, pxsize] = estsize(coords, pxsize, mag);
-
-% permuted indices
-permInd = randperm(size(coords, 1));
-% permute the data
-coords = coords(permInd, :);
-
-tic;
-
-I0 = resolution.binlocal(coords(2:2:end, :), npx, pxsize);
-I1 = resolution.binlocal(coords(1:2:end, :), npx, pxsize);
-
-t = toc;
-
 fprintf(' x=%d, y=%d, z=%d\n', npx(1), npx(2), npx(3));
-fprintf(' %.2fms to bin the image\n', t*1e3);
-
-% generate Z projection
-I0p = sum(I0, 3);
-I1p = sum(I1, 3);
 
 %% calculate FRC
 fprintf('\n -- calculate FRC --\n');
 
-frc_res = resolution.frc(I0p, I1p, npx, pxsize);
+h = figure('Name', 'FRC resolution', 'NumberTitle', 'off');
+hold on;
 
-figure('Name', 'FRC resolution', 'NumberTitle', 'off');
+n = 20;
+frc_ens = [];
+for i = 1:n   
+    fprintf('%d/%d\n', i, n);
+    
+    % permuted indices
+    permInd = randperm(size(coords, 1));
+    % permute the data
+    coords = coords(permInd, :);
+    
+    % bin the data
+    I0 = resolution.binlocal(coords(2:2:end, :), npx, pxsize);
+    I1 = resolution.binlocal(coords(1:2:end, :), npx, pxsize);
+    % generate Z projection
+    I0p = sum(I0, 3);
+    I1p = sum(I1, 3);
+    
+    % generate the FRC curve
+    frc_res = resolution.frc(I0p, I1p, npx, pxsize);
 
-frc_frq = 0:length(frc_res)-1;
+    figure(h);
+    frc_frq = 0:length(frc_res)-1;
+    frc_frq = frc_frq / size(I0p, 1);
+    plot(frc_frq, frc_res);
+    axis([frc_frq(1), frc_frq(end), -0.5, 1]);
+    xlabel('Spatial Frequency (nm^{-1})');
+    
+    drawnow;
+    
+    if isempty(frc_ens)
+        frc_ens = frc_res;
+    else 
+        frc_ens = (frc_ens+frc_res) / 2;
+    end
+end
+
+frc_frq = 0:length(frc_ens)-1;
 frc_frq = frc_frq / size(I0p, 1);
-plot(frc_frq, frc_res);
+plot(frc_frq, frc_ens, 'LineWidth', 2);
 axis([frc_frq(1), frc_frq(end), -0.5, 1]);
 xlabel('Spatial Frequency (nm^{-1})');
-
-nr = radialsum(ones(size(I0p)));
+hold off;
