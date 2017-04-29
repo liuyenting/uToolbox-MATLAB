@@ -18,11 +18,11 @@ if nrows ~= ncols
 end
 % TODO: crop the image
 
-L = floor(nrows/2);
+r = 0:floor(nrows/2);
 s = zeros([L, 1]);
-for r = 1:L
-    smpl = radialsmplr(I, r, pres);
-    s(r) = sum(smpl);
+for i = 1:length(L)
+    smpl = radialsmplr(I, r(i), pres);
+    s(i) = sum(smpl);
 end
 
 end
