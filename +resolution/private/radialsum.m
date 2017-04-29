@@ -1,32 +1,28 @@
-function s = radialsum(I, rstep, ares)
+function s = radialsum(I, pres)
 %RADIALSUM Calculate the radial sum of an image with interpolation.
 %
-%   S = RADIALSUM(I, R)
-%   S = RADIALSUM(I, R, RES) calculate radial sum at R spatial frequency
-%   using resolution of RES. RES is default to 1 degree if not assigned.
+%   S = RADIALSUM(I, ARES) calculate radial sum at different spatial 
+%   frequency using angular resolution of ARES. ARES is default to 1 degree
+%   if not assigned.
 
-% default angular resolution
-if nargin == 2
-    ares = 1;
+% default pixel resolution to 1px
+if nargin == 1
+    pres = 1;
 end
 
-[smpl, lbl] = radialsmplr(I, rstep, ares);
-s = sum(smpl);
+% find the minimal dimension
+[nrows, ncols] = size(I);
+if nrows ~= ncols
+    warning('resolution:radialsum', ...
+            'Not a square matrix, cropped to the minimal square.');
+end
+% TODO: crop the image
 
-%
-% DEBUG
-%
-figure('Name', '[DEBUG] Radial Sum', 'NumberTitle', 'off');
-
-% get the largest element in the image
-maxelem = max(I(:)) + 1;
-
-I = 100*log(1+abs(fftshift(I)));
-I(lbl) = maxelem;
-
-% plot the original image
-imagesc(I);
-colormap(gray);
-axis image;
+L = floor(nrows/2);
+s = zeros([L, 1]);
+for r = 1:L
+    smpl = radialsmplr(I, r, pres);
+    s(r) = sum(smpl);
+end
 
 end
