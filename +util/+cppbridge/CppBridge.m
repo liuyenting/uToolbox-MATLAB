@@ -119,7 +119,7 @@ classdef CppBridge < handle
             mex('-v', '-largeArrayDims', '-c', incPath, '*.cpp');
 
             %% Move the object file and calcaulte the include path.
-            movefile('*.obj', outDir);
+            movefile('*.o*', outDir);
         end
     end
 
