@@ -23,6 +23,10 @@ nrs = floor(npx(1)/2)+1;
 % start parallel pool
 nthread = 24;
 if isempty(gcp('nocreate'))
+    if nthread > nt
+        % shrink the thread pool if not required
+        nthread = nt;
+    end
     parpool('local', nthread);
 end
 

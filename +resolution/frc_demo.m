@@ -2,7 +2,7 @@ clear all; close all; %#ok<CLALL>
 
 %% loading the data
 fprintf('\n -- loading the data --\n');
-coords = dlmread(fullfile(userpath, 'subarea3_frc.dat'));
+coords = dlmread(fullfile(userpath, 'layer_28_200.dat'));
 
 % resolution [dx, dy, dz] in nm
 pxsize = [103, 103];
@@ -13,7 +13,7 @@ fprintf('%d samples loaded\n', size(coords, 1));
 fprintf('\n -- prepare the data set --\n');
 
 % leave only XY values
-coords = coords(:, 1:2);
+coords = coords(:, 2:3);
 % offset back to the origin and drop the t-axis
 coords = offsetorigin(coords);
 
@@ -23,12 +23,15 @@ fprintf('\n -- calculate FRC --\n');
 % super-resolved image size
 npx = [1960, 1960];
 % n trials
-n = 25;
+n = 20;
 
 tic;
 [frc_frq, frc_raw, frc_avg, frc_std] = resolution.frccurve(coords, npx, n);
 t = toc;
 fprintf('%.2fs elapsed\n', t);
+
+[res, frc_thr] = resolution.frcc2res(frc_frq, frc_avg);
+fprintf('resolution = %.2fnm\n', res);
 
 figure('Name', 'FRC resolution', 'NumberTitle', 'off');
 
@@ -45,3 +48,5 @@ subplot(2, 1, 2);
         title('Averaged');
     hold on;
     errorbar(frc_frq, frc_avg, frc_std);
+    hold on;
+    plot(frc_frq, frc_thr);
