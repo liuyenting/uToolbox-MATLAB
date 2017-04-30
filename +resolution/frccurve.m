@@ -50,7 +50,7 @@ delete(h);
 
 % calculate the average and error no matter we have complete the
 % calculation or not
-frc_avg = mean(frc_crv);
-frc_std = std(frc_crv);
+frc_avg = mean(frc_raw);
+frc_std = std(frc_raw);
 
 end

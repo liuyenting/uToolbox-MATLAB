@@ -2,7 +2,7 @@ clear all; close all; %#ok<CLALL>
 
 %% loading the data
 fprintf('\n -- loading the data --\n');
-coords = dlmread(fullfile(userpath, 'example_fig2a.dat'));
+coords = dlmread(fullfile(userpath, 'cell3_wholearea_400frames_forFRC.dat'));
 
 % resolution [dx, dy, dz] in nm
 %pxsize = [103, 103, 1000];
@@ -29,7 +29,7 @@ coords = offsetorigin(coords);
 fprintf('\n -- calculate FRC --\n');
 
 % super-resolved image size
-npx = [1024, 1024];
+npx = [2560, 2560];
 % n trials
 n = 20;
 
@@ -37,6 +37,7 @@ n = 20;
 
 figure('Name', 'FRC resolution', 'NumberTitle', 'off');
 
+nrs = length(frc_avg);
 frc_frq = 0:nrs-1;
 frc_frq = frc_frq / nrs;
 

@@ -47,18 +47,3 @@ for i = 1:ns
 end
 
 end
-
-function B = padrows(A, usz, val)
-%PADROWS Pad the rows of array to multiple of designated unit size.
-%
-%   PADROWS(A, USZ) pads rows of matrix A to multiply of unit size USZ.
-%   PADROWS(A, USZ, VAL) if VAL is assigned, than it is used as the padded
-%   value, otherwise, 0 is used.
-
-if nargin == 2
-    val = 0;
-end
-
-
-
-end
