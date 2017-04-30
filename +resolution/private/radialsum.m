@@ -21,8 +21,9 @@ end
 r = 0:floor(nrows/2);
 nr = length(r);
 s = zeros([nr, 1]);
+intp = griddedInterpolant(I);
 for i = 1:nr
-    smpl = radialsmplr(I, r(i), pres);
+    smpl = radialsmplr(intp, [nrows, ncols], r(i), pres);
     s(i) = sum(smpl);
 end
 

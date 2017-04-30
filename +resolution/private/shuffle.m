@@ -1,10 +1,12 @@
 function S = shuffle(A, ns, blk)
 %SHUFFLE Shuffle the data to fulfill the FRC requirement.
 %
-%   SHUFFLE(A, NS) shuffles and splits data array A into NS sets. 
-%   SHUFFLE(A, NS, BLK) asides from shuffling and splitting, SHUFFLE
-%   randomize the data into BLK blocks prior to the operations. If BLK is
-%   not defined or invalid, it is default to 1.
+%   SHUFFLE(A, NS) 
+%   SHUFFLE(A, NS, BLK) shuffles and splits data array A into NS sets. If 
+%   BLK is not defined or invalid, it is default to 1.
+%
+%   Note:
+%   Input array A is assumed to be arranged chronologically.
 
 if nargin == 2
     blk = 1;

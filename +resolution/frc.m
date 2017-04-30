@@ -1,10 +1,25 @@
-function cor = frc(A, B, npx, pxsz)
+function cor = frc(A, B, tsz)
 %FRC Calculate Fourier ring correlation values.
 %
-%   TBA
+%   COR = FRC(A, B)
+%   COR = FRC(A, B, TSZ) calculates the correlation values COR along the
+%   axis of the incoming images A and B. TSZ indicates fractions of the
+%   image that will be damped during the masking. TSZ is default to 8,
+%   meaning that 1/8 * 2 = 2/8 of the images, along the border line, will
+%   get damped. 
+
+npx = size(A);
+if size(B) ~= npx
+    error('resolution:frc', ...
+          'Image sizes do not match.');
+end
+
+if nargin == 2
+    tsz = 8;
+end
 
 % generate Tukey window
-mask = tukeywin2(npx, 8);
+mask = tukeywin2(npx, tsz);
 
 % mask the binned images
 A = A .* mask;
