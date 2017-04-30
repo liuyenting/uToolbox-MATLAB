@@ -24,9 +24,9 @@ rm = distmap([nrows, ncols], [xi, yi]);
 
 % start sampling
 s = zeros([nr, 1]);
-parfor i = 1:nr
-    smpl = I((rm >= r(i)) & (rm < r(i)+1));
-    s(i) = sum(smpl);
+for i = 1:nr
+    ind = (rm >= r(i)) & (rm < r(i)+1);
+    s(i) = sum(I(ind));
 end
 
 end

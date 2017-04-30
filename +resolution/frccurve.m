@@ -20,21 +20,15 @@ nrs = floor(npx(1)/2)+1;
 % ensembeld result
 frc_raw = zeros([nt, nrs]);
 
-% create progress bar
-h = waitbar(0, '1', 'Name', 'Calculating FRC...', ...
-            'CreateCancelBtn', ...
-            'setappdata(gcbf, ''canceling'', 1)');
-setappdata(h, 'canceling', 0)
+% start parallel pool
+nthread = 24;
+if isempty(gcp('nocreate'))
+    parpool('local', nthread);
+end
 
 % start the iterations
-for i = 1:nt
-    % check for cancel button press
-    if getappdata(h, 'canceling')
-        break
-    end
-    % report current status
-    waitbar(i/nt, h, sprintf('%d/%d', i, nt));
-    
+fprintf('%d tasks, running %d at a time...\n', nt, nthread);
+parfor i = 1:nt
     % shuffle the input
     scoords = shuffle(coords, 2, blk);
     
@@ -45,8 +39,6 @@ for i = 1:nt
     % generate the FRC curve
     frc_raw(i, :) = loesssmooth(resolution.frc(I1, I2));
 end
-% delete the waitbar, do not try to close it
-delete(h);
 
 % calculate the average and error no matter we have complete the
 % calculation or not

@@ -2,7 +2,7 @@ clear all; close all; %#ok<CLALL>
 
 %% loading the data
 fprintf('\n -- loading the data --\n');
-coords = dlmread(fullfile(userpath, 'example_fig2a.dat'));
+coords = dlmread(fullfile(userpath, 'subarea3_frc.dat'));
 
 % resolution [dx, dy, dz] in nm
 %pxsize = [103, 103, 1000];
@@ -10,7 +10,7 @@ pxsize = [103, 103, 1000];
 % magnification
 mag = 10;
 
-fprintf(' %d samples loaded\n', size(coords, 1));
+fprintf('%d samples loaded\n', size(coords, 1));
 
 %% prepare the data set
 fprintf('\n -- prepare the data set --\n');
@@ -29,11 +29,14 @@ coords = offsetorigin(coords);
 fprintf('\n -- calculate FRC --\n');
 
 % super-resolved image size
-npx = [2560, 2560];
+npx = [1960, 1960];
 % n trials
-n = 10;
+n = 25;
 
+tic;
 [frc_raw, frc_avg, frc_std] = resolution.frccurve(coords, npx, n);
+t = toc;
+fprintf('%.2fs elapsed\n', t);
 
 figure('Name', 'FRC resolution', 'NumberTitle', 'off');
 
