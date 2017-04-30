@@ -16,25 +16,28 @@ end
 % radius sample location
 r = 0:floor(nrows/2);
 nr = length(r);
-rm = distmap([nrows, ncols]);
+% find the center
+[~, ind] = max(I(:));
+[xi, yi] = ind2sub([nrows, ncols], ind);
+% generate the distance map
+rm = distmap([nrows, ncols], [xi, yi]);
 
 % start sampling
 s = zeros([nr, 1]);
-gI = gpuArray(I);
-gR = gpuArray(rm);
-for i = 1:nr
-    gR = (gR >= r(i)) & (gR < r(i)+1);
-    gS = sum(sum(gI .* gR));
-    s(i) = gather(gS);
+parfor i = 1:nr
+    smpl = I((rm >= r(i)) & (rm < r(i)+1));
+    s(i) = sum(smpl);
 end
 
 end
 
-function r = distmap(sz)
+function r = distmap(sz, midpt)
 %DISTMAP Generate distance map from the center of the image.
 
-% find the midpoint
-midpt = sz / 2;
+if nargin == 1
+    % find the midpoint
+    midpt = sz / 2;
+end
 
 % generate comparison grid
 [xq, yq] = meshgrid(1:sz(1), 1:sz(2));

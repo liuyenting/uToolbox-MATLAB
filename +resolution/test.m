@@ -1,7 +1,7 @@
 clear all; close all; %#ok<CLALL>
 
 sz = [1024, 1024];
-r = 100;
+r = 10;
 
 I = zeros(sz);
 
