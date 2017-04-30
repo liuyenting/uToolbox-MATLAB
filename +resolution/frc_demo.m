@@ -31,7 +31,7 @@ fprintf('\n -- calculate FRC --\n');
 % super-resolved image size
 npx = [2560, 2560];
 % n trials
-n = 25;
+n = 10;
 
 [frc_raw, frc_avg, frc_std] = resolution.frccurve(coords, npx, n);
 

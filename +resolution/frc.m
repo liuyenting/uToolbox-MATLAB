@@ -39,7 +39,7 @@ SB = radialsum(abs(FB).^2);
 den = sqrt(abs(SA.*SB));
 
 % divided result
-cor = num ./ den;
+cor = double(num) ./ double(den);
 % remove NaN
 cor(isnan(cor)) = 0;
 

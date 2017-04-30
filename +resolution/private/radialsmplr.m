@@ -1,4 +1,4 @@
-function A = radialsmplr(ip, sz, r, pres)
+function S = radialsmplr(I, sz, r)
 %RADIALSMPLR Sampling data in radial direction.
 %
 %   TBA
@@ -8,29 +8,20 @@ function A = radialsmplr(ip, sz, r, pres)
 % find the midpoint
 midpt = sz / 2;
 
-% generate the sampling location
-ares = calcares(pres, r);
-angles = 0:ares:2*pi;
+% generate comparison grid
+[xq, yq] = meshgrid(1:sz(1), 1:sz(2));
+xq = xq - midpt(1);
+yq = yq - midpt(2);
 
-% generate the Cartesian coordinates
-[x, y] = pol2cart(angles, r);
-
-% sample on the matrix
-A = ip(x+midpt(1), y+midpt(2));
+rq = sqrt(xq.^2 + yq.^2);
+S = I((rq >= r) & (rq < r+1));
 
 % DEBUG
-%printsmpltrace(I, x, y, m);
+%printsmpltrace(I, xq, yq);
 
 end
 
-function ares = calcares(pres, r)
-%CALCARES Calculate angular resolution from desired pixel resolution.
-
-ares = pres / r;
-
-end
-
-function printsmpltrace(A, x, y, m) %#ok<DEFNU>
+function printsmpltrace(A, x, y) %#ok<DEFNU>
 %PRINTSMPLTRACE Print the sampled trace on source array.
 
 figure('Name', '[DEBUG] Sampling Trace', 'NumberTitle', 'off'); 
@@ -45,6 +36,6 @@ axis image;
 hold on;
 
 % dump the trace
-plot(x+midpt, y+midpt);
+plot(x, y);
 
 end
