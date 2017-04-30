@@ -5,10 +5,7 @@ fprintf('\n -- loading the data --\n');
 coords = dlmread(fullfile(userpath, 'subarea3_frc.dat'));
 
 % resolution [dx, dy, dz] in nm
-%pxsize = [103, 103, 1000];
-pxsize = [103, 103, 1000];
-% magnification
-mag = 10;
+pxsize = [103, 103];
 
 fprintf('%d samples loaded\n', size(coords, 1));
 
@@ -20,11 +17,6 @@ coords = coords(:, 1:2);
 % offset back to the origin and drop the t-axis
 coords = offsetorigin(coords);
 
-% estimate the output size
-%[npx, pxsize] = estsize(coords, pxsize, mag);
-%fprintf(' x=%d, y=%d, z=%d\n', npx(1), npx(2), npx(3));
-%fprintf(' x=%d, y=%d\n', npx(1), npx(2));
-
 %% calculate FRC
 fprintf('\n -- calculate FRC --\n');
 
@@ -34,15 +26,11 @@ npx = [1960, 1960];
 n = 25;
 
 tic;
-[frc_raw, frc_avg, frc_std] = resolution.frccurve(coords, npx, n);
+[frc_frq, frc_raw, frc_avg, frc_std] = resolution.frccurve(coords, npx, n);
 t = toc;
 fprintf('%.2fs elapsed\n', t);
 
 figure('Name', 'FRC resolution', 'NumberTitle', 'off');
-
-nrs = length(frc_avg);
-frc_frq = 0:nrs-1;
-frc_frq = frc_frq / nrs;
 
 subplot(2, 1, 1);
     plot(frc_frq, frc_raw);

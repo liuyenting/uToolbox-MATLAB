@@ -1,4 +1,4 @@
-function [frc_raw, frc_avg, frc_std] = frccurve(coords, npx, nt, blk)
+function [fcfrq, fcraw, fcavg, fcstd] = frccurve(coords, npx, nt, blk)
 %FRCCURVE Calculate Fourier ring correlation curve.
 %
 %   NPX     Super-resolved image size in pixels.
@@ -14,11 +14,11 @@ if nargin == 3
     blk = 500;
 end
 
+% estimate proper pixel dimensions that can contain all the data
+pxsz = estpxsize(coords, npx);
+
 % radial sample size, assuming the dimension are matched
 nrs = floor(npx(1)/2)+1;
-
-% ensembeld result
-frc_raw = zeros([nt, nrs]);
 
 % start parallel pool
 nthread = 24;
@@ -26,6 +26,8 @@ if isempty(gcp('nocreate'))
     parpool('local', nthread);
 end
 
+% ensembeld result
+fcraw = zeros([nt, nrs]);
 % start the iterations
 fprintf('%d tasks, running %d at a time...\n', nt, nthread);
 parfor i = 1:nt
@@ -33,17 +35,21 @@ parfor i = 1:nt
     scoords = shuffle(coords, 2, blk);
     
     % bin the data 
-    I1 = resolution.binlocal(scoords{1}, npx);
-    I2 = resolution.binlocal(scoords{2}, npx);
+    I1 = resolution.binlocal(scoords{1}, npx, pxsz);
+    I2 = resolution.binlocal(scoords{2}, npx, pxsz);
     
     % generate the FRC curve
-    frc_raw(i, :) = loesssmooth(resolution.frc(I1, I2));
+    fcraw(i, :) = loesssmooth(resolution.frc(I1, I2));
 end
 
 % calculate the average and error no matter we have complete the
 % calculation or not
-frc_avg = mean(frc_raw);
-frc_std = std(frc_raw);
+fcavg = mean(fcraw);
+fcstd = std(fcraw);
+
+% generate the frequency scale
+fcfrq = 0:nrs-1;
+fcfrq = fcfrq / (nrs*pxsz(1));
 
 end
 
