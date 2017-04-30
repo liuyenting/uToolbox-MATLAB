@@ -1,4 +1,7 @@
 function cor = frc(A, B, npx, pxsz)
+%FRC Calculate Fourier ring correlation values.
+%
+%   TBA
 
 % generate Tukey window
 mask = tukeywin2(npx, 8);

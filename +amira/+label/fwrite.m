@@ -1,4 +1,4 @@
-function fwrite(outPath, type, arr, bdBox, comp)
+function fwrite(outPath, arr, bdbox, comp)
 %FWRITE Write as an Amira file
 %   Detailed explanation goes here
 
@@ -18,9 +18,9 @@ end
 
 % verify the bounding box
 if nargin == 3
-    bdBox = repmat([0, 1], [1, nDim]);
+    bdbox = repmat([0, 1], [1, nDim]);
 else
-    if size(bdBox, 2)/2 ~= nDim
+    if size(bdbox, 2)/2 ~= nDim
         error('amira:fwrite', 'Bounding box dimension mismatch, ignored.');
     end
 end 
@@ -35,7 +35,7 @@ else
         case 'Zip'
             comp = 'HxZip';
         otherwise
-            error('amira:fwrite', 'Unknown compressino scheme.');
+            error('amira:fwrite', 'Unknown compression scheme.');
     end
 end
        
@@ -67,7 +67,7 @@ fprintf(fid, 'Parameters {\n\tCoordType "uniform",\n');
 
 % write bounding box
 fprintf(fid, '\tBoundingBox');
-for p = bdBox
+for p = bdbox
     fprintf(fid, ' %f', p);
 end
 fprintf(fid, ',\n');
