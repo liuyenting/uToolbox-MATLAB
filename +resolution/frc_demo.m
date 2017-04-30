@@ -2,7 +2,7 @@ clear all; close all; %#ok<CLALL>
 
 %% loading the data
 fprintf('\n -- loading the data --\n');
-coords = dlmread(fullfile(userpath, 'cell3_wholearea_400frames_forFRC.dat'));
+coords = dlmread(fullfile(userpath, 'example_fig2a.dat'));
 
 % resolution [dx, dy, dz] in nm
 %pxsize = [103, 103, 1000];
@@ -31,7 +31,7 @@ fprintf('\n -- calculate FRC --\n');
 % super-resolved image size
 npx = [2560, 2560];
 % n trials
-n = 20;
+n = 25;
 
 [frc_raw, frc_avg, frc_std] = resolution.frccurve(coords, npx, n);
 

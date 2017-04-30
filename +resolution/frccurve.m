@@ -43,7 +43,7 @@ for i = 1:nt
     I2 = resolution.binlocal(scoords{2}, npx);
     
     % generate the FRC curve
-    frc_raw(i, :) = resolution.frc(I1, I2);
+    frc_raw(i, :) = loesssmooth(resolution.frc(I1, I2));
 end
 % delete the waitbar, do not try to close it
 delete(h);
@@ -52,5 +52,22 @@ delete(h);
 % calculation or not
 frc_avg = mean(frc_raw);
 frc_std = std(frc_raw);
+
+end
+
+function s = loesssmooth(r, nspan)
+%LOESSSMOOTH Use LOESS to smooth the incoming curve.
+
+if nargin == 1
+    nspan = 20;
+end
+
+nd = length(r);
+
+% smoothing span
+sspan = ceil(nd/nspan);
+sspan = sspan + (1-mod(sspan, 2));
+
+s = smooth(r, sspan, 'loess');
 
 end
