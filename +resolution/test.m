@@ -1,5 +1,6 @@
 clear all; close all; %#ok<CLALL>
 
-%% load and prep the image
-I = imread('cameraman.tif');
+A = 1:20;
+A = repmat(A', [1, 3]);
 
+S = shuffle(A, 2, 5);
