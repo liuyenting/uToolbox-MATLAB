@@ -2,7 +2,6 @@
 *~
 .*
 *.asv
-*.obj
 
 # Exception for wildcard
 !.gitignore
@@ -14,11 +13,8 @@ data/
 *.tif*
 *.bmp
 
+# Object files
+*.o*
+
 # Generated binaries
 *.mex*
-
-# Unwanted directories
-deskew_deprecate/
-postproc_rev2/
-class_test/
-Unstructured\ Code\ Repository/
