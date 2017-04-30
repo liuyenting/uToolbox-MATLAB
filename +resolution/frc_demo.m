@@ -2,7 +2,7 @@ clear all; close all; %#ok<CLALL>
 
 %% loading the data
 fprintf('\n -- loading the data --\n');
-coords = dlmread(fullfile(userpath, 'subarea3_frc.dat'));
+coords = dlmread(fullfile(userpath, 'example_fig2a.dat'));
 
 % resolution [dx, dy, dz] in nm
 %pxsize = [103, 103, 1000];
@@ -28,47 +28,28 @@ coords = offsetorigin(coords);
 %% calculate FRC
 fprintf('\n -- calculate FRC --\n');
 
-h = figure('Name', 'FRC resolution', 'NumberTitle', 'off');
-hold on;
-
+% super-resolved image size
+npx = [1024, 1024];
+% n trials
 n = 20;
-frc_ens = [];   % ensembled result
-for i = 1:n   
-    fprintf('%d/%d\n', i, n);
-    
-    scoords = shuffle(coords, 2, 500);
-    
-    % bin the data
-    I1 = resolution.binlocal(scoords{1}, [1024, 1024]);
-    I2 = resolution.binlocal(scoords{2}, [1024, 1024]);
-    
-    % generate the FRC curve
-    frc_cor = resolution.frc(I1, I2);
-    
-    %nr = radialsum(ones(size(I1)));
 
-    figure(h);
-    frc_frq = 0:length(frc_cor)-1;
-    frc_frq = frc_frq / size(I1, 1);
-    plot(frc_frq, frc_cor);
-    %axis([frc_frq(1), frc_frq(end), -0.5, 1]);
-    axis tight;
-    xlabel('Spatial Frequency (nm^{-1})');
-    
-    drawnow;
-    
-    if isempty(frc_ens)
-        frc_ens = frc_res;
-    else 
-        frc_ens = (frc_ens+frc_res) / 2;
-    end
-end
+[frc_raw, frc_avg, frc_std] = resolution.frccurve(coords, npx, n);
 
+figure('Name', 'FRC resolution', 'NumberTitle', 'off');
 
+frc_frq = 0:nrs-1;
+frc_frq = frc_frq / nrs;
 
-%frc_frq = 0:length(frc_ens)-1;
-%frc_frq = frc_frq / size(I0p, 1);
-%plot(frc_frq, frc_ens, 'LineWidth', 2);
-%axis([frc_frq(1), frc_frq(end), -0.5, 1]);
-%xlabel('Spatial Frequency (nm^{-1})');
-hold off;
+subplot(2, 1, 1);
+    plot(frc_frq, frc_raw);
+        axis([frc_frq(1), frc_frq(end), -1, 1]);
+        xlabel('Spatial Frequency (nm^{-1})');
+        title('Raw');
+
+subplot(2, 1, 2);
+    plot(frc_frq, frc_avg);
+        axis([frc_frq(1), frc_frq(end), -1, 1]);
+        xlabel('Spatial Frequency (nm^{-1})');
+        title('Averaged');
+    hold on;
+    errorbar(frc_frq, frc_avg, frc_std);
