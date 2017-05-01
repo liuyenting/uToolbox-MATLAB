@@ -2,7 +2,7 @@ clear all; close all; %#ok<CLALL>
 
 %% loading the data
 fprintf('\n -- loading the data --\n');
-coords = dlmread(fullfile(userpath, 'FRC1.dat'));
+coords = dlmread(fullfile(userpath, 'subarea3_frc.dat'));
 
 % resolution [dx, dy, dz] in nm
 pxsize = [103, 103];
@@ -26,7 +26,7 @@ npx = [1960, 1960];
 n = 20;
 
 tic;
-[frc_frq, frc_raw, frc_avg, frc_std] = resolution.frccurve(coords, npx, n);
+[frc_frq, frc_raw, frc_avg, frc_std, frc_num] = resolution.frccurve(coords, npx, n);
 t = toc;
 fprintf('%.2fs elapsed\n', t);
 
@@ -50,3 +50,9 @@ subplot(2, 1, 2);
     errorbar(frc_frq, frc_avg, frc_std);
     hold on;
     plot(frc_frq, frc_thr);
+    
+figure('Name', 'Spurious Correlation', 'NumberTitle', 'off');
+frc_num = mean(frc_num);
+plot(frc_frq, frc_num);
+    axis([frc_frq(1), frc_frq(end), -1, 1]);
+    xlabel('Spatial Frequency (nm^{-1})');

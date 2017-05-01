@@ -1,4 +1,4 @@
-function [fcfrq, fcraw, fcavg, fcstd] = frccurve(coords, npx, nt, blk)
+function [fcfrq, fcraw, fcavg, fcstd, fcnum] = frccurve(coords, npx, nt, blk)
 %FRCCURVE Calculate Fourier ring correlation curve.
 %
 %   NPX     Super-resolved image size in pixels.
@@ -27,6 +27,7 @@ end
 
 % ensembeld result
 fcraw = zeros([nt, nrs]);
+fcnum = zeros([nt, nrs]);
 % start the iterations
 fprintf('%d tasks in queue\n', nt);
 parfor i = 1:nt
@@ -38,7 +39,9 @@ parfor i = 1:nt
     I2 = resolution.binlocal(scoords{2}, npx, pxsz);
     
     % generate the FRC curve
-    fcraw(i, :) = loesssmooth(resolution.frc(I1, I2));
+    [raw, num] = resolution.frc(I1, I2);
+    fcraw(i, :) = loesssmooth(raw);
+    fcnum(i, :) = num;
 end
 
 % calculate the average and error no matter we have complete the
