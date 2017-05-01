@@ -1,4 +1,4 @@
-function cor = frc(A, B, tsz)
+function varargout = frc(A, B, tsz)
 %FRC Calculate Fourier ring correlation values.
 %
 %   COR = FRC(A, B)
@@ -39,9 +39,15 @@ SB = radialsum(abs(FB).^2);
 den = sqrt(abs(SA.*SB));
 
 % divided result
-cor = double(num) ./ double(den);
+cor = num ./ den;
 % remove NaN
 cor(isnan(cor)) = 0;
+
+% set the output
+varargout{1} = cor;
+if nargout == 2
+    varargout{2} = num;
+end
 
 % DEBUG
 %printft(A, B, FA, FB);

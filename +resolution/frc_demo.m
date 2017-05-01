@@ -2,7 +2,7 @@ clear all; close all; %#ok<CLALL>
 
 %% loading the data
 fprintf('\n -- loading the data --\n');
-coords = dlmread(fullfile(userpath, 'layer_28_200.dat'));
+coords = dlmread(fullfile(userpath, 'FRC1.dat'));
 
 % resolution [dx, dy, dz] in nm
 pxsize = [103, 103];

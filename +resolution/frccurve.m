@@ -21,19 +21,14 @@ pxsz = estpxsize(coords, npx);
 nrs = floor(npx(1)/2)+1;
 
 % start parallel pool
-nthread = 24;
 if isempty(gcp('nocreate'))
-    if nthread > nt
-        % shrink the thread pool if not required
-        nthread = nt;
-    end
-    parpool('local', nthread);
+    parpool('local');
 end
 
 % ensembeld result
 fcraw = zeros([nt, nrs]);
 % start the iterations
-fprintf('%d tasks, running %d at a time...\n', nt, nthread);
+fprintf('%d tasks in queue\n', nt);
 parfor i = 1:nt
     % shuffle the input
     scoords = shuffle(coords, 2, blk);
