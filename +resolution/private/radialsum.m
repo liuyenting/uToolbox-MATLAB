@@ -13,8 +13,8 @@ if nrows ~= ncols
     I = sqcrop(I);
 end
 
-% radius sample location
-r = 0:floor(nrows/2);
+% radius sample location, cutoff at Nyquist criterion (50%)
+r = 0:floor((nrows/2)/2);
 nr = length(r);
 % find the center
 [~, ind] = max(I(:));
