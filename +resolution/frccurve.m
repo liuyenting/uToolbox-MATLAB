@@ -1,31 +1,35 @@
-function [fcfrq, fcraw, fcavg, fcstd, fcnum] = frccurve(coords, npx, nt, blk)
+function [fcfrq, varargout] = frccurve(coords, nd, blk)
 %FRCCURVE Calculate Fourier ring correlation curve.
 %
 %   NPX     Super-resolved image size in pixels.
 %   NT      N trials to perform the averaging.
 %   BLK     N blocks to randomize the dataset.
 
-if npx(1) ~= npx(2)
-    error('resolution:frccurve', ...
-          'Image size should be a square.');
-end
-
 if nargin == 3
     blk = 500;
 end
 
 % estimate proper pixel dimensions that can contain all the data
-pxsz = estpxsize(coords, npx);
+pxsz = estpxsize(coords, [nd, nd]);
 
 % radial sample size, assuming the dimension are matched
-nrs = floor(npx(1)/2)+1;
+nrs = floor(nd/2)+1;
 
-% start parallel pool
-if isempty(gcp('nocreate'))
-    parpool('local');
-end
+% shuffle the input
+coords = shuffle(coords, 2, blk);
+
+% bin the data
+sz = [nd, nd];
+I1 = resolution.binlocal(coords{1}, sz);
+I2 = resolution.binlocal(coords{2}, sz);
+
+% generate the curve
+[
 
 % ensembeld result
+
+
+
 fcraw = zeros([nt, nrs]);
 fcnum = zeros([nt, nrs]);
 % start the iterations

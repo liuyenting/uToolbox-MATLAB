@@ -2,7 +2,7 @@ clear all; close all; %#ok<CLALL>
 
 %% loading the data
 fprintf('\n -- loading the data --\n');
-coords = dlmread(fullfile(userpath, 'subarea3_frc.dat'));
+coords = dlmread(fullfile(userpath, 'Hela_POM121_1_postprocessed.dat'));
 
 % resolution [dx, dy, dz] in nm
 pxsize = [103, 103];
@@ -13,20 +13,24 @@ fprintf('%d samples loaded\n', size(coords, 1));
 fprintf('\n -- prepare the data set --\n');
 
 % leave only XY values
-coords = coords(:, 2:3);
+coords = coords(:, 1:2);
 % offset back to the origin and drop the t-axis
 coords = offsetorigin(coords);
 
 %% calculate FRC
 fprintf('\n -- calculate FRC --\n');
 
-% super-resolved image size
-npx = [1960, 1960];
+% n samples
+nd = 1960;
 % n trials
 n = 20;
 
+for i = 1:n
+    
+
+
 tic;
-[frc_frq, frc_raw, frc_avg, frc_std, frc_num] = resolution.frccurve(coords, npx, n);
+[frc_frq, frc_raw, frc_avg, frc_std, frc_num] = resolution.frccurve(coords, nd);
 t = toc;
 fprintf('%.2fs elapsed\n', t);
 
