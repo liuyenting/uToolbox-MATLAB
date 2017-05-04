@@ -1,61 +1,64 @@
-function [fcfrq, varargout] = frccurve(coords, nd, blk)
+function [frcFrq, frcCrv, varargout] = frccurve(coords, nd, varargin)
 %FRCCURVE Calculate Fourier ring correlation curve.
 %
 %   NPX     Super-resolved image size in pixels.
 %   NT      N trials to perform the averaging.
 %   BLK     N blocks to randomize the dataset.
 
-if nargin == 3
-    blk = 500;
-end
+p = inputParser;
+addOptional(p, 'BlockSize', 500, @isnumeric);
+addOptional(p, 'Iterations', 20, @isnumeric);
+parse(p, varargin{:});
 
-% estimate proper pixel dimensions that can contain all the data
-pxsz = estpxsize(coords, [nd, nd]);
+blk = p.Results.BlockSize;
+n = p.Results.Iterations;
 
 % radial sample size, assuming the dimension are matched
 nrs = floor(nd/2)+1;
 
-% shuffle the input
-coords = shuffle(coords, 2, blk);
-
-% bin the data
+% target image size
 sz = [nd, nd];
-I1 = resolution.binlocal(coords{1}, sz);
-I2 = resolution.binlocal(coords{2}, sz);
+% estimate proper pixel dimensions that can contain all the data
+pxsz = estpxsize(coords, sz);
 
-% generate the curve
-[
+% generate temporary storage
+frcRaw = zeros([n, nrs]);
+frcNum = zeros([n, nrs]);
 
-% ensembeld result
-
-
-
-fcraw = zeros([nt, nrs]);
-fcnum = zeros([nt, nrs]);
-% start the iterations
-fprintf('%d tasks in queue\n', nt);
-parfor i = 1:nt
-    % shuffle the input
-    scoords = shuffle(coords, 2, blk);
+for i = 1:n
+    fprintf('... %d / %d\n', i, n);
     
-    % bin the data 
-    I1 = resolution.binlocal(scoords{1}, npx, pxsz);
-    I2 = resolution.binlocal(scoords{2}, npx, pxsz);
+    % suffle the data
+    shufCoords = shuffle(coords, 2, blk);
     
-    % generate the FRC curve
-    [raw, num] = resolution.frc(I1, I2);
-    fcraw(i, :) = loesssmooth(raw);
-    fcnum(i, :) = num;
+    % bin the data
+    I1 = resolution.binlocal(shufCoords{1}, sz, pxsz);
+    I2 = resolution.binlocal(shufCoords{2}, sz, pxsz);
+    
+    % generate the curve
+    [tmpFrcRaw, frcNum(i, :)] = resolution.frc(I1, I2);
+    frcRaw(i, :) = loesssmooth(tmpFrcRaw);
 end
 
-% calculate the average and error no matter we have complete the
-% calculation or not
-fcavg = mean(fcraw);
-fcstd = std(fcraw);
-
 % generate the frequency scale
-fcfrq = 0:nrs-1;
-fcfrq = fcfrq / (nrs*pxsz(1));
+frcFrq = 0:nrs-1;
+if pxsz(1) ~= pxsz(2)
+    error('resolution:frccurve', ...
+          'Anisotropic scale is not applicable in FRC.');
+else
+    pxsz = pxsz(1);
+end
+frcFrq = frcFrq / (nrs*pxsz);
+
+% post statistics
+frcCrv = mean(frcRaw);
+
+% assign the output
+if n > 1
+    if nargout >= 3
+        varargout{1} = frcRaw;
+    end
+end
 
 end
 

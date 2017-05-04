@@ -2,7 +2,7 @@ clear all; close all; %#ok<CLALL>
 
 %% loading the data
 fprintf('\n -- loading the data --\n');
-coords = dlmread(fullfile(userpath, 'Hela_POM121_1_postprocessed.dat'));
+coords = dlmread(fullfile(userpath, 'FRC1.dat'));
 
 % resolution [dx, dy, dz] in nm
 pxsize = [103, 103];
@@ -21,42 +21,20 @@ coords = offsetorigin(coords);
 fprintf('\n -- calculate FRC --\n');
 
 % n samples
-nd = 1960;
-% n trials
-n = 20;
-
-for i = 1:n
-    
-
+nd = 1280;
 
 tic;
-[frc_frq, frc_raw, frc_avg, frc_std, frc_num] = resolution.frccurve(coords, nd);
+[frcFrq, frcCrv] = resolution.frccurve(coords, nd, 'Iterations', 1);
 t = toc;
 fprintf('%.2fs elapsed\n', t);
 
-[res, frc_thr] = resolution.frcc2res(frc_frq, frc_avg);
-fprintf('resolution = %.2fnm\n', res);
+%[res, frc_thr] = resolution.frcc2res(frc_frq, frc_avg);
+%fprintf('resolution = %.2fnm\n', res);
 
 figure('Name', 'FRC resolution', 'NumberTitle', 'off');
 
-subplot(2, 1, 1);
-    plot(frc_frq, frc_raw);
-        axis([frc_frq(1), frc_frq(end), -1, 1]);
-        xlabel('Spatial Frequency (nm^{-1})');
-        title('Raw');
-
-subplot(2, 1, 2);
-    plot(frc_frq, frc_avg);
-        axis([frc_frq(1), frc_frq(end), -1, 1]);
-        xlabel('Spatial Frequency (nm^{-1})');
-        title('Averaged');
-    hold on;
-    errorbar(frc_frq, frc_avg, frc_std);
-    hold on;
-    plot(frc_frq, frc_thr);
-    
-figure('Name', 'Spurious Correlation', 'NumberTitle', 'off');
-frc_num = mean(frc_num);
-plot(frc_frq, frc_num);
-    axis([frc_frq(1), frc_frq(end), -1, 1]);
+plot(frcFrq, frcCrv);
+    axis([frcFrq(1), frcFrq(end), -0.5, 1]);
     xlabel('Spatial Frequency (nm^{-1})');
+hold on;
+%plot(frcFrq, frcThr);
