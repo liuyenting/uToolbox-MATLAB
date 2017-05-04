@@ -37,7 +37,7 @@ for i = 1:n
     
     % generate the curve
     [tmpFrcRaw, frcNum(i, :)] = resolution.frc(I1, I2);
-    frcRaw(i, :) = loesssmooth(tmpFrcRaw);
+    frcRaw(i, :) = loess(tmpFrcRaw);
 end
 
 % generate the frequency scale
@@ -57,28 +57,10 @@ else
     frcCrv = mean(frcRaw);
 end
 
-% assign the output
-if n > 1
-    if nargout >= 3
-        varargout{1} = frcRaw;
-    end
+% spurious correction
+if nargout >= 3
+    
+    varargout{1} = frcSpu;
 end
-
-end
-
-function s = loesssmooth(r, nspan)
-%LOESSSMOOTH Use LOESS to smooth the incoming curve.
-
-if nargin == 1
-    nspan = 20;
-end
-
-nd = length(r);
-
-% smoothing span
-sspan = ceil(nd/nspan);
-sspan = sspan + (1-mod(sspan, 2));
-
-s = smooth(r, sspan, 'loess');
 
 end
