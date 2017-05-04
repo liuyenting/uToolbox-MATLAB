@@ -51,7 +51,11 @@ end
 frcFrq = frcFrq / (nrs*pxsz);
 
 % post statistics
-frcCrv = mean(frcRaw);
+if n == 1
+    frcCrv = frcRaw;
+else
+    frcCrv = mean(frcRaw);
+end
 
 % assign the output
 if n > 1
