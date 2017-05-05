@@ -65,18 +65,24 @@ fprintf('\n -- calculate FRC --\n');
 nd = 1280;
 
 tic;
-[frcFrq, frcCrv] = resolution.frccurve(coords, nd, uncertainty, ...
-                                       'Iterations', 5);
+[frcFrq, frcCrv, frcSpu] = resolution.frccurve(coords, nd, uncertainty, ...
+                                               'Iterations', 5);
 t = toc;
 fprintf('%.2fs elapsed\n', t);
 
-%[res, frc_thr] = resolution.frcc2res(frc_frq, frc_avg);
-%fprintf('resolution = %.2fnm\n', res);
+[res, frcThr] = resolution.frcc2res(frcFrq, frcCrv);
+fprintf('resolution = %.2fnm\n', res);
 
 figure('Name', 'FRC resolution', 'NumberTitle', 'off');
-
-plot(frcFrq, frcCrv);
-    axis([frcFrq(1), frcFrq(end), -0.5, 1]);
-    xlabel('Spatial Frequency (nm^{-1})');
-hold on;
-%plot(frcFrq, frcThr);
+subplot(2, 1, 1);
+    plot(frcFrq, frcCrv);
+        axis([frcFrq(1), frcFrq(end), -0.5, 1]);
+        xlabel('Spatial Frequency (nm^{-1})');
+    hold on;
+    plot(frcFrq, frcThr);
+subplot(2, 1, 2);
+    plot(frcFrq, frcSpu);
+        %axis([frcFrq(1), frcFrq(end), -3, 3]);
+        axis tight
+        xlabel('Spatial Frequency (nm^{-1})');
+        ylabel('log_{10}FRC numerator');

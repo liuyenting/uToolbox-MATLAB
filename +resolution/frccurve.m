@@ -15,6 +15,8 @@ parse(p, varargin{:});
 blk = p.Results.BlockSize;
 n = p.Results.Iterations;
 uncert = p.Results.UncertaintyXY;
+% set the flag
+calcSpurious = ~isempty(uncert);
 
 % radial sample size, assuming the dimension are matched
 nrs = floor(nd/2)+1;
@@ -24,10 +26,18 @@ sz = [nd, nd];
 % estimate proper pixel dimensions that can contain all the data
 pxsz = estpxsize(coords, sz);
 
-% generate temporary storage
-frcRaw = zeros([n, nrs]);
-frcNum = zeros([n, nrs]);
+% generate the frequency scale
+frcFrq = 0:nrs-1;
+if pxsz(1) ~= pxsz(2)
+    error('resolution:frccurve', ...
+          'Anisotropic scale is not applicable.');
+end
+frcFrq = frcFrq.' / (nrs*pxsz(1));
 
+frcCrv = zeros([n, nrs]);
+if calcSpurious
+    frcSpu = zeros([n, nrs]);
+end
 for i = 1:n
     fprintf('... %d / %d\n', i, n);
     
@@ -39,33 +49,24 @@ for i = 1:n
     I2 = resolution.binlocal(shufCoords{2}, sz, pxsz);
     
     % generate the curve
-    [tmpFrcRaw, frcNum(i, :)] = resolution.frc(I1, I2);
-    frcRaw(i, :) = loess(tmpFrcRaw);
+    [tmpFrcCrv, frcNum] = resolution.frc(I1, I2);
+    frcCrv(i, :) = loess(tmpFrcCrv, 20);
     
-    % calculate the spurious correlation in the loop
+    if calcSpurious
+        frcSpu(i, :) = spurious(nd, frcFrq, frcNum, uncert);
+    end
 end
-
-% generate the frequency scale
-frcFrq = 0:nrs-1;
-if pxsz(1) ~= pxsz(2)
-    error('resolution:frccurve', ...
-          'Anisotropic scale is not applicable in FRC.');
-else
-    pxsz = pxsz(1);
-end
-frcFrq = frcFrq / (nrs*pxsz);
 
 % post statistics
-if n == 1
-    frcCrv = frcRaw;
-else
-    frcCrv = mean(frcRaw);
+if n > 1
+    frcCrv = mean(frcCrv);
+    if calcSpurious
+        frcSpu = mean(frcSpu);
+    end
 end
 
-% spurious correction
-if ~isempty(uncert)
-    frcSpu = spurious(FrcFrq, frcNum, uncert);
-    %TODO: iterate through the numerators
+if calcSpurious
+    varargout{1} = frcSpu;
 end
 
 end
@@ -74,24 +75,19 @@ function frcSpu = spurious(nd, frcFrq, frcNum, uncert)
 
 % calculate the denominator of v(q)
 pxcnt = radialsum(ones([nd, nd]));
+    
+% v(q)
+v = frcNum ./ pxcnt;
 
-n = size(frcNum, 1);
-for i = 1:n
-    fprintf('... %d / %d\n', i, n);
-    
-    % v(q)
-    v = frcNum(i, :) ./ pxcnt;
-    
-    % H(q)
-    H = pdffactor(frcFrq, uncert);
-    
-    % sinc
-    s = sinc(pi * frcFrq * nd);
-    
-    % generate the curve
-    [tmpFrcRaw, frcNum(i, :)] = resolution.frc(I1, I2);
-    frcRaw(i, :) = loess(tmpFrcRaw);
-end
+% H(q)
+H = pdffactor(frcFrq, uncert);
+
+% sinc
+s2 = sinc(pi * frcFrq * nd).^2;
+
+frcSpu = log(abs(v ./ H ./ s2));
+
+frcSpu = loess(frcSpu, 10);
 
 end
 
@@ -107,7 +103,7 @@ fac = 1 + 2 * (2*pi * uncStd * q).^2;
 % power of the exponential term
 pwr = (2*pi * uncAvg * q).^2;
 
-h = exp(pwr) ./ sqrt(fac);
+h = exp(-pwr) ./ sqrt(fac);
 
 end
 
