@@ -62,6 +62,50 @@ end
 
 % spurious correction
 if ~isempty(uncertainty)
+    frcSpu = spurious(FrcFrq, frcNum, uncertainty);
+    %TODO: iterate through the numerators
 end
 
 end
+
+function frcSpu = spurious(nd, frcFrq, frcNum, uncert)
+
+% calculate the denominator of v(q)
+pxcnt = radialsum(ones([nd, nd]));
+
+n = size(frcNum, 1);
+for i = 1:n
+    fprintf('... %d / %d\n', i, n);
+    
+    % v(q)
+    v = frcNum(i, :) ./ pxcnt;
+    
+    % H(q)
+    H = pdffactor(frcFrq, uncert);
+    
+    % sinc
+    s = sinc(pi * frcFrq * nd);
+    
+    % generate the curve
+    [tmpFrcRaw, frcNum(i, :)] = resolution.frc(I1, I2);
+    frcRaw(i, :) = loess(tmpFrcRaw);
+end
+
+end
+
+function h = pdffactor(q, uncert)
+
+% calculate the statistic among the uncertainty value
+uncAvg = mean(uncert);
+uncStd = std(uncert);
+
+% common factors
+fac = 1 + 2 * (2*pi * uncStd * q).^2;
+
+% power of the exponential term
+pwr = (2*pi * uncAvg * q).^2;
+
+h = exp(pwr) ./ sqrt(fac);
+
+end
+

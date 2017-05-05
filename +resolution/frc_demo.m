@@ -65,7 +65,8 @@ fprintf('\n -- calculate FRC --\n');
 nd = 1280;
 
 tic;
-[frcFrq, frcCrv] = resolution.frccurve(coords, nd, 'Iterations', 5);
+[frcFrq, frcCrv] = resolution.frccurve(coords, nd, uncertainty, ...
+                                       'Iterations', 5);
 t = toc;
 fprintf('%.2fs elapsed\n', t);
 
