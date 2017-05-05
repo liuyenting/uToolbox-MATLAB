@@ -6,12 +6,15 @@ function [frcFrq, frcCrv, varargout] = frccurve(coords, nd, varargin)
 %   BLK     N blocks to randomize the dataset.
 
 p = inputParser;
-addOptional(p, 'BlockSize', 500, @isnumeric);
-addOptional(p, 'Iterations', 20, @isnumeric);
+addOptional(p, 'UncertaintyXY', [], ...
+            @(arr) (size(arr, 1) == size(coords, 1)));
+addParameter(p, 'BlockSize', 500, @isnumeric);
+addParameter(p, 'Iterations', 20, @isnumeric);
 parse(p, varargin{:});
 
 blk = p.Results.BlockSize;
 n = p.Results.Iterations;
+uncertainty = p.Results.UncertaintyXY;
 
 % radial sample size, assuming the dimension are matched
 nrs = floor(nd/2)+1;
@@ -58,9 +61,7 @@ else
 end
 
 % spurious correction
-if nargout >= 3
-    
-    varargout{1} = frcSpu;
+if ~isempty(uncertainty)
 end
 
 end

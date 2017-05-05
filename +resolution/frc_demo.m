@@ -1,19 +1,60 @@
-clear all; close all; %#ok<CLALL>
+close all;
+clearvars -except data;
 
 %% loading the data
-fprintf('\n -- loading the data --\n');
-coords = dlmread(fullfile(userpath, 'FRC1.dat'));
+fprintf('\n -- loading data --\n');
+
+
+filePath = fullfile(userpath, '0421Neuron1_postprocessed.csv');
+fprintf('path = "%s"\n', filePath);
+
+tic;
+
+% load the header
+fid = fopen(filePath);
+header = fgetl(fid);
+% split by comma
+header = strsplit(header, ',');
+% remove quotes
+header = strrep(header, '"', '');
+fclose(fid);
+
+fprintf('%d columns in the dataset\n', length(header));
+
+if exist('data', 'var')
+    warning('resolution:frc_demo', ...
+            'Using preloaded data.');
+else
+    % load the data
+    data = csvread(filePath, 1, 0);
+end
+fprintf('... %d samples loaded\n', size(data, 1));
+
+t = toc;
+fprintf('%.2fs elapsed\n', t);
+
 
 % resolution [dx, dy, dz] in nm
 pxsize = [103, 103];
 
-fprintf('%d samples loaded\n', size(coords, 1));
-
 %% prepare the data set
 fprintf('\n -- prepare the data set --\n');
 
-% leave only XY values
-coords = coords(:, 1:2);
+% find the indices
+xyIndex = findcol(header, {'x', 'y'});
+uncertaintyIndex = findcol(header, {'uncertainty_xy'});
+if isempty(xyIndex)
+    error('resolution:frc_demo', ...
+          'Unable to locate the coordinate columns.');
+end
+if isempty(uncertaintyIndex)
+    error('resolution:frc_demo', ...
+          'Unable to locate radial uncertainty column.');
+end
+
+% extract the data
+coords = data(:, xyIndex);
+uncertainty = data(:, uncertaintyIndex);
 % offset back to the origin and drop the t-axis
 coords = offsetorigin(coords);
 
@@ -24,7 +65,7 @@ fprintf('\n -- calculate FRC --\n');
 nd = 1280;
 
 tic;
-[frcFrq, frcCrv] = resolution.frccurve(coords, nd, 'Iterations', 1);
+[frcFrq, frcCrv] = resolution.frccurve(coords, nd, 'Iterations', 5);
 t = toc;
 fprintf('%.2fs elapsed\n', t);
 
