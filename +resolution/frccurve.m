@@ -14,7 +14,7 @@ parse(p, varargin{:});
 
 blk = p.Results.BlockSize;
 n = p.Results.Iterations;
-uncertainty = p.Results.UncertaintyXY;
+uncert = p.Results.UncertaintyXY;
 
 % radial sample size, assuming the dimension are matched
 nrs = floor(nd/2)+1;
@@ -41,6 +41,8 @@ for i = 1:n
     % generate the curve
     [tmpFrcRaw, frcNum(i, :)] = resolution.frc(I1, I2);
     frcRaw(i, :) = loess(tmpFrcRaw);
+    
+    % calculate the spurious correlation in the loop
 end
 
 % generate the frequency scale
@@ -61,8 +63,8 @@ else
 end
 
 % spurious correction
-if ~isempty(uncertainty)
-    frcSpu = spurious(FrcFrq, frcNum, uncertainty);
+if ~isempty(uncert)
+    frcSpu = spurious(FrcFrq, frcNum, uncert);
     %TODO: iterate through the numerators
 end
 
