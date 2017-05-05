@@ -3,6 +3,11 @@ function [I, pxsz] = binlocal(coords, sz, pxsz)
 %
 %   TBA
 
+if size(coords, 2) ~= length(sz)
+    error('resolution:binlocal', ...
+          'Dimension of the image size mismatch the coordinate list.');
+end
+
 % generate the empty stack
 I = zeros(sz);
 

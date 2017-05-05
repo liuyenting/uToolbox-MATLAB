@@ -1,75 +1,67 @@
-function [fcfrq, fcraw, fcavg, fcstd] = frccurve(coords, npx, nt, blk)
+function [frcFrq, frcCrv, varargout] = frccurve(coords, nd, varargin)
 %FRCCURVE Calculate Fourier ring correlation curve.
 %
 %   NPX     Super-resolved image size in pixels.
 %   NT      N trials to perform the averaging.
 %   BLK     N blocks to randomize the dataset.
 
-if npx(1) ~= npx(2)
-    error('resolution:frccurve', ...
-          'Image size should be a square.');
-end
+p = inputParser;
+addOptional(p, 'UncertaintyXY', [], ...
+            @(arr) (size(arr, 1) == size(coords, 1)));
+addParameter(p, 'BlockSize', 500, @isnumeric);
+addParameter(p, 'Iterations', 20, @isnumeric);
+parse(p, varargin{:});
 
-if nargin == 3
-    blk = 500;
-end
-
-% estimate proper pixel dimensions that can contain all the data
-pxsz = estpxsize(coords, npx);
+blk = p.Results.BlockSize;
+n = p.Results.Iterations;
+uncertainty = p.Results.UncertaintyXY;
 
 % radial sample size, assuming the dimension are matched
-nrs = floor(npx(1)/2)+1;
+nrs = floor(nd/2)+1;
 
-% start parallel pool
-nthread = 24;
-if isempty(gcp('nocreate'))
-    if nthread > nt
-        % shrink the thread pool if not required
-        nthread = nt;
-    end
-    parpool('local', nthread);
-end
+% target image size
+sz = [nd, nd];
+% estimate proper pixel dimensions that can contain all the data
+pxsz = estpxsize(coords, sz);
 
-% ensembeld result
-fcraw = zeros([nt, nrs]);
-% start the iterations
-fprintf('%d tasks, running %d at a time...\n', nt, nthread);
-parfor i = 1:nt
-    % shuffle the input
-    scoords = shuffle(coords, 2, blk);
+% generate temporary storage
+frcRaw = zeros([n, nrs]);
+frcNum = zeros([n, nrs]);
+
+for i = 1:n
+    fprintf('... %d / %d\n', i, n);
     
-    % bin the data 
-    I1 = resolution.binlocal(scoords{1}, npx, pxsz);
-    I2 = resolution.binlocal(scoords{2}, npx, pxsz);
+    % suffle the data
+    shufCoords = shuffle(coords, 2, blk);
     
-    % generate the FRC curve
-    fcraw(i, :) = loesssmooth(resolution.frc(I1, I2));
+    % bin the data
+    I1 = resolution.binlocal(shufCoords{1}, sz, pxsz);
+    I2 = resolution.binlocal(shufCoords{2}, sz, pxsz);
+    
+    % generate the curve
+    [tmpFrcRaw, frcNum(i, :)] = resolution.frc(I1, I2);
+    frcRaw(i, :) = loess(tmpFrcRaw);
 end
-
-% calculate the average and error no matter we have complete the
-% calculation or not
-fcavg = mean(fcraw);
-fcstd = std(fcraw);
 
 % generate the frequency scale
-fcfrq = 0:nrs-1;
-fcfrq = fcfrq / (nrs*pxsz(1));
+frcFrq = 0:nrs-1;
+if pxsz(1) ~= pxsz(2)
+    error('resolution:frccurve', ...
+          'Anisotropic scale is not applicable in FRC.');
+else
+    pxsz = pxsz(1);
+end
+frcFrq = frcFrq / (nrs*pxsz);
 
+% post statistics
+if n == 1
+    frcCrv = frcRaw;
+else
+    frcCrv = mean(frcRaw);
 end
 
-function s = loesssmooth(r, nspan)
-%LOESSSMOOTH Use LOESS to smooth the incoming curve.
-
-if nargin == 1
-    nspan = 20;
+% spurious correction
+if ~isempty(uncertainty)
 end
-
-nd = length(r);
-
-% smoothing span
-sspan = ceil(nd/nspan);
-sspan = sspan + (1-mod(sspan, 2));
-
-s = smooth(r, sspan, 'loess');
 
 end

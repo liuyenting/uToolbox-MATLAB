@@ -1,42 +1,29 @@
 clear all; close all; %#ok<CLALL>
 
-sz = [1024, 1024];
-r = 10;
+fprintf('\n -- loading the data --\n');
 
-I = zeros(sz);
+filePath = fullfile(userpath, '0421Neuron1_postprocessed.csv');
 
-% find the midpoint
-midpt = sz / 2;
+tic;
+% header
+fid = fopen(filePath);
+header = fgetl(fid);
+% split by comma
+header = strsplit(header, ',');
+% remove quotes
+header = strrep(header, '"', '')
+fclose(fid);
 
-pres = 1;
-% generate the sampling location
-ares = calcares(pres, r);
-angles = 0:ares:2*pi;
+% data
+%data = csvread(filePath, 1, 0);
+t = toc;
 
-% generate the Cartesian coordinates
-[x, y] = pol2cart(angles, r);
+% result
+%fprintf('%d samples loaded, %.2fs elapsed\n', size(data, 1), t);
+fprintf('%d columns in the dataset\n', length(header));
 
-% generate comparison grid
-[xi, yi] = meshgrid(1:sz(1), 1:sz(2));
-xi = xi - midpt(1);
-yi = yi - midpt(2);
+% identify target row
+query = {'uncertainty_xy', 'x', 'y'};
+uncertInd = findcol(header, query)
 
-ri = rdist(xi, yi);
-I((ri >= r) & (ri < r+1)) = 1;
-
-figure;
-imagesc(I);
-    axis image;
-
-function r = rdist(x, y)
-
-r = sqrt(x.^2 + y.^2);
-
-end
-
-function ares = calcares(pres, r)
-%CALCARES Calculate angular resolution from desired pixel resolution.
-
-ares = pres / r;
-
-end
+fprintf('uncertainty column locates at %d\n', uncertInd);

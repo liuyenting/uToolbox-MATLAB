@@ -1,52 +1,81 @@
-clear all; close all; %#ok<CLALL>
+close all;
+clearvars -except data;
 
 %% loading the data
-fprintf('\n -- loading the data --\n');
-coords = dlmread(fullfile(userpath, 'layer_28_200.dat'));
+fprintf('\n -- loading data --\n');
+
+
+filePath = fullfile(userpath, '0421Neuron1_postprocessed.csv');
+fprintf('path = "%s"\n', filePath);
+
+tic;
+
+% load the header
+fid = fopen(filePath);
+header = fgetl(fid);
+% split by comma
+header = strsplit(header, ',');
+% remove quotes
+header = strrep(header, '"', '');
+fclose(fid);
+
+fprintf('%d columns in the dataset\n', length(header));
+
+if exist('data', 'var')
+    warning('resolution:frc_demo', ...
+            'Using preloaded data.');
+else
+    % load the data
+    data = csvread(filePath, 1, 0);
+end
+fprintf('... %d samples loaded\n', size(data, 1));
+
+t = toc;
+fprintf('%.2fs elapsed\n', t);
+
 
 % resolution [dx, dy, dz] in nm
 pxsize = [103, 103];
 
-fprintf('%d samples loaded\n', size(coords, 1));
-
 %% prepare the data set
 fprintf('\n -- prepare the data set --\n');
 
-% leave only XY values
-coords = coords(:, 2:3);
+% find the indices
+xyIndex = findcol(header, {'x', 'y'});
+uncertaintyIndex = findcol(header, {'uncertainty_xy'});
+if isempty(xyIndex)
+    error('resolution:frc_demo', ...
+          'Unable to locate the coordinate columns.');
+end
+if isempty(uncertaintyIndex)
+    error('resolution:frc_demo', ...
+          'Unable to locate radial uncertainty column.');
+end
+
+% extract the data
+coords = data(:, xyIndex);
+uncertainty = data(:, uncertaintyIndex);
 % offset back to the origin and drop the t-axis
 coords = offsetorigin(coords);
 
 %% calculate FRC
 fprintf('\n -- calculate FRC --\n');
 
-% super-resolved image size
-npx = [1960, 1960];
-% n trials
-n = 20;
+% n samples
+nd = 1280;
 
 tic;
-[frc_frq, frc_raw, frc_avg, frc_std] = resolution.frccurve(coords, npx, n);
+[frcFrq, frcCrv] = resolution.frccurve(coords, nd, 'Iterations', 5);
 t = toc;
 fprintf('%.2fs elapsed\n', t);
 
-[res, frc_thr] = resolution.frcc2res(frc_frq, frc_avg);
-fprintf('resolution = %.2fnm\n', res);
+%[res, frc_thr] = resolution.frcc2res(frc_frq, frc_avg);
+%fprintf('resolution = %.2fnm\n', res);
 
 figure('Name', 'FRC resolution', 'NumberTitle', 'off');
 
-subplot(2, 1, 1);
-    plot(frc_frq, frc_raw);
-        axis([frc_frq(1), frc_frq(end), -1, 1]);
-        xlabel('Spatial Frequency (nm^{-1})');
-        title('Raw');
-
-subplot(2, 1, 2);
-    plot(frc_frq, frc_avg);
-        axis([frc_frq(1), frc_frq(end), -1, 1]);
-        xlabel('Spatial Frequency (nm^{-1})');
-        title('Averaged');
-    hold on;
-    errorbar(frc_frq, frc_avg, frc_std);
-    hold on;
-    plot(frc_frq, frc_thr);
+plot(frcFrq, frcCrv);
+    axis([frcFrq(1), frcFrq(end), -0.5, 1]);
+    xlabel('Spatial Frequency (nm^{-1})');
+hold on;
+%plot(frcFrq, frcThr);
