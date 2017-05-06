@@ -81,13 +81,13 @@ function frcSpu = spurious(q, L, numerator, uncert)
 % q = pxCnt / L
 
 % v(q)
-v = numerator ./ (2*pi*q*L);
+v = numerator ./ (q*L);
 
 % H(q)
 H = pdffactor(q, uncert);
 
 % sinc
-s2 = sinc(pi*q*L).^2;
+s2 = sinc(q*L/2).^2;
 
 frcSpu = log(abs(v ./ H ./ s2));
 frcSpu = loess(frcSpu, 10);
@@ -101,10 +101,12 @@ uncAvg = mean(uncert);
 uncStd = std(uncert);
 
 % common factors
-fac = 1 + 2 * (2*pi * uncStd * q).^2;
+% fac = 1 + 2 * (2*pi * uncStd * q).^2;
+fac = 1 + 2 * (uncStd * q).^2;
 
 % power of the exponential term
-pwr = (2*pi * uncAvg * q).^2;
+% pwr = (2*pi * uncAvg * q).^2;
+pwr = (uncAvg * q).^2;
 
 h = exp(-pwr) ./ sqrt(fac);
 
