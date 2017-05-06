@@ -63,7 +63,7 @@ coords = offsetorigin(coords);
 fprintf('\n -- calculate FRC --\n');
 
 % n samples
-nd = 1280;
+nd = 1960;
 
 tic;
 [frcFrq, frcCrv, frcSpu] = resolution.frccurve(coords, nd, uncertainty, ...
@@ -79,13 +79,14 @@ fprintf('resolution = %.2fnm\n', res);
 figure('Name', 'FRC resolution', 'NumberTitle', 'off');
 subplot(2, 1, 1);
     plot(frcFrq, frcCrv);
-        axis([frcFrq(1), frcFrq(end), -0.25, 1]);
+        axis tight;
+        xlim([frcFrq(1), frcFrq(end)]);
         xlabel('Spatial Frequency (nm^{-1})');
     hold on;
     plot(frcFrq, frcThr);
 subplot(2, 1, 2);
     plot(frcFrq, frcSpu);
-        %axis([frcFrq(1), frcFrq(end), -3, 3]);
-        axis tight
+        axis tight;
+        xlim([frcFrq(1), frcFrq(end)]);
         xlabel('Spatial Frequency (nm^{-1})');
         ylabel('log_{10}FRC numerator');
