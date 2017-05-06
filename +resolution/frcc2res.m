@@ -9,8 +9,12 @@ frcThr = (exp(1) / (6*pi)) * ones(size(frcFrq));
 % intersection
 lineThr = [frcFrq; frcThr];
 lineAvg = [frcFrq; frcAvg];
-ind = interx(lineThr, lineAvg);
+P = interx(lineThr, lineAvg);
 
-res = 1/ind(1);
+% use the first point only
+P = P(1, :);
+
+% lookup the spatial frequency
+res = 1/P(1);
 
 end
