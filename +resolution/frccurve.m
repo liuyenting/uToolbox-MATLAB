@@ -57,7 +57,7 @@ for i = 1:n
     frcCrv(i, :) = loess(tmpFrcCrv, 20);
     
     if calcSpurious
-        frcSpu(i, :) = spurious(frcFrq, pxPerFreq, frcNum, uncert);
+        frcSpu(i, :) = spurious(frcFrq, nd*pxsz(1), frcNum, uncert);
     end
 end
 
@@ -75,37 +75,22 @@ end
 
 end
 
-function frcSpu = spurious(q, pxCnt, numerator, uncert)
+function frcSpu = spurious(q, L, numerator, uncert)
 
 % Note:
 % q = pxCnt / L
 
-% % v(q)
-% v = numerator ./ pxCnt;
-% 
-% % H(q)
-% H = pdffactor(q, uncert);
-% 
-% % sinc
-% s2 = sinc(pxCnt / 2).^2;
-% 
-% frcSpu = log(abs(v ./ H ./ s2));
-% 
-% frcSpu = loess(frcSpu, 10);
-
 % v(q)
-v = numerator ./ (2*pi * pxCnt);
+v = numerator ./ (2*pi*q*L);
 
 % H(q)
 H = pdffactor(q, uncert);
 
 % sinc
-s2 = sinc(pi * pxCnt).^2;
+s2 = sinc(pi*q*L).^2;
 
 frcSpu = log(abs(v ./ H ./ s2));
-
 frcSpu = loess(frcSpu, 10);
-
 
 end
 
