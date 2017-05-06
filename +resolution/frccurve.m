@@ -14,20 +14,34 @@ parse(p, varargin{:});
 
 blk = p.Results.BlockSize;
 n = p.Results.Iterations;
-uncertainty = p.Results.UncertaintyXY;
-
-% radial sample size, assuming the dimension are matched
-nrs = floor(nd/2)+1;
+uncert = p.Results.UncertaintyXY;
+% set the flag
+calcSpurious = ~isempty(uncert);
 
 % target image size
 sz = [nd, nd];
 % estimate proper pixel dimensions that can contain all the data
 pxsz = estpxsize(coords, sz);
 
-% generate temporary storage
-frcRaw = zeros([n, nrs]);
-frcNum = zeros([n, nrs]);
+%% Frequency
+pxPerFreq = radialsum(ones(sz));
+% radial sample counts
+nrs = length(pxPerFreq);
 
+r = 1:nrs;
+
+if pxsz(1) ~= pxsz(2)
+    error('resolution:frccurve', ...
+          'Anisotropic scale is not applicable.');
+end
+% q = r / (nL * pxsz) = r / L
+frcFrq = r / (nd*pxsz(1));
+
+%% Correlation
+frcCrv = zeros([n, nrs]);
+if calcSpurious
+    frcSpu = zeros([n, nrs]);
+end
 for i = 1:n
     fprintf('... %d / %d\n', i, n);
     
@@ -39,29 +53,62 @@ for i = 1:n
     I2 = resolution.binlocal(shufCoords{2}, sz, pxsz);
     
     % generate the curve
-    [tmpFrcRaw, frcNum(i, :)] = resolution.frc(I1, I2);
-    frcRaw(i, :) = loess(tmpFrcRaw);
+    [tmpFrcCrv, frcNum] = resolution.frc(I1, I2);
+    frcCrv(i, :) = loess(tmpFrcCrv, 20);
+    
+    if calcSpurious
+        frcSpu(i, :) = spurious(frcFrq, nd*pxsz(1), frcNum, uncert);
+    end
 end
-
-% generate the frequency scale
-frcFrq = 0:nrs-1;
-if pxsz(1) ~= pxsz(2)
-    error('resolution:frccurve', ...
-          'Anisotropic scale is not applicable in FRC.');
-else
-    pxsz = pxsz(1);
-end
-frcFrq = frcFrq / (nrs*pxsz);
 
 % post statistics
-if n == 1
-    frcCrv = frcRaw;
-else
-    frcCrv = mean(frcRaw);
+if n > 1
+    frcCrv = mean(frcCrv);
+    if calcSpurious
+        frcSpu = mean(frcSpu);
+    end
 end
 
-% spurious correction
-if ~isempty(uncertainty)
+if calcSpurious
+    varargout{1} = frcSpu;
 end
 
 end
+
+function frcSpu = spurious(q, L, numerator, uncert)
+
+% Note:
+% q = pxCnt / L
+
+% v(q)
+v = numerator ./ (q*L);
+
+% H(q)
+H = pdffactor(q, uncert);
+
+% sinc
+s2 = sinc(q*L/2).^2;
+
+frcSpu = log(abs(v ./ H ./ s2));
+frcSpu = loess(frcSpu, 10);
+
+end
+
+function h = pdffactor(q, uncert)
+
+% calculate the statistic among the uncertainty value
+uncAvg = mean(uncert);
+uncStd = std(uncert);
+
+% common factors
+% fac = 1 + 2 * (2*pi * uncStd * q).^2;
+fac = 1 + 2 * (uncStd * q).^2;
+
+% power of the exponential term
+% pwr = (2*pi * uncAvg * q).^2;
+pwr = (uncAvg * q).^2;
+
+h = exp(-pwr) ./ sqrt(fac);
+
+end
+

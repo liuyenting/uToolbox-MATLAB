@@ -1,16 +1,30 @@
-function [res, frc_thr] = frcc2res(frc_frq, frc_avg)
+function [res, varargout] = frcc2res(frcFrq, frcAvg)
 %FRCC2RES Derive the resolution from an FRC curve.
 %
-%   TBA
+%   RES = FRCC2RES(FRCFRQ, FRCAVG) finds the intersection between the 
+%   averaged FRC curve and the 0.5-bit curve, deducted by information 
+%   theory. RES is the estimated resolution in terms of the inverse unit of
+%   spatial frequency used by FRCFRQ.
+%
+%   [RES, FRCTHR] = FRCC2RES(...) provides the additional threshold curve
+%   through the output variable FRCTHR.
 
 % the threshold curve
-frc_thr = (exp(1) / (6*pi)) * ones(size(frc_frq));
+frcThr = (exp(1) / (6*pi)) * ones(size(frcFrq));
 
 % intersection
-dat_thr = [frc_frq; frc_thr];
-dat_avg = [frc_frq; frc_avg];
-ind = interx(dat_thr, dat_avg);
+lineThr = [frcFrq; frcThr];
+lineAvg = [frcFrq; frcAvg];
+P = interx(lineThr, lineAvg);
 
-res = 1/ind(1);
+% use the first point only
+P = P(1, :);
+
+% lookup the spatial frequency
+res = 1/P(1);
+
+if nargout == 2
+    varargout{1} = frcThr;
+end
 
 end

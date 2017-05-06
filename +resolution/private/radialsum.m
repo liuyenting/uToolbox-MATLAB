@@ -1,30 +1,40 @@
-function s = radialsum(I)
+function s = radialsum(I, smplratio)
 %RADIALSUM Calculate the radial sum of an image with interpolation.
 %
 %   S = RADIALSUM(I, ARES) calculate radial sum at different spatial 
 %   frequency using angular resolution of ARES. ARES is default to 1 degree
 %   if not assigned.
+%   SMPLRATIO implies the sampling ratio, (0, 1], default at 0.5.
 
 % find the minimal dimension
-[nrows, ncols] = size(I);
-if nrows ~= ncols
+sz = size(I);
+if sz(1) ~= sz(2)
     warning('resolution:radialsum', ...
             'Not a square matrix, cropped to the minimal square.');
-    I = sqcrop(I);
+    [I, sz] = sqcrop(I);
 end
 
-% radius sample location, cutoff at Nyquist criterion (50%)
-r = 0:floor(nrows/2);
-nr = length(r);
+if nargin == 1
+    % default cutoff at 50% (Nyquist criterion)
+    smplratio = 0.5;
+else
+    if (smplratio <= 0) || (smplratio > 1)
+        error('resolution:radialsum', ...
+              'Sampling ratio can only range from (0, 1].');
+    end
+end
+
+% radius sample location
+r = 1:floor((sz(1)/2) * smplratio);
 % find the center
 [~, ind] = max(I(:));
-[xi, yi] = ind2sub([nrows, ncols], ind);
+[xi, yi] = ind2sub(sz, ind);
 % generate the distance map
-rm = distmap([nrows, ncols], [xi, yi]);
+rm = distmap(sz, [xi, yi]);
 
 % start sampling
-s = zeros([nr, 1]);
-for i = 1:nr
+s = zeros(size(r));
+for i = 1:length(s)
     ind = (rm >= r(i)) & (rm < r(i)+1);
     s(i) = sum(I(ind));
 end
@@ -48,20 +58,21 @@ r = sqrt(xq.^2 + yq.^2);
 
 end
 
-function Iout = sqcrop(Iin)
+function [Iout, sz] = sqcrop(Iin)
 %SQCROP Crop input array to square array.
 
-[nrows, ncols] = size(Iin);
-if nrows == ncols
+[nrow, ncol] = size(Iin);
+if nrow == ncol
     Iout = Iin;
+    sz = [nrow, ncol];
 else
-    sz = min(nrows, ncols);
-    redsz = max(nrows, ncols) - sz;
+    sz = min(nrow, ncol);
+    redsz = max(nrow, ncol) - sz;
     
     % padded size is half of the redundant size
     padsz = floor(redsz/2);
     
-    if sz == nrows
+    if sz == nrow
         Iout = Iin(:, padsz:padsz+sz-1);
     else
         Iout = Iin(padsz:padsz+sz-1, :);
