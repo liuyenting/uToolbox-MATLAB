@@ -52,9 +52,9 @@ end
 coords = data(:, xyIndex);
 uncertainty = data(:, uncertaintyIndex);
 
-% coords = dlmread(fullfile(userpath, 'subarea3_frc.dat'));
-% coords = coords(:, 1:2);
-% uncertainty = [];
+coords = dlmread(fullfile(userpath, 'Hela_POM121_1_postprocessed.dat'));
+coords = coords(:, 1:2);
+uncertainty = [];
 
 % offset back to the origin and drop the t-axis
 coords = offsetorigin(coords);
@@ -66,10 +66,9 @@ fprintf('\n -- calculate FRC --\n');
 nd = 1960;
 
 tic;
-[frcFrq, frcCrv, frcSpu] = resolution.frccurve(coords, nd, uncertainty, ...
-                                               'Iterations', 5);
-% [frcFrq, frcCrv] = resolution.frccurve(coords, nd, ...
-%                                        'Iterations', 5);                                           
+% [frcFrq, frcCrv, frcSpu] = resolution.frccurve(coords, nd, uncertainty, ...
+%                                                'Iterations', 5);
+[frcFrq, frcCrv] = resolution.frccurve(coords, nd, 'Iterations', 5);                                           
 t = toc;
 fprintf('%.2fs elapsed\n', t);
 
@@ -77,7 +76,7 @@ fprintf('%.2fs elapsed\n', t);
 fprintf('resolution = %.2fnm\n', res);
 
 figure('Name', 'FRC resolution', 'NumberTitle', 'off');
-subplot(2, 1, 1);
+% subplot(2, 1, 1);
     plot(frcFrq, frcCrv);
         axis tight;
         xlim([frcFrq(1), frcFrq(end)]);
@@ -86,9 +85,9 @@ subplot(2, 1, 1);
         ylabel('FRC');
     hold on;
     plot(frcFrq, frcThr);
-subplot(2, 1, 2);
-    plot(frcFrq, frcSpu);
-        axis tight;
-        xlim([frcFrq(1), frcFrq(end)]);
-        xlabel('Spatial Frequency (nm^{-1})');
-        ylabel('log_{10}FRC numerator');
+% subplot(2, 1, 2);
+%     plot(frcFrq, frcSpu);
+%         axis tight;
+%         xlim([frcFrq(1), frcFrq(end)]);
+%         xlabel('Spatial Frequency (nm^{-1})');
+%         ylabel('log_{10}FRC numerator');
