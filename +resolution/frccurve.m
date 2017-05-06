@@ -18,22 +18,26 @@ uncert = p.Results.UncertaintyXY;
 % set the flag
 calcSpurious = ~isempty(uncert);
 
-% radial sample size, assuming the dimension are matched
-nrs = floor(nd/2)+1;
-
 % target image size
 sz = [nd, nd];
 % estimate proper pixel dimensions that can contain all the data
 pxsz = estpxsize(coords, sz);
 
-% generate the frequency scale
-frcFrq = 0:nrs-1;
+%% Frequency
+pxPerFreq = radialsum(ones(sz));
+% radial sample counts
+nrs = length(pxPerFreq);
+
+r = 1:nrs;
+
 if pxsz(1) ~= pxsz(2)
     error('resolution:frccurve', ...
           'Anisotropic scale is not applicable.');
 end
-frcFrq = frcFrq.' / (nrs*pxsz(1));
+% q = r / (nL * pxsz) = r / L
+frcFrq = r / (nd*pxsz(1));
 
+%% Correlation
 frcCrv = zeros([n, nrs]);
 if calcSpurious
     frcSpu = zeros([n, nrs]);
@@ -53,7 +57,7 @@ for i = 1:n
     frcCrv(i, :) = loess(tmpFrcCrv, 20);
     
     if calcSpurious
-        frcSpu(i, :) = spurious(nd, frcFrq, frcNum, uncert);
+        frcSpu(i, :) = spurious(frcFrq, pxPerFreq, frcNum, uncert);
     end
 end
 
@@ -71,23 +75,37 @@ end
 
 end
 
-function frcSpu = spurious(nd, frcFrq, frcNum, uncert)
+function frcSpu = spurious(q, pxCnt, numerator, uncert)
 
-% calculate the denominator of v(q)
-pxcnt = radialsum(ones([nd, nd]));
-    
+% Note:
+% q = pxCnt / L
+
+% % v(q)
+% v = numerator ./ pxCnt;
+% 
+% % H(q)
+% H = pdffactor(q, uncert);
+% 
+% % sinc
+% s2 = sinc(pxCnt / 2).^2;
+% 
+% frcSpu = log(abs(v ./ H ./ s2));
+% 
+% frcSpu = loess(frcSpu, 10);
+
 % v(q)
-v = frcNum ./ pxcnt;
+v = numerator ./ (2*pi * pxCnt);
 
 % H(q)
-H = pdffactor(frcFrq, uncert);
+H = pdffactor(q, uncert);
 
 % sinc
-s2 = sinc(pi * frcFrq * nd).^2;
+s2 = sinc(pi * pxCnt).^2;
 
 frcSpu = log(abs(v ./ H ./ s2));
 
 frcSpu = loess(frcSpu, 10);
+
 
 end
 
