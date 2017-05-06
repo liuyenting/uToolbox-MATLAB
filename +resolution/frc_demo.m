@@ -81,7 +81,7 @@ subplot(2, 1, 1);
     plot(frcFrq, frcCrv);
         axis tight;
         xlim([frcFrq(1), frcFrq(end)]);
-        yl = ylim; yl(2) = 1; ylim(yl);
+        yl = ylim; yl(2) = 1; ylim(yl); % force the max scale to 1
         xlabel('Spatial Frequency (nm^{-1})');
         ylabel('FRC');
     hold on;
