@@ -34,6 +34,7 @@ if pxsz(1) ~= pxsz(2)
     error('resolution:frccurve', ...
           'Anisotropic scale is not applicable.');
 end
+fprintf('adjusted superpixel size = %.2fnm\n', pxsz(1));
 % q = r / (nL * pxsz) = r / L
 frcFrq = r / (nd*pxsz(1));
 

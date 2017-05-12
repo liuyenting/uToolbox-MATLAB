@@ -5,7 +5,7 @@ clearvars -except data;
 fprintf('\n -- loading data --\n');
 
 
-filePath = fullfile(userpath, '0421Neuron1_postprocessed.csv');
+filePath = fullfile(userpath, '0605cell3_driftcorrected.csv');
 fprintf('path = "%s"\n', filePath);
 
 tic;
@@ -52,9 +52,9 @@ end
 coords = data(:, xyIndex);
 uncertainty = data(:, uncertaintyIndex);
 
-coords = dlmread(fullfile(userpath, 'Hela_POM121_1_postprocessed.dat'));
-coords = coords(:, 1:2);
-uncertainty = [];
+% coords = dlmread(fullfile(userpath, 'Hela_POM121_1_postprocessed.dat'));
+% coords = coords(:, 1:2);
+% uncertainty = [];
 
 % offset back to the origin and drop the t-axis
 coords = offsetorigin(coords);
@@ -63,12 +63,12 @@ coords = offsetorigin(coords);
 fprintf('\n -- calculate FRC --\n');
 
 % n samples
-nd = 1960;
+nd = 2560;
 
 tic;
 % [frcFrq, frcCrv, frcSpu] = resolution.frccurve(coords, nd, uncertainty, ...
 %                                                'Iterations', 5);
-[frcFrq, frcCrv] = resolution.frccurve(coords, nd, 'Iterations', 5);                                           
+[frcFrq, frcCrv] = resolution.frccurve(coords, nd, 'Iterations', 10);                                           
 t = toc;
 fprintf('%.2fs elapsed\n', t);
 
