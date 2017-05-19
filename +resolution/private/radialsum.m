@@ -24,8 +24,9 @@ else
     end
 end
 
+%% Find the center of the image.
 % radius sample location
-r = 0:floor((sz(1)/2) * smplratio);
+r = 1:floor((sz(1)/2) * smplratio);
 % find the center
 [~, ind] = max(I(:));
 %TODO: dirty hack
@@ -37,18 +38,7 @@ else
     [xi, yi] = ind2sub(sz, ind);
 end
 
-%% discrete
-% % generate the distance map
-% rm = distmap(sz, [xi, yi]);
-% 
-% % start sampling
-% s = zeros(size(r));
-% for i = 1:length(s)
-%     ind = (rm >= r(i)) & (rm < r(i)+1);
-%     s(i) = sum(I(ind));
-% end
-
-%% continuous
+%% Sample along the circumfrance. 
 s = zeros(size(r));
 intp = griddedInterpolant(I);
 for i = 1:length(s)
@@ -56,14 +46,6 @@ for i = 1:length(s)
     s(i) = sum(smpl);
 end
 
-end
-
-function r = distmap(sz, midpt)
-%DISTMAP Generate distance map from the center of the image.
-
-if nargin == 1
-    % find the midpoint
-    midpt = sz / 2;
 end
 
 % generate comparison grid

@@ -1,8 +1,17 @@
 function sz = estimsize(coords, res, varargin)
 %ESTIMSIZE Estimate the size of the binned image.
 %
-%   SZ = ESTIMSIZE(COORDS, RES) estimates the generated pixel size 
-%   according to the maxmium size of the coordinate range.
+%   SZ = ESTIMSIZE(COORDS, RES) estimates the generated binned image size
+%   according to the specified resolution.
+%   SZ = ESTIMSIZE(..., PARAM) allows one to specify croping or extending
+%   method.
+%
+%   Parameters
+%   ----------
+%   'MaxSquare'     Extend the region to a square that can contain the 
+%                   entire image. Rest of the region is filled with zero.
+%   'MinSquare'     Crop the region to a square with its length the minimum
+%                   of the rectangle. 
 
 maxcoord = max(coords);
 sz = maxcoord / res;

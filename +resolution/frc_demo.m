@@ -52,7 +52,7 @@ end
 coords = data(:, xyIndex);
 uncertainty = data(:, uncertaintyIndex);
 
-coords = dlmread(fullfile(userpath, 'frc_test_data', 'Hela_POM121_1_postprocessed.dat'));
+coords = dlmread(fullfile(userpath, 'frc_test_data', 'usaf1951', 'usaf1951_cam100nm_dp5um_fit.dat'));
 coords = coords(:, 1:2);
 uncertainty = [];
 
@@ -68,7 +68,7 @@ res = 10;
 tic;
 % [frcFrq, frcCrv, frcSpu] = resolution.frccurve(coords, res, uncertainty, ...
 %                                                'Iterations', 5);
-[frcFrq, frcCrv] = resolution.frccurve(coords, res, 'Iterations', 5);                                           
+[frcFrq, frcCrv] = resolution.frccurve(coords, res, 'Iterations', 20);                                           
 t = toc;
 fprintf('%.2fs elapsed\n', t);
 
