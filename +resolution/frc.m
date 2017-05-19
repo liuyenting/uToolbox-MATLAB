@@ -26,8 +26,8 @@ A = A .* mask;
 B = B .* mask;
 
 % calculate the FT result
-FA = fft2(fftshift(A));
-FB = fft2(fftshift(B));
+FA = fftshift(fft2(A));
+FB = fftshift(fft2(B));
 
 % numerator
 num = radialsum(FA.*conj(FB));
