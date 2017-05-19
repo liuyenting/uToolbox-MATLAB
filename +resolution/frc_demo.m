@@ -62,13 +62,13 @@ coords = offsetorigin(coords);
 %% calculate FRC
 fprintf('\n -- calculate FRC --\n');
 
-% n samples
-nd = 2560;
+% super-resolved resolution [nm]
+res = 10;
 
 tic;
-% [frcFrq, frcCrv, frcSpu] = resolution.frccurve(coords, nd, uncertainty, ...
+% [frcFrq, frcCrv, frcSpu] = resolution.frccurve(coords, res, uncertainty, ...
 %                                                'Iterations', 5);
-[frcFrq, frcCrv] = resolution.frccurve(coords, nd, 'Iterations', 10);                                           
+[frcFrq, frcCrv] = resolution.frccurve(coords, res, 'Iterations', 5);                                           
 t = toc;
 fprintf('%.2fs elapsed\n', t);
 
