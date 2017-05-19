@@ -6,7 +6,8 @@ function sz = estimsize(coords, res, varargin)
 
 maxcoord = max(coords);
 sz = maxcoord / res;
-sz = ceil(sz);
+% unconditional carry
+sz = ceil(sz + 1);
 
 if nargin == 3
     % additional resolution setting

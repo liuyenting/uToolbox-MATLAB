@@ -5,7 +5,7 @@ clearvars -except data;
 fprintf('\n -- loading data --\n');
 
 
-filePath = fullfile(userpath, '0605cell3_driftcorrected.csv');
+filePath = fullfile(userpath, 'frc_test_data', '0605cell3_driftcorrected.csv');
 fprintf('path = "%s"\n', filePath);
 
 tic;
@@ -52,7 +52,7 @@ end
 coords = data(:, xyIndex);
 uncertainty = data(:, uncertaintyIndex);
 
-coords = dlmread(fullfile(userpath, 'usaf1951_cam100nm_dp5um_fit.dat'));
+coords = dlmread(fullfile(userpath, 'frc_test_data', 'subarea3_frc.dat'));
 coords = coords(:, 1:2);
 uncertainty = [];
 
