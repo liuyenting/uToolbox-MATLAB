@@ -52,9 +52,9 @@ end
 coords = data(:, xyIndex);
 uncertainty = data(:, uncertaintyIndex);
 
-coords = dlmread(fullfile(userpath, 'frc_test_data', 'subarea3_frc.dat'));
-coords = coords(:, 1:2);
-uncertainty = [];
+% coords = dlmread(fullfile(userpath, 'frc_test_data', 'example_fig2a.dat'));
+% coords = coords(:, 1:2);
+% uncertainty = [];
 
 % offset back to the origin and drop the t-axis
 coords = offsetorigin(coords);
@@ -72,20 +72,27 @@ tic;
 t = toc;
 fprintf('%.2fs elapsed\n', t);
 
-[res, frcThr] = resolution.frcc2res(frcFrq, frcCrv);
-fprintf('resolution = %.2fnm\n', res);
+hFrcCrv = figure('Name', 'FRC resolution', 'NumberTitle', 'off');
+plot(frcFrq, frcCrv);
+    axis tight;
+    xlim([frcFrq(1), frcFrq(end)]);
+    yl = ylim; yl(2) = 1; ylim(yl); % force the max scale to 1
+    xlabel('Spatial Frequency (nm^{-1})');
+    ylabel('FRC');
 
-figure('Name', 'FRC resolution', 'NumberTitle', 'off');
-% subplot(2, 1, 1);
-    plot(frcFrq, frcCrv);
-        axis tight;
-        xlim([frcFrq(1), frcFrq(end)]);
-        yl = ylim; yl(2) = 1; ylim(yl); % force the max scale to 1
-        xlabel('Spatial Frequency (nm^{-1})');
-        ylabel('FRC');
+[res, frcThr] = resolution.frcc2res(frcFrq, frcCrv);
+if isinf(res)
+    fprintf('unable to solve the resolution\n');
+    return;
+else
+    fprintf('resolution = %.2fnm\n', res);
+    
+    figure(hFrcCrv);
     hold on;
     plot(frcFrq, frcThr);
-% subplot(2, 1, 2);
+    hold off;
+end
+
 %     plot(frcFrq, frcSpu);
 %         axis tight;
 %         xlim([frcFrq(1), frcFrq(end)]);

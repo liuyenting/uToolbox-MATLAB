@@ -20,8 +20,12 @@ P = interx(lineAvg, lineThr);
 % use the first point only
 P = P(1, :);
 
-% lookup the spatial frequency
-res = 1/P(1);
+if isempty(P)
+    res = -inf;
+else
+    % lookup the spatial frequency
+    res = 1/P(1);
+end
 
 if nargout == 2
     varargout{1} = frcThr;
