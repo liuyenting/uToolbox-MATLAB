@@ -15,7 +15,7 @@ frcThr = (exp(1) / (6*pi)) * ones(size(frcFrq));
 % intersection
 lineThr = [frcFrq; frcThr];
 lineAvg = [frcFrq; frcAvg];
-P = interx(lineThr, lineAvg);
+P = interx(lineAvg, lineThr);
 
 % use the first point only
 P = P(1, :);

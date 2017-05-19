@@ -1,4 +1,4 @@
-function s = radialsum(I, smplratio)
+function s = radialsum(I, smplratio, midpt)
 %RADIALSUM Calculate the radial sum of an image with interpolation.
 %
 %   S = RADIALSUM(I, ARES) calculate radial sum at different spatial 
@@ -25,18 +25,35 @@ else
 end
 
 % radius sample location
-r = 1:floor((sz(1)/2) * smplratio);
+r = 0:floor((sz(1)/2) * smplratio);
 % find the center
 [~, ind] = max(I(:));
-[xi, yi] = ind2sub(sz, ind);
-% generate the distance map
-rm = distmap(sz, [xi, yi]);
+%TODO: dirty hack
+if ind == 1
+    midpt = sz/2;
+    xi = midpt(1);
+    yi = midpt(2);
+else
+    [xi, yi] = ind2sub(sz, ind);
+end
 
-% start sampling
+%% discrete
+% % generate the distance map
+% rm = distmap(sz, [xi, yi]);
+% 
+% % start sampling
+% s = zeros(size(r));
+% for i = 1:length(s)
+%     ind = (rm >= r(i)) & (rm < r(i)+1);
+%     s(i) = sum(I(ind));
+% end
+
+%% continuous
 s = zeros(size(r));
+intp = griddedInterpolant(I);
 for i = 1:length(s)
-    ind = (rm >= r(i)) & (rm < r(i)+1);
-    s(i) = sum(I(ind));
+    smpl = radialsmplr(intp, sz, r(i), 1, [xi, yi]);
+    s(i) = sum(smpl);
 end
 
 end

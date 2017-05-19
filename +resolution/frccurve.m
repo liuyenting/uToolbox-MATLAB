@@ -40,6 +40,7 @@ calcSpurious = ~isempty(uncert);
 
 % estimate proper image dimensions that can contain all the data
 sz = estimsize(coords, res, 'MaxSquare');
+fprintf('pixel size = %.2fnm, image size = %dx%d\n', res, sz(1), sz(2));
 
 %% Frequency
 pxPerFreq = radialsum(ones(sz));
@@ -48,7 +49,6 @@ nrs = length(pxPerFreq);
 
 r = 1:nrs;
 
-fprintf('pixel size = %.2fnm, image size = %dx%d\n', res, sz(1), sz(2));
 % q = r / (nL * pxsz) = r / L
 L = sz(1)*res;
 frcFrq = r / L;

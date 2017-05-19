@@ -52,9 +52,9 @@ end
 coords = data(:, xyIndex);
 uncertainty = data(:, uncertaintyIndex);
 
-% coords = dlmread(fullfile(userpath, 'Hela_POM121_1_postprocessed.dat'));
-% coords = coords(:, 1:2);
-% uncertainty = [];
+coords = dlmread(fullfile(userpath, 'usaf1951_cam100nm_dp5um_fit.dat'));
+coords = coords(:, 1:2);
+uncertainty = [];
 
 % offset back to the origin and drop the t-axis
 coords = offsetorigin(coords);
