@@ -9,9 +9,8 @@ function s = radialsum(I, smplratio, midpt)
 % find the minimal dimension
 sz = size(I);
 if sz(1) ~= sz(2)
-    warning('resolution:radialsum', ...
+    error('resolution:radialsum', ...
             'Not a square matrix, cropped to the minimal square.');
-    [I, sz] = sqcrop(I);
 end
 
 if nargin == 1
@@ -44,38 +43,6 @@ intp = griddedInterpolant(I);
 for i = 1:length(s)
     smpl = radialsmplr(intp, sz, r(i), 1, [xi, yi]);
     s(i) = sum(smpl);
-end
-
-end
-
-% generate comparison grid
-[xq, yq] = meshgrid(1:sz(1), 1:sz(2));
-xq = xq - midpt(1);
-yq = yq - midpt(2);
-
-r = sqrt(xq.^2 + yq.^2);
-
-end
-
-function [Iout, sz] = sqcrop(Iin)
-%SQCROP Crop input array to square array.
-
-[nrow, ncol] = size(Iin);
-if nrow == ncol
-    Iout = Iin;
-    sz = [nrow, ncol];
-else
-    sz = min(nrow, ncol);
-    redsz = max(nrow, ncol) - sz;
-    
-    % padded size is half of the redundant size
-    padsz = floor(redsz/2);
-    
-    if sz == nrow
-        Iout = Iin(:, padsz:padsz+sz-1);
-    else
-        Iout = Iin(padsz:padsz+sz-1, :);
-    end
 end
 
 end
