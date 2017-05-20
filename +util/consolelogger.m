@@ -25,7 +25,7 @@ function consolelogger(varargin)
 p = inputParser;
 addRequired(p, 'Op');
 % default filename is 'yyy-MM-dd-HH-mm-ss.txt'
-addOptional(p, 'Path', [timestamp, '.txt'], @(f) (ischar(f)));
+addOptional(p, 'Path', [util.timestamp, '.txt'], @(f) (ischar(f)));
 % default is behavior is overwrite instead of append
 addParameter(p, 'Mode', 'Overwrite', @validateMode);
 parse(p, varargin{:});
