@@ -3,6 +3,8 @@ function b = islicensed(tbname)
 %
 %   B = ISLICENSED(tbname) verifies the toolbox TBNAME. TBNAME is one of 
 %   the name enlisted by function LISTPRODUCT.
+%
+%   See also: LISTPRODUCT
 
 tblist = util.license.listproduct;
 for n = tblist

@@ -1,7 +1,20 @@
 function poolsize = startparallel(varargin)
 %STARTPARALLEL Launch worker pool if capable.
 %
-%   TBA
+%   POOLSIZE = STARTPARALLEL() starts a local parallel pool using all valid
+%   logical CPUs. Available number of workers is returned as POOLSIZE.
+%   POOLSIZE = STARTPARALLEL(PARAM) can configure the PARPOOL command.
+%
+%   Arguments
+%   ---------
+%   'Profile'       Profile to executed for the newly created cluster. 
+%                   Default profile is retrieved and used if none is
+%                   assigned.
+%   'NumWorkers'    Total number of workers the pool should contain. NO
+%                   boundary check is enforced! Default value is the
+%                   available CPU cores MATLAB can use.
+%
+%   See also: PARPOOL
 
 if ~util.license.islicensed('Parallel Computing Toolbox')
     warning('util:startparallel', ...
