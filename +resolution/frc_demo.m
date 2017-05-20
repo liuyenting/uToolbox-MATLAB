@@ -5,6 +5,7 @@ clearvars -except data;
 fprintf('\n -- loading data --\n');
 
 
+% filePath = fullfile(userpath, 'frc_test_data', 'usaf1951', 'usaf1951_cam100nm_dp5um_fit.csv');
 filePath = fullfile(userpath, 'frc_test_data', '0605cell3_driftcorrected.csv');
 fprintf('path = "%s"\n', filePath);
 
@@ -22,8 +23,7 @@ fclose(fid);
 fprintf('%d columns in the dataset\n', length(header));
 
 if exist('data', 'var')
-    warning('resolution:frc_demo', ...
-            'Using preloaded data.');
+    warning('resolution:frc_demo', 'Using preloaded data.');
 else
     % load the data
     data = csvread(filePath, 1, 0);
@@ -52,9 +52,9 @@ end
 coords = data(:, xyIndex);
 uncertainty = data(:, uncertaintyIndex);
 
-coords = dlmread(fullfile(userpath, 'frc_test_data', 'usaf1951', 'usaf1951_cam100nm_dp5um_fit.dat'));
-coords = coords(:, 1:2);
-uncertainty = [];
+% coords = dlmread(fullfile(userpath, 'frc_test_data', 'usaf1951', 'usaf1951_cam100nm_dp5um_fit.dat'));
+% coords = coords(:, 1:2);
+% uncertainty = [];
 
 % offset back to the origin and drop the t-axis
 coords = offsetorigin(coords);
@@ -66,9 +66,9 @@ fprintf('\n -- calculate FRC --\n');
 res = 10;
 
 tic;
-% [frcFrq, frcCrv, frcSpu] = resolution.frccurve(coords, res, uncertainty, ...
-%                                                'Iterations', 5);
-[frcFrq, frcCrv] = resolution.frccurve(coords, res, 'Iterations', 20);                                           
+[frcFrq, frcCrv, frcSpu] = resolution.frccurve(coords, res, uncertainty, ...
+                                               'Iterations', 5);
+% [frcFrq, frcCrv] = resolution.frccurve(coords, res, 'Iterations', 5);                                           
 t = toc;
 fprintf('%.2fs elapsed\n', t);
 
@@ -79,6 +79,9 @@ plot(frcFrq, frcCrv);
     yl = ylim; yl(2) = 1; ylim(yl); % force the max scale to 1
     xlabel('Spatial Frequency (nm^{-1})');
     ylabel('FRC');
+
+%% convert to resolution
+fprintf('\n -- convert to resolution --\n');
 
 [res, frcThr] = resolution.frcc2res(frcFrq, frcCrv);
 if isinf(res)
@@ -93,8 +96,9 @@ else
     hold off;
 end
 
-%     plot(frcFrq, frcSpu);
-%         axis tight;
-%         xlim([frcFrq(1), frcFrq(end)]);
-%         xlabel('Spatial Frequency (nm^{-1})');
-%         ylabel('log_{10}FRC numerator');
+hFrcSpu = figure('Name', 'Spurious Correlation', 'NumberTitle', 'off');
+plot(frcFrq, frcSpu);
+    axis tight;
+    xlim([frcFrq(1), frcFrq(end)]);
+    xlabel('Spatial Frequency (nm^{-1})');
+    ylabel('log_{10}FRC numerator');
