@@ -1,4 +1,4 @@
-function s = radialsum(I, smplratio, midpt)
+function s = radialsum(I, smplratio)
 %RADIALSUM Calculate the radial sum of an image with interpolation.
 %
 %   S = RADIALSUM(I, ARES) calculate radial sum at different spatial 
@@ -9,8 +9,7 @@ function s = radialsum(I, smplratio, midpt)
 % find the minimal dimension
 sz = size(I);
 if sz(1) ~= sz(2)
-    error('resolution:radialsum', ...
-            'Not a square matrix, cropped to the minimal square.');
+    error('resolution:radialsum', 'Not a square matrix.');
 end
 
 if nargin == 1
@@ -41,7 +40,7 @@ end
 s = zeros(size(r));
 intp = griddedInterpolant(I);
 for i = 1:length(s)
-    smpl = radialsmplr(intp, sz, r(i), 1, [xi, yi]);
+    smpl = radialsmplr(intp, [xi, yi], r(i), 1);
     s(i) = sum(smpl);
 end
 

@@ -1,4 +1,4 @@
-function A = radialsmplr(ip, sz, r, pres, midpt)
+function A = radialsmplr(ip, midpt, r, pres)
 %RADIALSMPLR Sampling data in radial direction.
 %
 %   TBA
