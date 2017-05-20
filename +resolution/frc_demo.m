@@ -1,17 +1,19 @@
 close all;
 clearvars -except data;
 
+import util.*;
+
 %% loading the data
 fprintf('\n -- loading data --\n');
 
 forceReload = true;
 
 % filePath = fullfile(userpath, 'frc_test_data', 'usaf1951', 'usaf1951_cam100nm_dp5um_fit.csv');
-filePath = fullfile(userpath, 'frc_test_data', '414cell1_subarea2.csv');
+filePath = fullfile(userpath, 'FRC_05202017', 'Exposuretime_dependent(sigle layer)', '5msec_result_driftcorrected.csv');
 fprintf('path = "%s"\n', filePath);
 
 % start the diary
-diary('filename');
+consolelogger('start', util.chfext(filePath, 'txt'));
 
 tic;
 
@@ -106,3 +108,5 @@ plot(frcFrq, frcSpu);
     xlim([frcFrq(1), frcFrq(end)]);
     xlabel('Spatial Frequency (nm^{-1})');
     ylabel('log_{10}FRC numerator');
+    
+consolelogger('stop');
