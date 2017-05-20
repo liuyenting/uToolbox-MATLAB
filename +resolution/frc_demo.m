@@ -4,10 +4,14 @@ clearvars -except data;
 %% loading the data
 fprintf('\n -- loading data --\n');
 
+forceReload = true;
 
 % filePath = fullfile(userpath, 'frc_test_data', 'usaf1951', 'usaf1951_cam100nm_dp5um_fit.csv');
-filePath = fullfile(userpath, 'frc_test_data', '0605cell3_driftcorrected.csv');
+filePath = fullfile(userpath, 'frc_test_data', '414cell1_subarea2.csv');
 fprintf('path = "%s"\n', filePath);
+
+% start the diary
+diary('filename');
 
 tic;
 
@@ -22,7 +26,7 @@ fclose(fid);
 
 fprintf('%d columns in the dataset\n', length(header));
 
-if exist('data', 'var')
+if exist('data', 'var') && ~forceReload
     warning('resolution:frc_demo', 'Using preloaded data.');
 else
     % load the data
@@ -67,7 +71,7 @@ res = 10;
 
 tic;
 [frcFrq, frcCrv, frcSpu] = resolution.frccurve(coords, res, uncertainty, ...
-                                               'Iterations', 5);
+                                               'Iterations', 20);
 % [frcFrq, frcCrv] = resolution.frccurve(coords, res, 'Iterations', 5);                                           
 t = toc;
 fprintf('%.2fs elapsed\n', t);
