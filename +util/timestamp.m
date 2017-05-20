@@ -29,7 +29,8 @@ elseif strcmp(foramt, 'Date')
     format = DATE_FORMAT;
 end
 
-ts = datetime('now', 'TimeZone', 'local', 'Format', format);
+t = datetime('now', 'TimeZone', 'local');
+ts = datestr(t, format);
 
 end
 
