@@ -6,14 +6,14 @@ import util.*;
 %% loading the data
 fprintf('\n -- loading data --\n');
 
-forceReload = true;
+forceReload = false;
 
 % filePath = fullfile(userpath, 'frc_test_data', 'usaf1951', 'usaf1951_cam100nm_dp5um_fit.csv');
-filePath = fullfile(userpath, 'FRC_05202017', 'Exposuretime_dependent(sigle layer)', '5msec_result_driftcorrected.csv');
+filePath = fullfile(userpath, 'FRC_05202017', 'Exposuretime_dependent(sigle layer)', '10msec_result_driftcorrected.red.csv');
 fprintf('path = "%s"\n', filePath);
 
-% start the diary
-consolelogger('start', util.chfext(filePath, 'txt'));
+% % start the diary
+% consolelogger('start', util.chfext(filePath, 'txt'));
 
 tic;
 
@@ -58,9 +58,12 @@ end
 coords = data(:, xyIndex);
 uncertainty = data(:, uncertaintyIndex);
 
-% coords = dlmread(fullfile(userpath, 'frc_test_data', 'usaf1951', 'usaf1951_cam100nm_dp5um_fit.dat'));
-% coords = coords(:, 1:2);
-% uncertainty = [];
+filePath = fullfile(userpath, 'FRC_05202017', '0414cell1(format_t_x_y)', '700.dat');
+% start the diary
+consolelogger('start', util.chfext(filePath, 'txt'));
+coords = dlmread(filePath);
+coords = coords(:, 2:3);
+uncertainty = [];
 
 % offset back to the origin and drop the t-axis
 coords = offsetorigin(coords);
@@ -72,9 +75,9 @@ fprintf('\n -- calculate FRC --\n');
 res = 10;
 
 tic;
-[frcFrq, frcCrv, frcSpu] = resolution.frccurve(coords, res, uncertainty, ...
-                                               'Iterations', 20);
-% [frcFrq, frcCrv] = resolution.frccurve(coords, res, 'Iterations', 5);                                           
+% [frcFrq, frcCrv, frcSpu] = resolution.frccurve(coords, res, uncertainty, ...
+%                                                'Iterations', 20);
+[frcFrq, frcCrv] = resolution.frccurve(coords, res, 'Iterations', 20);                                           
 t = toc;
 fprintf('%.2fs elapsed\n', t);
 
@@ -102,11 +105,11 @@ else
     hold off;
 end
 
-hFrcSpu = figure('Name', 'Spurious Correlation', 'NumberTitle', 'off');
-plot(frcFrq, frcSpu);
-    axis tight;
-    xlim([frcFrq(1), frcFrq(end)]);
-    xlabel('Spatial Frequency (nm^{-1})');
-    ylabel('log_{10}FRC numerator');
+% hFrcSpu = figure('Name', 'Spurious Correlation', 'NumberTitle', 'off');
+% plot(frcFrq, frcSpu);
+%     axis tight;
+%     xlim([frcFrq(1), frcFrq(end)]);
+%     xlabel('Spatial Frequency (nm^{-1})');
+%     ylabel('log_{10}FRC numerator');
     
 consolelogger('stop');
