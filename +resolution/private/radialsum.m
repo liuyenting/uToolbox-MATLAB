@@ -26,9 +26,10 @@ end
 % radius sample location
 r = 1:floor((sz(1)/2) * smplratio);
 % find the center
-[~, ind] = max(I(:));
-%TODO: dirty hack
-if ind == 1
+[Imax, ind] = max(I(:));
+Imin = min(I(:));
+% if min and max are the same, there is no possible a peak exists
+if Imin == Imax
     midpt = sz/2;
     xi = midpt(1);
     yi = midpt(2);
