@@ -63,7 +63,7 @@ classdef VolView < handle
             
             % set figure related variables
             this.axSep = 10;
-            this.edgeSep = 60;
+            this.edgeSep = 80;
             this.fillRatio = 0.5;
             
             this.voxSize = p.Results.VoxelSize;
