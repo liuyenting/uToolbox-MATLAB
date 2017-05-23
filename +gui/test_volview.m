@@ -1,13 +1,13 @@
 close all;
 clearvars;
 
-%% load demo data
-n = 8;
-magic_data = zeros([2*n, 2*n, n]);
-for i = 1:n
-    magic_data(:, :, i) = magic(2*n);
-end
+%% load data
+filePath = fullfile(userpath, 'ca_test_data', 'pancrea3_ch0_stack0000_488nm_0000000msec_0005772506msecAbs.tif');
+I = tiff.imread(filePath, true);
 
 %% show the data
-h = gui.volview.VolView('Title', 'Hello world!');
-h.show(magic_data);
+h = gui.volview.VolView( ...
+    'Title', 'Hello world!', ...
+    'Data', I, ...
+    'VoxelSize', [0.103, 0.103, 1] ...
+);
