@@ -16,8 +16,8 @@ classdef VolView < handle
 
     properties (Access=private, Hidden=true)
         hFigure;        % Handle to the actual figure.
-        hAxes;          % Handles to XY/YZ and XZ axes.
         hPreview;       % Handles to the 3-D preview axes.
+        hAxes;          % Handles to XY/YZ and XZ axes.
         hGraphics;      % Handles to the plotted contents.
     end
 
