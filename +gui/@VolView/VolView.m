@@ -26,9 +26,9 @@ classdef VolView < handle
         edgeSep;        % Padding length between the axes and window.
         fillRatio;      % Filling ratio for the figure versus dispaly.
 
-        voxSize;        % Voxel size along X, Y and Z dimension.
+        voxelSize;      % Voxel size along X, Y and Z dimension.
         data;           % Volume to display.
-        volSize;        % Dimension of the volume.
+        volumeSize;     % Dimension of the volume.
 
         cursorPos;      % Current cursor position in the data.
         %ROI
@@ -68,7 +68,7 @@ classdef VolView < handle
             this.edgeSep = 40;
             this.fillRatio = 0.7;
 
-            this.voxSize = p.Results.VoxelSize;
+            this.voxelSize = p.Results.VoxelSize;
             data = p.Results.Data;
             if ~isempty(data)
                 this.show(data);
@@ -101,7 +101,7 @@ classdef VolView < handle
             % assess the dimension
             sz = size(data);
             %TODO: process data with multi-timepoints and channels
-            this.volSize = sz;
+            this.volumeSize = sz;
 
             if gui.volview.VolView.DEBUG
                 fprintf('volume = %dx%dx%d\n', sz(1), sz(2), sz(3));
@@ -116,7 +116,7 @@ classdef VolView < handle
             this.hFigure.Visible = 'off';
 
             % retrieve volume size, compensated by voxel size to isotropic
-            sz = this.volSize .* this.voxSize;
+            sz = this.volumeSize .* this.voxelSize;
             % set window size, [X+Z+axSep+2*edgeSep, Y+Z+axSep+2*edgeSep]
             xyzSz = sz(1:2) + sz(3);
 
@@ -180,7 +180,7 @@ classdef VolView < handle
             %   specified location and update the internal variable.
 
             if nargin == 1
-                pos = this.volSize/2;
+                pos = this.volumeSize/2;
                 pos = floor(pos);
             end
 
@@ -204,9 +204,9 @@ classdef VolView < handle
         end
 
         function this = updateAxesAnnotation(this)
-            px = this.voxSize(1);
-            py = this.voxSize(2);
-            pz = this.voxSize(3);
+            px = this.voxelSize(1);
+            py = this.voxelSize(2);
+            pz = this.voxelSize(3);
 
             % XY
             axes(this.hAxes(1));
