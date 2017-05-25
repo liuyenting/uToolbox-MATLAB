@@ -4,8 +4,13 @@ classdef VolView < handle
     %   H = VOLVIEW() creates a default viewer.
     %   H = VOLVIEW(DATA) shows render the volume of the data in XY/YZ/XZ
     %   view.
-    %   H = VOLVIEW(..., 'Title', NAME) set the title of the viewer instead
-    %   of default to the variable name.
+    %   H = VOLVIEW(..., PARAM) allows detail controls of the internal
+    %   parameters.
+    %
+    %   Parameters
+    %   ----------
+    %   'VoxelSize'     Set the voxel size if the data is anisotropic.
+    %   'Title'         Title of the screen, default to DATA variable name.
 
     %% Book-keeping variables
     properties (Access=private, Hidden=true)
@@ -20,6 +25,25 @@ classdef VolView < handle
         % hPreview holds the handles for the overview of current position in the
         % volumetric data.
         hPreview;
+    end
+
+    %% Rendering setup
+    properties (SetAccess=protected, GetAccess=public)
+        fillRatio;      % Ratio of the entire viewer respective to the screen.
+        viewGap;        % Gaps (px) between the views.
+        edgeGap;        % Gaps (px) between the views and the edges.
+    end
+
+    %% Data positioning
+    properties (SetAccess=protected, GetAccess=public)
+        voxelSize;      % Voxel size along the X, Y and Z dimension.
+        volumeSize;     % Dimension of the volume.
+        %TODO: attach volume size variation to axes poisition update function.
+
+        data;           % Raw data.
+        %TODO: attach data change to hGraphics update callback
+
+        cursorPos;      % Current cursor position in the
     end
 
     %% Constructor and destructor
