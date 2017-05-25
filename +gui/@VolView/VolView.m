@@ -27,15 +27,15 @@ classdef VolView < handle
         hPreview;
     end
 
-    %% Rendering setup
+    %% Layout configurations
     properties (SetAccess=protected, GetAccess=public)
         fillRatio;      % Ratio of the entire viewer respective to the screen.
         viewGap;        % Gaps (px) between the views.
         edgeGap;        % Gaps (px) between the views and the edges.
     end
 
-    %% Data positioning
-    properties (SetAccess=protected, GetAccess=public)
+    %% Data
+    properties (SetAccess=protected, GetAccess=public, SetObservable)
         voxelSize;      % Voxel size along the X, Y and Z dimension.
         volumeSize;     % Dimension of the volume.
         %TODO: attach volume size variation to axes poisition update function.
@@ -44,6 +44,7 @@ classdef VolView < handle
         %TODO: attach data change to hGraphics update callback
 
         cursorPos;      % Current cursor position in the
+        %TODO: update preview and boundary check by cursorPos change
     end
 
     %% Constructor and destructor
@@ -51,6 +52,31 @@ classdef VolView < handle
         function this = VolView(varargin)
             %CONSTRUCTOR Create a template volume viewer object.
 
+            p = inputParser;
+            % only 3-D data is allowed
+            addOptional(p, 'Data', [], @(x)(~isempty(x) && (ndims(x)==3)));
+            % voxels are default to be isotropic
+            addParameter(p, 'VoxelSize', [1, 1, 1], @(x)(isnumeric(x)));
+            % use variable name as the default title
+            addParameter(p, 'Title', inputname(1), @(x)(ischar(x)));
+            parse(p, varargin{:});
+
+            % generate the figure
+            this.hFigure = figure( ...
+                'Name', p.Results.Title, ...
+                'NumberTitle', 'off', ...
+                'Visible', 'off' ...
+            );
+
+            % populate the components
+
+            % set layout properties
+            this.fillRatio = 0.7;
+            this.viewGap = 10;
+            this.edgeGap = 40;
+
+            % inject the data
+            
         end
 
         function delete(this)
@@ -66,6 +92,11 @@ classdef VolView < handle
 
     %% Public functions
     methods
+        this = show(this, data)
+        this = setCursor(this, pos)
+    end
 
+    %% Private functions
+    methods (Access=Private)
     end
 end
