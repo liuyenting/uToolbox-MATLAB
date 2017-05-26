@@ -40,7 +40,7 @@ classdef VolView < handle
     end
 
     %% Data
-    properties (SetAccess=protected, GetAccess=public, SetObservable)
+    properties (SetAccess=protected, GetAccess=public, SetObservable, AbortSet)
         voxelSize;      % Voxel size along the X, Y and Z dimension.
         volumeSize;     % Dimension of the volume.
         %TODO: attach volume size variation to axes poisition update function.
@@ -90,7 +90,7 @@ classdef VolView < handle
             % attach the listener
             addlistener( ...
                 this, 'voxelSize', ...
-                'PostSet', @updateAxes ...
+                'PostSet', @updateAspectRatio ...
             );
             addlistener( ...
                 this, 'volumeSize', ...
@@ -98,7 +98,7 @@ classdef VolView < handle
             );
             addlistener( ...
                 this, 'data', ...
-                'PostSet', @updateDataCallback ...
+                'PostSet', @updateMultiView ...
             );
             addlistener( ...
                 this, 'cursorPos', ...
@@ -137,11 +137,42 @@ classdef VolView < handle
 
     %% Private functions
     methods (Access=Private)
+
+        function this = updateAxes(this, source, event)
+        end
+
+        function this = updateAspectRatio(this, source, event)
+            % number of layers
+            nl = size(this.hMultiView, 1);
+            % copied voxel size to avoid tampering
+            vsz = this.voxelSize;
+
+            % iterate through XY, YZ, XZ
+            for d = 1:3
+                % iterate through the layers
+                for l = 1:nl
+                    % select the axes
+                    axes(this.hMultiView(l, d));
+
+                    % set the aspect ratio
+                    set(gca, 'DataAspectRatioMode', 'manual');
+                    set(gca, 'DataAspectRatio', [vsz(1:2), 1]);
+                end
+
+                % permute the voxel size for next setup
+                %    XY             -> [px, py, 1] (px, py, pz)
+                %    YZ             -> [py, pz, 1] (py, pz, px)
+                %    XZ (tranposed) -> [pz, px, 1] (pz, px, py)
+                vsz = permute(vsz, [2, 3, 1]);
+            end
+        end
+
         function this = updateDataCallback(src, evnt)
         end
 
         function this = updateCursorPosCallback(src, evnt)
         end
+
 
         this = updateMultiView(this, data)
         this = updateCrosshair(this, pos)
