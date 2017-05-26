@@ -16,8 +16,8 @@ h = gui.VolView( ...
     'VoxelSize', [0.103, 0.103, 1] ...
 );
 
-set (gcf, 'WindowButtonMotionFcn', @mouseMove);
-function mouseMove(object, eventdata)
-    C = get (gca, 'CurrentPoint');
-    title(gca, ['(X,Y) = (', num2str(C(1,1)), ', ',num2str(C(1,2)), ')']);
-end
+% set (gcf, 'WindowButtonMotionFcn', @mouseMove);
+% function mouseMove(object, eventdata)
+%     C = get (gca, 'CurrentPoint');
+%     title(gca, ['(X,Y) = (', num2str(C(1,1)), ', ',num2str(C(1,2)), ')']);
+% end

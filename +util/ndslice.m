@@ -19,7 +19,7 @@ for id = 1:nd
     end
 end
 
-B = A(inds{:});
+B = squeeze(A(inds{:}));
 
 end
 
