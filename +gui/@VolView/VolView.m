@@ -25,6 +25,11 @@ classdef VolView < handle
         % hPreview holds the handles for the overview of current position in the
         % volumetric data.
         hPreview;
+
+        % hListener holds an array that contains all the event listener applied
+        % in the constructor. Used by the destructor to unregister all the user
+        % events.
+        hListener;
     end
 
     %% Layout configurations
@@ -83,18 +88,43 @@ classdef VolView < handle
             this.edgeGap = 40;
 
             % attach the listener
-            addlistener()
+            addlistener( ...
+                this, 'voxelSize', ...
+                'PostSet', @updateAxes ...
+            );
+            addlistener( ...
+                this, 'volumeSize', ...
+                'PostSet', @updateAxes ...
+            );
+            addlistener( ...
+                this, 'data', ...
+                'PostSet', @updateDataCallback ...
+            );
+            addlistener( ...
+                this, 'cursorPos', ...
+                'PostSet', @updateCrosshair ...
+            );
 
             % inject the data
+            this.data = p.Results.Data;
+            this.voxelSize = p.Results.VoxelSize;
         end
 
         function delete(this)
             %DESTRUCTOR Free all the resources.
 
+            % remove registered user event handlers
+            lh = this.hListener;
+            if ~isempty(lh)
+                for l = lh
+                    delete(l);
+                end
+            end
+
             % close remaining figure
-            h = this.hFigure;
-            if ~isempty(h) && ishandle(h)
-                close(h);
+            fh = this.hFigure;
+            if ~isempty(fh) && ishandle(fh)
+                close(fh);
             end
         end
     end
@@ -107,6 +137,12 @@ classdef VolView < handle
 
     %% Private functions
     methods (Access=Private)
+        function this = updateDataCallback(src, evnt)
+        end
+
+        function this = updateCursorPosCallback(src, evnt)
+        end
+
         this = updateMultiView(this, data)
         this = updateCrosshair(this, pos)
     end
