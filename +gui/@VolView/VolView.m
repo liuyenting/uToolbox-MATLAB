@@ -68,15 +68,24 @@ classdef VolView < handle
                 'Visible', 'off' ...
             );
 
-            % populate the components
+            % populate the axes for raw data and crosshairs
+            this.hMultiView = gobjects(2, 3);
+            for i = 1:numel(this.hMultiView)
+                this.hMultiView(i) = axes( ...
+                    'Units', 'pixels', ...
+                    'Position', [0, 0, 0, 0] ...
+                );
+            end
 
             % set layout properties
             this.fillRatio = 0.7;
             this.viewGap = 10;
             this.edgeGap = 40;
 
+            % attach the listener
+            addlistener()
+
             % inject the data
-            
         end
 
         function delete(this)
@@ -98,5 +107,7 @@ classdef VolView < handle
 
     %% Private functions
     methods (Access=Private)
+        this = updateMultiView(this, data)
+        this = updateCrosshair(this, pos)
     end
 end
