@@ -92,7 +92,7 @@ classdef VolView < handle
             % inject the data
             this.voxelSize = p.Results.VoxelSize;
             % default cursor position to the origin
-            this.cursorPos = [450, 1025, 65];
+            this.cursorPos = [900, 600, 65];
 
             % attach the listener
             propName = {'voxelSize', 'volumeSize', 'data', 'cursorPos'};
@@ -274,34 +274,37 @@ classdef VolView < handle
         end
 
         function this = updateAxes(this)
-            disp('updateAxes()');
-
+            %UPDATEAXES Update underlying axes render configurations.
+            %   
+            %   TBA
+            %   Remove ticks and set appropriate labels.
+    
             % XY
-            axes(this.hMultiView(1, 1));
+            h = this.hMultiView(1, 1);
                 % X
-                xlabel('X', 'FontSize', 14);
-                set(gca, 'XAxisLocation', 'top');
-                %set(gca, 'XTickLabel', []);
+                xlabel(h, 'X', 'FontSize', 14);
+                h.XAxisLocation = 'top';
+                h.XTick = [];
                 % Y
-                ylabel('Y', 'FontSize', 14);
-                %set(gca, 'YTickLabel', []);
+                ylabel(h, 'Y', 'FontSize', 14);
+                h.YTick = [];
 
             % YZ
-            axes(this.hMultiView(1, 2));
+            h = this.hMultiView(1, 2);
                 % X
-                xlabel('Z', 'FontSize', 14);
-                set(gca, 'XAxisLocation', 'top');
-                %set(gca, 'XTickLabel', []);
+                xlabel(h, 'Z', 'FontSize', 14);
+                h.XAxisLocation = 'top';
+                h.XTick = [];
                 % Y
-                set(gca, 'YTickLabel', []);
+                h.YTick = [];
 
             % XZ
-            axes(this.hMultiView(1, 3));
+            h = this.hMultiView(1, 3);
                 % X
-                set(gca, 'XTickLabel', []);
+                h.XTick = [];
                 % Y
-                ylabel('Z', 'FontSize', 14);
-                %set(gca, 'YTickLabel', []);
+                ylabel(h, 'Z', 'FontSize', 14);
+                h.YTick = [];
         end
 
         function this = updateMultiView(this)
