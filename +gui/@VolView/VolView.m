@@ -104,6 +104,7 @@ classdef VolView < handle
                 );
                 this.hListener = [this.hListener, lh];
             end
+            this.hFigure.WindowButtonDownFcn = @gui.VolView.mouseDown;
 
             % inject the data
             this.data = p.Results.Data;
@@ -179,6 +180,12 @@ classdef VolView < handle
                 this.updateMultiView();
                 this.updateAxes();
             end
+        end
+        
+        function mouseDown(source, event)
+            h = gca;
+            c = get(h, 'CurrentPoint');
+            disp(['clicked @ ', h.Tag, '!']);
         end
     end
 
@@ -326,7 +333,7 @@ classdef VolView < handle
             % but we have to swap the X/Y index, so they are called by [3,
             % 1, 2], the worst possible permutation.
             indSel = [3, 1, 2];
-    
+        
             % iterate through views
             for d = 1:3
                 % target dimension
@@ -355,6 +362,7 @@ classdef VolView < handle
             sz = this.volumeSize;
             % cursor
             c = this.cursorPos;
+            
             % iterate through the dimensions
             for d = 1:3
                 h = this.hMultiView(1, d);
@@ -402,6 +410,10 @@ classdef VolView < handle
             end
 
             %TODO
+        end
+        
+        function this = updateCursorPos(this)
+            
         end
     end
 end
