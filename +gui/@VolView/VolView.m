@@ -80,9 +80,15 @@ classdef VolView < handle
             for d = 1:3
                 this.hMultiView(1, d) = axes( ...
                     'Units', 'pixels', ...
-                    'Position', [0, 0, 0, 0] ...
+                    'Position', [0, 0, 0, 0], ...
+                    'YDir', 'reverse', ...  % default to image style
+                    'NextPlot', 'add' ...   % keep parent values
                 );
             end
+            % add the dimension tag
+            this.hMultiView(1, 1).Tag = 'XY';
+            this.hMultiView(1, 2).Tag = 'YZ';
+            this.hMultiView(1, 3).Tag = 'XZ';
 
             % set layout properties
             this.fillRatio = 0.7;
@@ -346,11 +352,14 @@ classdef VolView < handle
                     A = A.';
                 end
                 
-                this.hMultiView(2, d) = plotter( ... % plotter handle
-                    this.hMultiView(1, d), ...       % target axes
-                    A, ...                           % the sliced data
-                    'HitTest', 'off' ...             % don't process events 
+                h = this.hMultiView(1, d);
+                this.hMultiView(2, d) = plotter( ...
+                    h, ...                  % target axes
+                    A, ...                  % the sliced data
+                    'HitTest', 'off' ...    % don't process events 
                 );
+                % tighten the axis
+                axis(h, 'tight');
             end
 
             % apply colormap
@@ -394,7 +403,7 @@ classdef VolView < handle
                     'LineWidth', 1, ...
                     'HitTest', 'off' ...    % don't process events
                 );
-
+                
                 sz = circshift(sz, -1);
                 c = circshift(c, -1);
             end
