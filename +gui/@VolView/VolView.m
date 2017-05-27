@@ -17,9 +17,11 @@ classdef VolView < handle
         % hFigure holds the handle to volume viwer's root figure object.
         hFigure;
 
-        % hMultiView is a (2+k)x3 struct array, each row represents a handle for
-        % different purpose, while each column represents XY/YZ/XZ multiview.
-        % There are at least 2 types of axes - Raw and Crosshair.
+        % hMultiView is a Nx3 graphic object array, each column represents
+        % XY, YZ and XZ view respectively. Default row is defined as
+        % 	1) Axes
+        %   2) Raw data
+        %   3..) Additional data
         hMultiView;
 
         % hPreview holds the handles for the overview of current position in the
@@ -74,9 +76,9 @@ classdef VolView < handle
             );
 
             % populate the axes for raw data and crosshairs
-            this.hMultiView = gobjects(2, 3);
-            for i = 1:numel(this.hMultiView)
-                this.hMultiView(i) = axes( ...
+            this.hMultiView = gobjects(3, 3);
+            for d = 1:3
+                this.hMultiView(1, d) = axes( ...
                     'Units', 'pixels', ...
                     'Position', [0, 0, 0, 0] ...
                 );
@@ -90,7 +92,7 @@ classdef VolView < handle
             % inject the data
             this.voxelSize = p.Results.VoxelSize;
             % default cursor position to the origin
-            this.cursorPos = [200, 400, 80];
+            this.cursorPos = [450, 1025, 65];
 
             % attach the listener
             propName = {'voxelSize', 'volumeSize', 'data', 'cursorPos'};
@@ -131,7 +133,16 @@ classdef VolView < handle
         this = show(this, data)
         this = setCursor(this, pos)
     end
-
+    
+    %% Setters and Getters
+    methods
+        function set.volumeSize(this, sz)
+            % Note: MATLAB layouts 3-D matrix as (Y, X, Z)
+            sz([1, 2]) = sz([2, 1]);
+            this.volumeSize = sz;
+        end
+    end
+    
     %% Primary callback function for events
     methods (Static, Access=private)
         function propertyChangeEvents(source, event)
@@ -228,14 +239,11 @@ classdef VolView < handle
             X = sz(1)*ratio;
             Y = sz(2)*ratio;
             Z = sz(3)*ratio;
-            % number of layers
-            nl = size(this.hMultiView, 1);
-            % iterate through the layers
-            for l = 1:nl
-                this.hMultiView(l, 1).Position = [e, e+Z+v, X, Y];
-                this.hMultiView(l, 2).Position = [e+X+v, e+Z+v, Z, Y];
-                this.hMultiView(l, 3).Position = [e, e, X, Z];
-            end
+            
+            % apply to the axes
+            this.hMultiView(1, 1).Position = [e, e+Z+v, X, Y];
+            this.hMultiView(1, 2).Position = [e+X+v, e+Z+v, Z, Y];
+            this.hMultiView(1, 3).Position = [e, e, X, Z];
 
             this.hFigure.Visible = 'on';
         end
@@ -250,58 +258,50 @@ classdef VolView < handle
 
             % iterate through XY, YZ, XZ
             for d = 1:3
-                % iterate through the layers
-                for l = 1:nl
-                    % select the axes
-                    axes(this.hMultiView(l, d));
+                % select the axes
+                h = this.hMultiView(1, d);
 
-                    % set the aspect ratio
-                    set(gca, 'DataAspectRatioMode', 'manual');
-                    set(gca, 'DataAspectRatio', [vsz(1:2), 1]);
-                end
+                % set the aspect ratio
+                h.DataAspectRatioMode = 'manual';
+                h.DataAspectRatio = [vsz(1:2), 1];
 
                 % permute the voxel size for next setup
                 %    XY             -> [px, py, 1] (px, py, pz)
                 %    YZ             -> [py, pz, 1] (py, pz, px)
                 %    XZ (tranposed) -> [pz, px, 1] (pz, px, py)
-                vsz = permute(vsz, [2, 3, 1]);
+                vsz = circshift(vsz, -1);
             end
         end
 
         function this = updateAxes(this)
             disp('updateAxes()');
 
-            % number of layers
-            nl = size(this.hMultiView, 1);
-            % iterate through the layers
-            for l = 1:nl
-                % XY
-                axes(this.hMultiView(l, 1));
-                    % X
-                    xlabel('X', 'FontSize', 14);
-                    set(gca, 'XAxisLocation', 'top');
-                    set(gca, 'XTickLabel', []);
-                    % Y
-                    ylabel('Y', 'FontSize', 14);
-                    set(gca, 'YTickLabel', []);
+            % XY
+            axes(this.hMultiView(1, 1));
+                % X
+                xlabel('X', 'FontSize', 14);
+                set(gca, 'XAxisLocation', 'top');
+                %set(gca, 'XTickLabel', []);
+                % Y
+                ylabel('Y', 'FontSize', 14);
+                %set(gca, 'YTickLabel', []);
 
-                % YZ
-                axes(this.hMultiView(l, 2));
-                    % X
-                    xlabel('Z', 'FontSize', 14);
-                    set(gca, 'XAxisLocation', 'top');
-                    set(gca, 'XTickLabel', []);
-                    % Y
-                    set(gca, 'YTickLabel', []);
+            % YZ
+            axes(this.hMultiView(1, 2));
+                % X
+                xlabel('Z', 'FontSize', 14);
+                set(gca, 'XAxisLocation', 'top');
+                %set(gca, 'XTickLabel', []);
+                % Y
+                set(gca, 'YTickLabel', []);
 
-                % XZ
-                axes(this.hMultiView(l, 3));
-                    % X
-                    set(gca, 'XTickLabel', []);
-                    % Y
-                    ylabel('Z', 'FontSize', 14);
-                    set(gca, 'YTickLabel', []);
-            end
+            % XZ
+            axes(this.hMultiView(1, 3));
+                % X
+                set(gca, 'XTickLabel', []);
+                % Y
+                ylabel('Z', 'FontSize', 14);
+                %set(gca, 'YTickLabel', []);
         end
 
         function this = updateMultiView(this)
@@ -313,22 +313,33 @@ classdef VolView < handle
         end
 
         function this = updateRawData(this)
-            disp('updateRawData()');
-
             plotter = @imagesc;
-
+            
+            % MATLAB layouts 3-D array as..    (Y, X, Z)
+            % (XY, YZ, XZ) slices defined by.. (Z, Y, X) 
+            % Internal size definition is..    (X, Y, Z)
+            %
+            % So, the slices are defined by (in permuted index) [3, 2, 1],
+            % but we have to swap the X/Y index, so they are called by [3,
+            % 1, 2], the worst possible permutation.
+            indSel = [3, 1, 2];
+    
+            % iterate through views
             for d = 1:3
-                axes(this.hMultiView(1, d));
                 % target dimension
                 td = (3-d)+1;
-                A = util.ndslice(this.data, td, this.cursorPos(td));
+                % selected layer is controlled by pre-calculated indices
+                ci = indSel(d);
+                A = util.ndslice(this.data, td, this.cursorPos(ci));
                 % transpose if necessary
                 if d == 3
                     A = A.';
                 end
-                plotter( ...
-                    A, ...
-                    'HitTest', 'off' ... % use underlying axes for events
+                
+                this.hMultiView(2, d) = plotter( ... % plotter handle
+                    this.hMultiView(1, d), ...       % target axes
+                    A, ...                           % the sliced data
+                    'HitTest', 'off' ...             % don't process events 
                 );
             end
 
@@ -343,25 +354,38 @@ classdef VolView < handle
             c = this.cursorPos;
             % iterate through the dimensions
             for d = 1:3
-                axes(this.hMultiView(2, d));
+                h = this.hMultiView(1, d);
 
-                % remove the background
-                %set(gca, 'Color', 'none');
-
-                % draw the crosshair
-                hold on;
                 % vertical
                 x = [c(1),  c(1)];
                 y = [   0, sz(2)];
-                line(x, y, 'Color', 'yellow');
+                if d ~= 1
+                    t = x; x = y; y = t;
+                end
+                line( ...
+                    h, ...
+                    x, y, ...
+                    'Color', 'yellow', ...
+                    'LineWidth', 1, ...
+                    'HitTest', 'off' ...
+                );
+                
                 % horizontal
                 x = [   0, sz(1)];
                 y = [c(2),  c(2)];
-                line(x, y, 'Color', 'yellow');
-                hold off;
+                if d ~= 1
+                    t = x; x = y; y = t;
+                end
+                line( ...
+                    h, ...                  % select view axes
+                    x, y, ...               % start/end matrix
+                    'Color', 'yellow', ...  % line apperances
+                    'LineWidth', 1, ...
+                    'HitTest', 'off' ...    % don't process events
+                );
 
-                sz = permute(sz, [2, 3, 1]);
-                c = permute(c, [2, 3, 1]);
+                sz = circshift(sz, -1);
+                c = circshift(c, -1);
             end
         end
 
