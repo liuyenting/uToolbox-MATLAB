@@ -1,7 +1,7 @@
 close all;
 clearvars;
 
-I = imread('single_npc_2.tif');
+I = imread('single_npc.tif');
 
 hf = figure('Name', 'Raw Data', 'NumberTitle', 'off');
 imagesc(I);
