@@ -1,7 +1,7 @@
 close all;
 clearvars;
 
-I = imread('single_npc_2.tif');
+I = imread('single_npc.tif');
 
 hf = figure('Name', 'Raw Data', 'NumberTitle', 'off');
 imagesc(I);
@@ -41,15 +41,16 @@ data = [x.', y.'];
 
 %% plot the kde 
 sz = size(I);
-[bandwidth, density, gx, gy] = kde2d( ...
-    data, ...
-    max(sz), ...    % sampling grid size (squared)
-    [0, 0], sz ...  % sampling range
-); 
+% [bandwidth, density, gx, gy] = kde2d( ...
+%     data, ...
+%     max(sz), ...    % sampling grid size (squared)
+%     [0, 0], sz ...  % sampling range
+% ); 
+[~, density, gx, gy] = statistics.kde2(I);
 
 figure('Name', 'KDE', 'NumberTitle', 'off');
-% plot density on measured grid
-surf(gx, gy, density, 'LineStyle', 'none');
+% plot density on measured grid, image data are transposed
+surf(gy, gx, density, 'LineStyle', 'none');
 % set the view
 view([0, 90]);
 set(gca, 'YDir', 'reverse');
