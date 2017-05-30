@@ -1,19 +1,28 @@
 close all;
 
-sz = 512;
+sz = 501;
+
+% inner size
+ssz = floor(sz/2);
 
 A = linspace(0, 2^16, sz);
-B = linspace(0, 2^16, sz/2);
+B = linspace(0, 2^16, ssz);
 
 A = repmat(A, [sz, 1]);
 
 B = flip(B);
-B = repmat(B, [sz/2, 1]);
+B = repmat(B, [ssz, 1]);
 
 A = uint16(round(A));
 B = uint16(round(B));
 
-A(129:384, 129:384) = B;
+% anchor
+c = floor((sz-ssz)/2);
+% range
+r = c:c+ssz-1;
+
+% paste the square
+A(r, r) = B;
 
 imagesc(A);
 axis image;
