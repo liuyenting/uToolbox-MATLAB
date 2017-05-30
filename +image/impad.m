@@ -16,6 +16,9 @@ imsz = size(I);
 % ignore the request if sizes are matched
 if imsz == sz
     J = I;
+    if nargout == 2
+        varargout{1} = [1, 1];
+    end
     return;
 end
 
