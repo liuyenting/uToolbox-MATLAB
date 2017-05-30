@@ -98,7 +98,7 @@ classdef VolView < handle
             % inject the data
             this.voxelSize = p.Results.VoxelSize;
             % default cursor position to the origin
-            this.cursorPos = [900, 600, 65];
+            this.cursorPos = [512, 512, 128];
 
             % attach the listener
             propName = {'voxelSize', 'volumeSize', 'data', 'cursorPos'};
