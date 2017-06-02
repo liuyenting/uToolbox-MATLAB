@@ -3,7 +3,7 @@ clearvars;
 
 %% load data
 fileName = 'pancrea3_ch0_stack0000_488nm_0000000msec_0005772506msecAbs.tif';
-filePath = fullfile(userpath, 'ca_test_data', 'pancrea3_z1um_40ms', fileName);
+filePath = fullfile(userpath, 'ca_test_data', fileName);
 tic;
 I = tiff.imread(filePath, true);
 t = toc;
