@@ -4,138 +4,226 @@ classdef VolView < handle
     %   H = VOLVIEW() creates a default viewer.
     %   H = VOLVIEW(DATA) shows render the volume of the data in XY/YZ/XZ
     %   view.
-    %   H = VOLVIEW(..., 'Title', NAME) set the title of the viewer instead
-    %   of default to the variable name.
+    %   H = VOLVIEW(..., PARAM) allows detail controls of the internal
+    %   parameters.
     %
-    %   See also: TBA
+    %   Parameters
+    %   ----------
+    %   'VoxelSize'     Set the voxel size if the data is anisotropic.
+    %   'Title'         Title of the screen, default to DATA variable name.
 
-    properties (Constant, Access=private, Hidden=true)
-        MSGID = 'gui:volview';
-        DEBUG = false;
-    end
-
+    %% Book-keeping variables
     properties (Access=private, Hidden=true)
-        hFigure;        % Handle to the actual figure.
-        hPreview;       % Handles to the 3-D preview axes.
-        hAxes;          % Handles to XY/YZ and XZ axes.
-        hGraphics;      % Handles to the plotted contents.
+        % hFigure holds the handle to volume viwer's root figure object.
+        hFigure;
+
+        % hMultiView is a Nx3 graphic object array, each column represents
+        % XY, YZ and XZ view respectively. Default row is defined as
+        % 	1) Axes
+        %   2) Raw data
+        %   3..) Additional data
+        hMultiView;
+
+        % hPreview holds the handles for the overview of current position in the
+        % volumetric data.
+        hPreview;
+
+        % hListener holds an array that contains all the event listener applied
+        % in the constructor. Used by the destructor to unregister all the user
+        % events.
+        hListener;
     end
 
-    properties (SetAccess=protected, GetAccess=protected, Hidden=true)
-        axSep;          % Interval between axes.
-        edgeSep;        % Padding length between the axes and window.
-        fillRatio;      % Filling ratio for the figure versus dispaly.
+    %% Layout configurations
+    properties (SetAccess=protected, GetAccess=public)
+        fillRatio;      % Ratio of the entire viewer respective to the screen.
+        viewGap;        % Gaps (px) between the views.
+        edgeGap;        % Gaps (px) between the views and the edges.
+    end
 
-        voxelSize;      % Voxel size along X, Y and Z dimension.
-        data;           % Volume to display.
+    %% Data
+    properties (SetAccess=protected, GetAccess=public, SetObservable, AbortSet)
+        voxelSize;      % Voxel size along the X, Y and Z dimension.
         volumeSize;     % Dimension of the volume.
+        %TODO: attach volume size variation to axes poisition update function.
 
-        cursorPos;      % Current cursor position in the data.
-        %ROI
+        data;           % Raw data.
+        %TODO: attach data change to hGraphics update callback
+
+        cursorPos;      % Current cursor position in the
+        %TODO: update preview and boundary check by cursorPos change
     end
 
+    %% Constructor and destructor
     methods
         function this = VolView(varargin)
+            %CONSTRUCTOR Create a template volume viewer object.
+
             p = inputParser;
             % only 3-D data is allowed
             addOptional(p, 'Data', [], @(x)(~isempty(x) && (ndims(x)==3)));
             % voxels are default to be isotropic
-            addParameter(p, 'VoxelSize', [1, 1, 2.5], @(x)(isnumeric(x)));
+            addParameter(p, 'VoxelSize', [1, 1, 1], @(x)(isnumeric(x)));
             % use variable name as the default title
             addParameter(p, 'Title', inputname(1), @(x)(ischar(x)));
             parse(p, varargin{:});
 
-            % populate the figure
+            % generate the figure
             this.hFigure = figure( ...
                 'Name', p.Results.Title, ...
                 'NumberTitle', 'off', ...
                 'Visible', 'off' ...
             );
 
-            % construct the components
-            this.hAxes = gobjects(1, 3);
-            for i = 1:3
-                this.hAxes(i) = axes( ...
+            % populate the axes for raw data and crosshairs
+            this.hMultiView = gobjects(3, 3);
+            for d = 1:3
+                this.hMultiView(1, d) = axes( ...
                     'Units', 'pixels', ...
-                    'Position', [0, 0, 0, 0] ...
+                    'Position', [0, 0, 0, 0], ...
+                    'YDir', 'reverse', ...  % default to image style
+                    'NextPlot', 'add' ...   % keep parent values
                 );
             end
-            this.hPreview = gobjects;
-            this.hGraphics = gobjects(1, 3);
+            % add the dimension tag
+            this.hMultiView(1, 1).Tag = 'XY';
+            this.hMultiView(1, 2).Tag = 'YZ';
+            this.hMultiView(1, 3).Tag = 'XZ';
 
-            % set figure related variables
-            this.axSep = 10;
-            this.edgeSep = 40;
+            % set layout properties
             this.fillRatio = 0.7;
+            this.viewGap = 10;
+            this.edgeGap = 40;
 
+            % inject the data
             this.voxelSize = p.Results.VoxelSize;
-            data = p.Results.Data;
-            if ~isempty(data)
-                this.show(data);
-            end
-        end
+            % default cursor position to the origin
+            this.cursorPos = [900, 600, 65];
 
-        function this = show(this, data)
-            if isempty(data)
-                error(gui.volview.VolView.MSG_ID, 'Input must be valid!');
-            else
-                this.setData(data);
+            % attach the listener
+            propName = {'voxelSize', 'volumeSize', 'data', 'cursorPos'};
+            np = numel(propName);
+            for i = 1:np
+                lh = addlistener( ...
+                    this, propName{i}, ...
+                    'PostSet', @gui.VolView.propertyChangeEvents ...
+                );
+                this.hListener = [this.hListener, lh];
             end
+            this.hFigure.WindowButtonDownFcn = @gui.VolView.mouseDown;
+
+            % inject the data
+            this.data = p.Results.Data;
         end
 
         function delete(this)
-            h = this.hFigure;
-            % close the figure if exists
-            if ~isempty(h) && ishandle(h)
-                close(h);
+            %DESTRUCTOR Free all the resources.
+
+            % remove registered user event handlers
+            lh = this.hListener;
+            if ~isempty(lh)
+                for l = lh
+                    delete(l);
+                end
+            end
+
+            % close remaining figure
+            fh = this.hFigure;
+            if ~isempty(fh) && ishandle(fh)
+                close(fh);
             end
         end
     end
 
-    methods (Access=private, Hidden=true)
-        function this = setData(this, data)
-            %SETDATA Set the data to display.
-
-            this.data = data;
-
-            % assess the dimension
-            sz = size(data);
-            %TODO: process data with multi-timepoints and channels
+    %% Public functions
+    methods
+        this = show(this, data)
+        this = setCursor(this, pos)
+    end
+    
+    %% Setters and Getters
+    methods
+        function set.volumeSize(this, sz)
+            % Note: MATLAB layouts 3-D matrix as (Y, X, Z)
+            sz([1, 2]) = sz([2, 1]);
             this.volumeSize = sz;
-
-            if gui.volview.VolView.DEBUG
-                fprintf('volume = %dx%dx%d\n', sz(1), sz(2), sz(3));
-            end
-
-            this.updateAxesSize();
-            this.updateAxesContent();
-            this.updateAxesAnnotation();
         end
+    end
+    
+    %% Primary callback function for events
+    methods (Static, Access=private)
+        function propertyChangeEvents(source, event)
+            % primary object
+            this = event.AffectedObject;
 
-        function this = updateAxesSize(this)
+            switch source.Name
+            case 'voxelSize'
+                disp('update "voxelSize"');
+
+                this.updateLayout();
+                this.updateAspectRatio();
+            case 'volumeSize'
+                disp('update "volumeSize"');
+
+                %DEBUG...
+                sz = this.volumeSize;
+                fprintf('volume = %dx%dx%d\n', sz(1), sz(2), sz(3));
+                %...DEBUG
+                this.updateLayout();
+                this.updateAxes();
+            case 'data'
+                disp('update "data"');
+
+                % update volume size
+                this.volumeSize = size(this.data);
+                % update the display
+                this.updateMultiView();
+                this.updateAxes();
+            case 'cursorPos'
+                disp('update "cursorPos"');
+
+                this.updateCrosshair();
+                this.updateMultiView();
+                this.updateAxes();
+            end
+        end
+        
+        function mouseDown(source, event)
+            h = gca;
+            c = get(h, 'CurrentPoint');
+            disp(['clicked @ ', h.Tag, '!']);
+        end
+    end
+
+    %% Private functions
+    methods (Access=private)
+        function this = updateLayout(this)
+            disp('updateLayout()');
+
             this.hFigure.Visible = 'off';
 
             % retrieve volume size, compensated by voxel size to isotropic
             sz = this.volumeSize .* this.voxelSize;
-            % set window size, [X+Z+axSep+2*edgeSep, Y+Z+axSep+2*edgeSep]
+            % set plot multi-view size
             xyzSz = sz(1:2) + sz(3);
 
-            % expand the window to fill the window
+            % filler size
+            filler = this.viewGap + 2*this.edgeGap;
+            % get the window size
             scSz = util.screensize;
             % only fill to designated percentage by expanding the axes
             scSz = scSz * this.fillRatio;
-            ratio = scSz./xyzSz;
-            % use the smaller ratio to expand
+            % expand the multi-view to maximum plausible screen area...
+            ratio = (scSz-filler) ./ xyzSz;
+            % ... use the smaller ratio to expand
             ratio = min(ratio);
             xyzSz = xyzSz * ratio;
 
-            % filler size
-            filler = this.axSep + 2*this.edgeSep;
-            % update the size
+            % update the window size
             winSz = xyzSz + filler;
             p = this.hFigure.Position;
             this.hFigure.Position = [p(1:2), winSz];
-            % center the window
+            % center the window to screen
             movegui(this.hFigure ,'center');
 
             % +----+----+
@@ -146,12 +234,12 @@ classdef VolView < handle
             %
             %   XY
             %       Left = e
-            %       Bottom = e + Z + a
+            %       Bottom = e + Z + v
             %       Width = X
             %       Height = Y
             %   YZ
-            %       Left = e + X + a
-            %       Bottom = e + Z + a
+            %       Left = e + X + v
+            %       Bottom = e + Z + v
             %       Width = Z
             %       Height = Y
             %   XZ
@@ -159,86 +247,182 @@ classdef VolView < handle
             %       Bottom = e
             %       Width = X
             %       Height = Z
-            e = this.edgeSep;
-            a = this.axSep;
+            e = this.edgeGap;
+            v = this.viewGap;
             X = sz(1)*ratio;
             Y = sz(2)*ratio;
             Z = sz(3)*ratio;
-            this.hAxes(1).Position = [e, e+Z+a, X, Y];
-            this.hAxes(2).Position = [e+X+a, e+Z+a, Z, Y];
-            this.hAxes(3).Position = [e, e, X, Z];
+            
+            % apply to the axes
+            this.hMultiView(1, 1).Position = [e, e+Z+v, X, Y];
+            this.hMultiView(1, 2).Position = [e+X+v, e+Z+v, Z, Y];
+            this.hMultiView(1, 3).Position = [e, e, X, Z];
 
             this.hFigure.Visible = 'on';
         end
 
-        function this = updateAxesContent(this, pos)
-            %UPDATEAXESCONTENT Updates the view.
-            %
-            %   THIS = UPDATEAXESCONTENT(THIS) set the slices to center of
-            %   the volume.
-            %   THIS = UPDATEAXESCONTENT(THIS, POS) set the slices to the
-            %   specified location and update the internal variable.
+        function this = updateAspectRatio(this)
+            disp('updateAspectRatio()');
 
-            if nargin == 1
-                pos = this.volumeSize/2;
-                pos = floor(pos);
+            % number of layers
+            nl = size(this.hMultiView, 1);
+            % copied voxel size to avoid tampering
+            vsz = this.voxelSize;
+
+            % iterate through XY, YZ, XZ
+            for d = 1:3
+                % select the axes
+                h = this.hMultiView(1, d);
+
+                % set the aspect ratio
+                h.DataAspectRatioMode = 'manual';
+                h.DataAspectRatio = [vsz(1:2), 1];
+
+                % permute the voxel size for next setup
+                %    XY             -> [px, py, 1] (px, py, pz)
+                %    YZ             -> [py, pz, 1] (py, pz, px)
+                %    XZ (tranposed) -> [pz, px, 1] (pz, px, py)
+                vsz = circshift(vsz, -1);
             end
+        end
 
-            plotter = @imagesc;
+        function this = updateAxes(this)
+            %UPDATEAXES Update underlying axes render configurations.
+            %   
+            %   TBA
+            %   Remove ticks and set appropriate labels.
+    
             % XY
-            axes(this.hAxes(1));
-            this.hGraphics(1) = plotter(this.data(:, :, pos(3)));
+            h = this.hMultiView(1, 1);
+                % X
+                xlabel(h, 'X', 'FontSize', 14);
+                h.XAxisLocation = 'top';
+                h.XTick = [];
+                % Y
+                ylabel(h, 'Y', 'FontSize', 14);
+                h.YTick = [];
 
             % YZ
-            axes(this.hAxes(2));
-            this.hGraphics(2) = plotter(squeeze(this.data(:, pos(2), :)));
+            h = this.hMultiView(1, 2);
+                % X
+                xlabel(h, 'Z', 'FontSize', 14);
+                h.XAxisLocation = 'top';
+                h.XTick = [];
+                % Y
+                h.YTick = [];
 
             % XZ
-            axes(this.hAxes(3));
-            this.hGraphics(3) = plotter(squeeze(this.data(pos(1), :, :)).');
+            h = this.hMultiView(1, 3);
+                % X
+                h.XTick = [];
+                % Y
+                ylabel(h, 'Z', 'FontSize', 14);
+                h.YTick = [];
+        end
+
+        function this = updateMultiView(this)
+            disp('updateMultiView()');
+
+            this.updateRawData();
+            this.updateCrosshair();
+            this.updateAdditionalLayers();
+        end
+
+        function this = updateRawData(this)
+            plotter = @imagesc;
+            
+            % MATLAB layouts 3-D array as..    (Y, X, Z)
+            % (XY, YZ, XZ) slices defined by.. (Z, Y, X) 
+            % Internal size definition is..    (X, Y, Z)
+            %
+            % So, the slices are defined by (in permuted index) [3, 2, 1],
+            % but we have to swap the X/Y index, so they are called by [3,
+            % 1, 2], the worst possible permutation.
+            indSel = [3, 1, 2];
+        
+            % iterate through views
+            for d = 1:3
+                % target dimension
+                td = (3-d)+1;
+                % selected layer is controlled by pre-calculated indices
+                ci = indSel(d);
+                A = util.ndslice(this.data, td, this.cursorPos(ci));
+                % transpose if necessary
+                if d == 3
+                    A = A.';
+                end
+                
+                h = this.hMultiView(1, d);
+                this.hMultiView(2, d) = plotter( ...
+                    h, ...                  % target axes
+                    A, ...                  % the sliced data
+                    'HitTest', 'off' ...    % don't process events 
+                );
+                % tighten the axis
+                axis(h, 'tight');
+            end
 
             % apply colormap
             colormap(gray);
-
-            this.cursorPos = pos;
         end
 
-        function this = updateAxesAnnotation(this)
-            px = this.voxelSize(1);
-            py = this.voxelSize(2);
-            pz = this.voxelSize(3);
+        function this = updateCrosshair(this)
+            % size of the volume
+            sz = this.volumeSize;
+            % cursor
+            c = this.cursorPos;
+            
+            % iterate through the dimensions
+            for d = 1:3
+                h = this.hMultiView(1, d);
 
-            % XY
-            axes(this.hAxes(1));
-            xlabel('X', 'FontSize', 14);
-            ylabel('Y', 'FontSize', 14);
-            set(gca, 'XAxisLocation', 'top');
-            set(gca, 'XTickLabel', []);
-            set(gca, 'YTickLabel', []);
-            set(gca, 'DataAspectRatioMode', 'manual');
-            set(gca, 'DataAspectRatio', [px, py, 1]);
+                % vertical
+                x = [c(1),  c(1)];
+                y = [   0, sz(2)];
+                if d ~= 1
+                    t = x; x = y; y = t;
+                end
+                line( ...
+                    h, ...
+                    x, y, ...
+                    'Color', 'yellow', ...
+                    'LineWidth', 1, ...
+                    'HitTest', 'off' ...
+                );
+                
+                % horizontal
+                x = [   0, sz(1)];
+                y = [c(2),  c(2)];
+                if d ~= 1
+                    t = x; x = y; y = t;
+                end
+                line( ...
+                    h, ...                  % select view axes
+                    x, y, ...               % start/end matrix
+                    'Color', 'yellow', ...  % line apperances
+                    'LineWidth', 1, ...
+                    'HitTest', 'off' ...    % don't process events
+                );
+                
+                sz = circshift(sz, -1);
+                c = circshift(c, -1);
+            end
+        end
 
-            % YZ
-            axes(this.hAxes(2));
-            xlabel('Z', 'FontSize', 14);
-            set(gca, 'XAxisLocation', 'top');
-            set(gca, 'XTickLabel', []);
-            set(gca, 'YTickLabel', []);
-            set(gca, 'DataAspectRatioMode', 'manual');
-            set(gca, 'DataAspectRatio', [py, pz, 1]);
+        function this = updateAdditionalLayers(this)
+            % number of layers
+            nl = size(this.hMultiView, 1);
 
-            % XZ (transposed)
-            axes(this.hAxes(3));
-            ylabel('Z', 'FontSize', 14);
-            set(gca, 'XTickLabel', []);
-            set(gca, 'YTickLabel', []);
-            set(gca, 'DataAspectRatioMode', 'manual');
-            set(gca, 'DataAspectRatio', [pz, px, 1]);
+            % skip this process if only default layer exists
+            if nl == 2
+                return;
+            end
+
+            %TODO
+        end
+        
+        function this = updateCursorPos(this)
+            
         end
     end
-
-    methods (Static, Access=private, Hidden=true)
-
-    end
-
 end
