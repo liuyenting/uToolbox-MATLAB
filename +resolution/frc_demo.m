@@ -1,34 +1,52 @@
 close all;
 clearvars -except data;
 
+import util.*;
+
+% filePath = fullfile(userpath, 'frc_test_data', 'usaf1951', 'usaf1951_cam100nm_dp5um_fit.csv');
+filePath = fullfile(userpath, 'frc_test_data', '0605', '200.dat');
+
+% start the diary
+consolelogger('start', util.chfext(filePath, 'txt'));
+
 %% loading the data
 fprintf('\n -- loading data --\n');
 
-
-% filePath = fullfile(userpath, 'frc_test_data', 'usaf1951', 'usaf1951_cam100nm_dp5um_fit.csv');
-filePath = fullfile(userpath, 'frc_test_data', '0605cell3_driftcorrected.csv');
+forceReload = false;
 fprintf('path = "%s"\n', filePath);
 
 tic;
 
-% load the header
-fid = fopen(filePath);
-header = fgetl(fid);
-% split by comma
-header = strsplit(header, ',');
-% remove quotes
-header = strrep(header, '"', '');
-fclose(fid);
+% determine the loader
+[~, ~, fext] = fileparts(filePath);
+if strcmp(fext, '.csv')
+    fprintf('loading CSV file\n');
 
-fprintf('%d columns in the dataset\n', length(header));
+    % load the header
+    fid = fopen(filePath);
+    header = fgetl(fid);
+    % split by comma
+    header = strsplit(header, ',');
+    % remove quotes
+    header = strrep(header, '"', '');
+    fclose(fid);
 
-if exist('data', 'var')
-    warning('resolution:frc_demo', 'Using preloaded data.');
-else
-    % load the data
-    data = csvread(filePath, 1, 0);
+    fprintf('%d columns in the dataset\n', length(header));
+
+    if exist('data', 'var') && ~forceReload
+        warning('resolution:frc_demo', 'Using preloaded data.');
+    else
+        % load the data
+        data = csvread(filePath, 1, 0);
+    end
+    fprintf('... %d samples loaded\n', size(data, 1));
+elseif strcmp(fext, '.dat')
+    fprintf('loading DAT file\n');
+    coords = dlmread(filePath);
+    fprintf('... %d samples loaded\n', size(coords, 1));
+else 
+    error('resolution:frc_demo', 'Unknown input file type.');
 end
-fprintf('... %d samples loaded\n', size(data, 1));
 
 t = toc;
 fprintf('%.2fs elapsed\n', t);
@@ -36,25 +54,26 @@ fprintf('%.2fs elapsed\n', t);
 %% prepare the data set
 fprintf('\n -- prepare the data set --\n');
 
-% find the indices
-xyIndex = findcol(header, {'x', 'y'});
-uncertaintyIndex = findcol(header, {'uncertainty_xy'});
-if isempty(xyIndex)
-    error('resolution:frc_demo', ...
-          'Unable to locate the coordinate columns.');
-end
-if isempty(uncertaintyIndex)
-    error('resolution:frc_demo', ...
-          'Unable to locate radial uncertainty column.');
-end
+if strcmp(fext, '.csv')
+    % find the indices
+    xyIndex = findcol(header, {'x', 'y'});
+    uncertaintyIndex = findcol(header, {'uncertainty_xy'});
+    if isempty(xyIndex)
+        error('resolution:frc_demo', ...
+              'Unable to locate the coordinate columns.');
+    end
+    if isempty(uncertaintyIndex)
+        error('resolution:frc_demo', ...
+              'Unable to locate radial uncertainty column.');
+    end
 
-% extract the data
-coords = data(:, xyIndex);
-uncertainty = data(:, uncertaintyIndex);
-
-% coords = dlmread(fullfile(userpath, 'frc_test_data', 'usaf1951', 'usaf1951_cam100nm_dp5um_fit.dat'));
-% coords = coords(:, 1:2);
-% uncertainty = [];
+    % extract the data
+    coords = data(:, xyIndex);
+    uncertainty = data(:, uncertaintyIndex);
+elseif strcmp(fext, '.dat')
+    coords = coords(:, 2:3);
+    uncertainty = [];
+end
 
 % offset back to the origin and drop the t-axis
 coords = offsetorigin(coords);
@@ -66,9 +85,9 @@ fprintf('\n -- calculate FRC --\n');
 res = 10;
 
 tic;
-[frcFrq, frcCrv, frcSpu] = resolution.frccurve(coords, res, uncertainty, ...
-                                               'Iterations', 5);
-% [frcFrq, frcCrv] = resolution.frccurve(coords, res, 'Iterations', 5);                                           
+% [frcFrq, frcCrv, frcSpu] = resolution.frccurve(coords, res, uncertainty, ...
+%                                                'Iterations', 20);
+[frcFrq, frcCrv] = resolution.frccurve(coords, res, 'Iterations', 20);                                           
 t = toc;
 fprintf('%.2fs elapsed\n', t);
 
@@ -96,9 +115,11 @@ else
     hold off;
 end
 
-hFrcSpu = figure('Name', 'Spurious Correlation', 'NumberTitle', 'off');
-plot(frcFrq, frcSpu);
-    axis tight;
-    xlim([frcFrq(1), frcFrq(end)]);
-    xlabel('Spatial Frequency (nm^{-1})');
-    ylabel('log_{10}FRC numerator');
+% hFrcSpu = figure('Name', 'Spurious Correlation', 'NumberTitle', 'off');
+% plot(frcFrq, frcSpu);
+%     axis tight;
+%     xlim([frcFrq(1), frcFrq(end)]);
+%     xlabel('Spatial Frequency (nm^{-1})');
+%     ylabel('log_{10}FRC numerator');
+    
+consolelogger('stop');
