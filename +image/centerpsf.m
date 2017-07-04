@@ -10,13 +10,23 @@ if (nd ~= 2) && (nd ~= 3)
           '1-D and N-D (greater than 3) PSF are not supported.');
 end
 
-% remove the average value as a simple measure to remove the noise
-average = mean(A(:));
-T = A - average;
+%% remoev noise
+T = A;
+% normalize to [0, 1]
+T = T - min(T(:));
+T = T / max(T(:));
 
-% calculate the centroid
+average = mean(T(:));
+% remove the average value as a simple measure to remove the noise
+T = T - average;
+
+% positivity constraints
+T(T < 0) = 0;
+
+%% calculate the centroid
+% size of an 3-D image is [height, width, depth] -> [y, x, z]
 sz = size(T);
-nelem = prod(sz);
+w = sum(T(:));
 if nd == 2
     [vx, vy] = meshgrid(1:sz(2), 1:sz(1));
     
@@ -25,8 +35,8 @@ if nd == 2
     cy = vy.*T;
     
     % divide the sum
-    cx = sum(cx(:)) / nelem;
-    cy = sum(cy(:)) / nelem;
+    cx = sum(cx(:)) / w;
+    cy = sum(cy(:)) / w;
     
     % combine the result
     centroid = [cx, cy];
@@ -39,17 +49,24 @@ else
     cz = vz.*T;
     
     % divide the sum
-    cx = sum(cx(:)) / nelem;
-    cy = sum(cy(:)) / nelem;
-    cz = sum(cz(:)) / nelem;
+    cx = sum(cx(:)) / sz(2);
+    cy = sum(cy(:)) / sz(1);
+    cz = sum(cz(:)) / sz(3);
     
     % combine the result
     centroid = [cx, cy, cz];
 end
 
-centroid
-
+%% shift the PSF
 B = A;
+
+% find the offset
+origin = (sz-1)/2 + 1;
+offset = centroid - origin;
+% shift has to be integer
+offset = floor(offset);
+% circular shift along all the dimensions
+B = circshift(B, offset);
 
 end
 
