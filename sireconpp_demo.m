@@ -5,8 +5,18 @@
 close all;
 clearvars;
 
-srcDir = 'F:\\Andy\\06302017_SIM\\Tan1_3_3DSIM';
-psfFileName = 'F:\\Andy\\06302017_SIM\\PSF\\PSF_NA1p1_520nm_x100nm.tif';
+%TODO remove OS dependent test code
+if ispc
+    srcDir = 'F:\\Andy\\06302017_SIM\\Tan1_3_3DSIM';
+    psfFileName = 'F:\\Andy\\06302017_SIM\\PSF\\PSF_NA1p1_520nm_x100nm.tif';
+else
+    srcDir = 'data/sim/06302017_SIM/Tan1_3_3DSIM';
+    psfFileName = 'data/sim/06302017_SIM/PSF/PSF_NA1p1_520nm_x100nm.tif';
+
+    % prepend the root
+    srcDir = fullfile(userpath, srcDir);
+    psfFileName = fullfile(userpath, psfFileName);
+end
 
 dstSuffix = '_sirecon';
 dstDir = [srcDir, dstSuffix];
