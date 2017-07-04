@@ -17,8 +17,14 @@ end
 %% Load the stack.
 imgStack = tiff.TIFFStack(path);
 [nx, ny, nz] = size(imgStack);
-img = imgStack(:);
-img = reshape(img, nx, ny, nz);
+if nz == 1
+    % use standard imread to bypass bug in TIFFStack
+    clear imgStack;
+    img = imread(path);
+else
+    img = imgStack(:);
+    img = reshape(img, nx, ny, nz);
+end
 varargout{1} = img;
 
 %% Save the stack size if needed.
