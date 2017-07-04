@@ -42,6 +42,16 @@ end
 list = dir(fullfile(srcDir, '*488nm*.tif*'));
 list = {list.name};
 
+%% preload the PSF
+Ipsf = tiff.imread(psfFileName);
+Ipsf = single(Ipsf);
+
+% center the PSF
+Ipsf = image.centerpsf(Ipsf);
+
+% normalize PSF, ensure kernel sum is 1
+Ipsf = Ipsf / sum(Ipsf(:));
+
 %% iterate through the files
 % ignore warnings for unknown tags for current session
 warning('off', 'MATLAB:imagesci:tiffmexutils:libtiffWarning');
@@ -77,6 +87,7 @@ for iFile = 1:nFile
         end
 
         % create MIP for debug
+        Ip = zeros([nOri, nPhase, sz(1:2)]);
         for iOri = 1:nOri
             for iPhase = 1:nPhase
                 % extract the volume
@@ -91,10 +102,14 @@ for iFile = 1:nFile
                 fname = sprintf('o%d_p%d.tif', iOri, iPhase);
                 fpath = fullfile(calDir, fname);
                 tiff.imsave(P, fpath);
+                
+                % save the result for further processing
+                Ip(iOri, iPhase, :, :) = P;
             end
         end
         
         %% find out kp value using the first stack
+        
     end
     
     %% reconstruction
