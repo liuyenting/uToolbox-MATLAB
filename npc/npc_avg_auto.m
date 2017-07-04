@@ -1,7 +1,7 @@
 close all;
 clearvars;
 
-I = imread('overview.tif');
+I = imread(fullfile(userpath, 'npc_average', 'overview.tif'));
 
 % sampling size
 smplsz = 32;
@@ -10,7 +10,7 @@ smplsz = 32;
 hfig = figure('Name', 'Preview', 'NumberTitle', 'off');
 hfig.Visible = 'off';
 
-imagesc(I);
+imagesc(log(I));
 axis image;
 hold on;
 
