@@ -21,10 +21,18 @@ end
 dstSuffix = '_sirecon';
 dstDir = [srcDir, dstSuffix];
 
-% orientations
-nOri = 1;
-% phases
-nPhase = 5;
+%% setup parameters
+siparms = struct;
+
+siparms.Orientations = 1;
+siparms.Phases = 5;
+
+siparms.PreDeconv = 5;
+siparms.PostDeconv = 5;
+
+% extract parameters
+nOri = siparms.Orientations;
+nPhase = siparms.Phases;
 
 %% verify the input
 % check whether the input directory exsists
@@ -97,7 +105,7 @@ for iFile = 1:nFile
         end
 
         % create MIP for debug
-        Ip = zeros([nOri, nPhase, sz(1:2)]);
+        Ip = zeros([nOri, nPhase, sz(1:2)], 'single');
         for iOri = 1:nOri
             for iPhase = 1:nPhase
                 % extract the volume
