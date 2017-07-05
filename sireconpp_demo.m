@@ -33,8 +33,10 @@ siparms.Phases = 5;
 siparms.I0 = 1;
 siparms.I1 = 1;
 
+% deconvolution
 siparms.PreDeconv = 5;
 siparms.PostDeconv = 5;
+siparms.PadSize = 10;
 
 %% verify the input
 % check whether the input directory exsists
@@ -98,13 +100,15 @@ for iFile = 1:nFile
     sz = size(I);
     
     % re-order the stack to phase-wise
-    [I, sz] = sim.opmajor(I, sz, siparms.Orientations, siparms.Phases);
+    [I, volSz] = sim.opmajor(I, sz, siparms.Orientations, siparms.Phases);
     
     % convert to floating point
     I = single(I);
     
+    % normalize the intensity across phases
+    I = sim.normopint(I, volSz, siparms);
     % execute
-    J = sim.sireconpp(I, sz, siparms);
+    J = sim.sireconpp(I, volSz, siparms);
     
     % cleanup
     fclose('all');
