@@ -21,5 +21,8 @@ M = [ ...
     I1 * exp(1i * 2*P) ...
 ];
 
+% type cast
+M = single(M);
+
 end
 
