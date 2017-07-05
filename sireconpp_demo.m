@@ -24,15 +24,16 @@ dstDir = [srcDir, dstSuffix];
 %% setup parameters
 siparms = struct;
 
+% classes
 siparms.Orientations = 1;
 siparms.Phases = 5;
 
+% beam intensity
+siparms.I0 = 1;
+siparms.I1 = 1;
+
 siparms.PreDeconv = 5;
 siparms.PostDeconv = 5;
-
-% extract parameters
-nOri = siparms.Orientations;
-nPhase = siparms.Phases;
 
 %% verify the input
 % check whether the input directory exsists
@@ -81,58 +82,21 @@ nFile = 1;
 for iFile = 1:nFile
     tInner = tic;
     
-    %% load the file
+    % load the file
     fileName = list{iFile};
     fprintf('[%s]\n', fileName);
     filePath = fullfile(srcDir, fileName);
     
     I = tiff.TIFFStack(filePath);
-    sz = size(I);
+    volSz = size(I);
     
-    %% pre-process
     % re-order the stack to phase-wise
-    I = sim.phmajor(I, sz, nOri, nPhase);
+    I = sim.opmajor(I, volSz, siparms.Orientations, siparms.Phases);
     
-    if iFile == 1
-        %% create calibration preview
-        calDir = fullfile(dstDir, 'calibrate');
-        
-        % create the directory
-        status = mkdir(calDir);
-        if ~status
-            error('sim:sireconpp_demo', ...
-                  'Unable to create the calibration output directory.');
-        end
-
-        % create MIP for debug
-        Ip = zeros([nOri, nPhase, sz(1:2)], 'single');
-        for iOri = 1:nOri
-            for iPhase = 1:nPhase
-                % extract the volume
-                P = I(iOri, iPhase, :, :, :);
-                P = squeeze(P);
-                
-                % MIP along Z axis
-                P = max(P, [], 1);
-                P = squeeze(P);
-                
-                % save the output
-                fname = sprintf('o%d_p%d.tif', iOri, iPhase);
-                fpath = fullfile(calDir, fname);
-                tiff.imsave(P, fpath);
-                
-                % save the result for further processing
-                Ip(iOri, iPhase, :, :) = P;
-            end
-        end
-        
-        %% find out kp value using the first stack
-        
-    end
+    % execute
+    J = sim.sireconpp(I, siparms);
     
-    %% reconstruction
-    
-    %% cleanup and statistics
+    % cleanup
     fclose('all');
     
     tElapse = toc(tInner);

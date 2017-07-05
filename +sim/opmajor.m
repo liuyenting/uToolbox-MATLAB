@@ -1,7 +1,7 @@
-function B = phmajor(A, sz, no, np)
-%PHMAJOR Convert input N-D array to orientation-phase major.
+function B = opmajor(A, sz, no, np)
+%OPMAJOR Convert input N-D array to orientation-phase major.
 %   
-%   B = PHMAJOR(A, SZ, NO, NP) reshapes A into orientation-phase majored B.
+%   B = OPMAJOR(A, SZ, NO, NP) reshapes A into orientation-phase majored B.
 %   SZ is the size of a single stack, NO is the number of orientations
 %   presented, NP is the phases presented.
 %
