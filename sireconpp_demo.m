@@ -24,6 +24,7 @@ dstDir = [srcDir, dstSuffix];
 %% setup parameters
 siparms = struct;
 
+siparms.DebugPath = fullfile(dstDir, 'calibrate');
 % classes
 siparms.Orientations = 1;
 siparms.Phases = 5;
@@ -45,7 +46,10 @@ end
 if exist(dstDir, 'dir') == 7
     content = dir(dstDir);
     if numel(content) > 2
-        error('sim:sireconpp_demo', 'Output directory is not empty.');
+        %error('sim:sireconpp_demo', 'Output directory is not empty.');
+        warning('sim:sireconpp_demo', 'Output directory is not empty.');
+        % recreate the folder
+        rmdir(dstDir, 's'); mkdir(dstDir);
     end
 else
     % create the directory
@@ -71,6 +75,9 @@ Ipsf = image.centerpsf(Ipsf);
 % normalize PSF, ensure kernel sum is 1
 Ipsf = Ipsf / sum(Ipsf(:));
 
+% save into SI parameter
+siparms.PSF = Ipsf;
+
 %% iterate through the files
 % ignore warnings for unknown tags for current session
 warning('off', 'MATLAB:imagesci:tiffmexutils:libtiffWarning');
@@ -88,13 +95,16 @@ for iFile = 1:nFile
     filePath = fullfile(srcDir, fileName);
     
     I = tiff.TIFFStack(filePath);
-    volSz = size(I);
+    sz = size(I);
     
     % re-order the stack to phase-wise
-    I = sim.opmajor(I, volSz, siparms.Orientations, siparms.Phases);
+    [I, sz] = sim.opmajor(I, sz, siparms.Orientations, siparms.Phases);
+    
+    % convert to floating point
+    I = single(I);
     
     % execute
-    J = sim.sireconpp(I, siparms);
+    J = sim.sireconpp(I, sz, siparms);
     
     % cleanup
     fclose('all');

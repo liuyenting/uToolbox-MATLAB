@@ -1,9 +1,10 @@
-function B = opmajor(A, sz, no, np)
+function [B, nsz] = opmajor(A, osz, no, np)
 %OPMAJOR Convert input N-D array to orientation-phase major.
 %   
-%   B = OPMAJOR(A, SZ, NO, NP) reshapes A into orientation-phase majored B.
-%   SZ is the size of a single stack, NO is the number of orientations
-%   presented, NP is the phases presented.
+%   [B, NSZ] = OPMAJOR(A, OSZ, NO, NP) reshapes A into orientation-phase 
+%   majored B. OSZ is the size of a single stack, NO is the number of 
+%   orientations presented, NP is the phases presented. Updated volume
+%   size, which takes consider NO and NP is saved as NSZ.
 %
 %   Note
 %   ----
@@ -14,23 +15,26 @@ function B = opmajor(A, sz, no, np)
 % flatten the original array
 A = A(:);
 % reduce total number of Zs
-sz(3) = sz(3) / (no*np);
+osz(3) = osz(3) / (no*np);
 
 % reshape the dimension to consider orientations and phases
-B = reshape(A, [sz(1:2), no, np, sz(3)]);
+B = reshape(A, [osz(1:2), no, np, osz(3)]);
 
 % re-order so that orientation and phases are the slowest
-%   X Y O P Z  ->  O P Z X Y
+%   X Y O P Z  ->  Z O P X Y
 %     X Y O P  ->  O P X Y
-nd = length(sz);
+nd = length(osz);
 if nd == 2
     order = [3, 4, 1, 2];
 elseif nd == 3
-    order = [3, 4, 5, 1, 2];
+    order = [5, 3, 4, 1, 2];
 else
     error('sim:phmajor', 'Unsupported dimension format.');
 end
 B = permute(B, order);
+
+% save the new volume size
+nsz = osz;
 
 end
 
