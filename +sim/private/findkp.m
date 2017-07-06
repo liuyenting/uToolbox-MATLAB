@@ -92,14 +92,14 @@ end
 %% print the result
 colname = cell([1, nOri]);
 for iOri = 1:nOri
-    colname{iOri} = sprintf('Orientation %d', iOri);
+    colname{iOri} = sprintf('Orientation%d', iOri);
 end
 
 rowname = cell([1, nPhase-1]);
 for iPhase = 2:2:nPhase
     i = iPhase/2;
-    rowname{iPhase} = sprintf('m%d-', i);
-    rowname{iPhase+1} = sprintf('m%d+', i);
+    rowname{iPhase-1} = sprintf('m%d-', i);
+    rowname{iPhase} = sprintf('m%d+', i);
 end
 
 kpstr = cell([nOri, nPhase-1]);
@@ -111,7 +111,12 @@ for iOri = 1:nOri
     end
 end
 
-result = table(string(kpstr.'), 'VariableNames', colname, 'RowNames', rowname)
+result = array2table( ...
+    kpstr.', ...
+    'VariableNames', colname, ...
+    'RowNames', rowname ...
+);
+disp(result);
 
 end
 
