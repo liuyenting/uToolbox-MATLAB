@@ -19,7 +19,10 @@ J = zeros([volSz(3), volSz(1:2)], 'single');
 for iz = 1:nz
     % extract the layer
     L = I(iz, :, :, :, :);
-    L = squeeze(L);
+    % use reshape instead of squeeze to avoid single orientation get
+    % squeezed as well
+    sz = size(L);
+    L = reshape(L, sz(2:end));
     
     if isempty(kp)
         %% create calibration preview
