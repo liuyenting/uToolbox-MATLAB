@@ -36,7 +36,7 @@ for iOri = 1:nOri
     % flatten the array
     F = reshape(F, [iPhase, prod(2*imSz)]);
     % solve the matrix
-    D = M \ F.';
+    F = M \ F;
     % reshape back to original image size
     F = reshape(F, [iPhase, 2*imSz]);
 end

@@ -25,6 +25,7 @@ dstDir = [srcDir, dstSuffix];
 siparms = struct;
 
 siparms.DebugPath = fullfile(dstDir, 'calibrate');
+
 % classes
 siparms.Orientations = 1;
 siparms.Phases = 5;
@@ -49,17 +50,26 @@ if exist(dstDir, 'dir') == 7
     content = dir(dstDir);
     if numel(content) > 2
         %error('sim:sireconpp_demo', 'Output directory is not empty.');
+        
         warning('sim:sireconpp_demo', 'Output directory is not empty.');
         % recreate the folder
-        rmdir(dstDir, 's'); mkdir(dstDir);
+        util.rmcontent(dstDir);
     end
-else
-    % create the directory
-    status = mkdir(dstDir);
-    if ~status
-        error('sim:sireconpp_demo', ...
-              'Unable to create the output directory.');
-    end
+end
+
+%% create the destination directory
+% destination root
+status = mkdir(dstDir);
+if ~status
+    error('sim:sireconpp_demo', ...
+          'Unable to create the output directory.');
+end
+
+% create the directory
+status = mkdir(siparms.DebugPath);
+if ~status
+    error('sim:sireconpp_demo', ...
+          'Unable to create the debug output directory.');
 end
 
 %% load the file list
@@ -107,6 +117,14 @@ for iFile = 1:nFile
     
     % normalize the intensity across phases
     I = sim.normopint(I, volSz, siparms);
+    
+    % Projection view is normalized instead of the original data since this
+    % information is used as visual aids for the Kp search process,
+    % normalized images are used instead of the raw ones.
+    if iFile == 1
+        sim.wfproj(I, volSz, siparms);
+    end
+    
     % execute
     J = sim.sireconpp(I, volSz, siparms);
     
