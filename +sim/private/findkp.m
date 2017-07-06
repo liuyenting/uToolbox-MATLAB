@@ -1,17 +1,21 @@
-function kp = findkp(I, imSz, parms)
+function kp = findkp(I, imSz, M, parms, show)
 %FINDKP Summary of this function goes here
 %   Detailed explanation goes here
+
+if nargin == 3
+    show = false;
+end
 
 % extract frequent use parameters
 nOri = parms.Orientations;
 nPhase = parms.Phases;
 psz = parms.PadSize;
 
-% generate spectral matrix on-the-fly
-M = spectramat(parms.Phases, parms.I0, parms.I1);
-
-% buffer space for results from the frequency domain
-F = zeros([nPhase, 2*imSz], 'single');
+% buffer space for results from the frequency domain, x2 upsampling
+fSz = 2*imSz;
+F = zeros([nPhase, fSz], 'single');
+% initialize the kp
+kp = zeros([nOri, nPhase-1, 2], 'single');
 for iOri = 1:nOri
     for iPhase = 1:nPhase
         % extract volume
@@ -30,43 +34,78 @@ for iOri = 1:nOri
         %   reciprocal space. This behavior is not observed in the ordinary
         %   reconstruction due to possible losses, hence multiplication as
         %   sine wave modulation in spatial domain is preferred.
-        T = fftshift(fft2(T, 2*imSz(1), 2*imSz(2)));
+        T = fftshift(fft2(T, fSz(2), fSz(1)));
         
         % save the result
         F(iPhase, :, :) = T;
     end
     
+    %% retrieve domains
     % flatten the array
-    F = reshape(F, [iPhase, prod(2*imSz)]);
+    F = reshape(F, [iPhase, prod(fSz)]);
     % solve the matrix
     F = M \ F;
     % reshape back to original image size
-    F = reshape(F, [iPhase, 2*imSz]);
+    F = reshape(F, [iPhase, fSz]);
+    
+    %% find peaks (frequencies)
+    % compute thr magnitude for peak search
+    F = abs(F(1:3, :, :));
     
     % find the m1-/m1+ terms
-    tic;
-    X = zeros([2, 2*imSz]);
-    % process m1-
-    F1 = fftshift(fft2(squeeze(F(1, :, :))));
-    F2 = fftshift(fft2(squeeze(F(2, :, :))));
-    FX = F1 .* F2;
-    X(1, :, :) = ifftshift(ifft2(FX));
-    % process m1+
-    F1 = fftshift(fft2(squeeze(F(1, :, :))));
-    F2 = fftshift(fft2(squeeze(F(3, :, :))));
-    FX = F1 .* F2;
-    X(2, :, :) = ifftshift(ifft2(FX));
-    toc;
+    X = zeros([2, fSz], 'single');
+    X(1, :, :) = fxcorr2(squeeze(F(1, :, :)), squeeze(F(2, :, :)));
+    X(2, :, :) = fxcorr2(squeeze(F(1, :, :)), squeeze(F(3, :, :)));
     
     % preview the result
-    figure;
-    subplot(1, 2, 1);
-        imagesc(abs(squeeze(X(1, :, :))));
-        axis image;
-    subplot(1, 2, 2);
-        imagesc(abs(squeeze(X(2, :, :))));
-        axis image;
+    if show
+        figure( ...
+            'Name', 'xcorr result of m0 and m1 terms', ...
+            'NumberTitle', 'off' ...
+        );
+        subplot(1, 2, 1);
+            imagesc(abs(squeeze(X(1, :, :))));
+            axis image;
+            title('m_1^-');
+        subplot(1, 2, 2);
+            imagesc(abs(squeeze(X(2, :, :))));
+            axis image;
+            title('m_1^+');
+    end
+    
+    %% calculate kp values
+    % find the position of the peak
+    X = reshape(X, [2, prod(fSz)]);
+    [~, ind] = max(X, [], 2);
+    [y, x] = ind2sub(fSz, ind);  
+    %DEBUG not quite center
+    
+    % save the shift result
+    kp(iOri, 1:2, :) = [x, y] - repmat(fSz/2, [2, 1]);
+    kp(iOri, 3:4, :) = 2*kp(iOri, 1:2, :);
 end
 
 end
 
+function C = fxcorr2(A, B)
+%FXCORR2 Fast 2-D cross-correlation.
+%
+%   C = FXCORR2(A, B) performs cross-correlation upon image A and B. Size
+%   of C is the maximum size of A and B on X and Y dimension.
+%
+%   See also: FFT2, IFFT2, FFTSHIFT, IFFTSHIFT
+
+% find the region that can cover both A and B
+% size of an image is [nrows (y), ncols (x)]
+sz = max(size(A), size(B));
+
+% Since cross-correlation is essentially a convolution, while convolution 
+% can be implemented as element-wise multiplication in the reciprocal 
+% space, we simply pad the input images A, B to enough size and perform an
+% FFT/IFFT, viola!
+f1 = fftshift(fft2(A, sz(1), sz(2)));
+f2 = fftshift(fft2(B, sz(1), sz(2)));
+fx = f1 .* f2;
+C = ifftshift(ifft2(fx));
+
+end

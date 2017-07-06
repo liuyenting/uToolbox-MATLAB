@@ -8,6 +8,8 @@ persistent kp;
 % extract frequently used parameters
 nz = volSz(3);
 
+% generate spectral matrix on-the-fly
+M = spectramat(parms.Phases, parms.I0, parms.I1);
 % phase shift values
 kp = [];
 
@@ -16,7 +18,7 @@ if isempty(kp)
     % create projection view along orientations and phases
     Ip = sim.wfproj(I, volSz, parms);
     % find the Kp values for each orientations
-    kp = findkp(Ip, volSz(1:2), parms);
+    kp = findkp(Ip, volSz(1:2), M, parms, false);
 end
 
 % iterate through the layers

@@ -34,6 +34,9 @@ siparms.Phases = 5;
 siparms.I0 = 1;
 siparms.I1 = 1;
 
+% kp FFT upsampling ratio
+siparms.KpUpsamplingRatio = 2;
+
 % deconvolution
 siparms.PreDeconv = 5;
 siparms.PostDeconv = 5;
