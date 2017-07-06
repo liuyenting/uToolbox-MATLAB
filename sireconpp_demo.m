@@ -117,14 +117,6 @@ for iFile = 1:nFile
     
     % normalize the intensity across phases
     I = sim.normopint(I, volSz, siparms);
-    
-    % Projection view is normalized instead of the original data since this
-    % information is used as visual aids for the Kp search process,
-    % normalized images are used instead of the raw ones.
-    if iFile == 1
-        sim.wfproj(I, volSz, siparms);
-    end
-    
     % execute
     J = sim.sireconpp(I, volSz, siparms);
     

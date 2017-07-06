@@ -1,4 +1,4 @@
-function varargout = wfproj(I, volSz, parms)
+function [Ip, varargout] = wfproj(I, volSz, parms)
 %WFPROJ Create widefield projection.
 %   Detailed explanation goes here
 
@@ -51,6 +51,10 @@ WF = reshape(Ip, [nOri*nPhase, volSz(1:2)]);
 WF = sum(WF, 1);
 WF = squeeze(WF);
 tiff.imsave(WF, fullfile(wfDir, 'widefield.tif'));
+
+if nargout == 1
+    varargout{1} = WF;
+end
 
 end
 
