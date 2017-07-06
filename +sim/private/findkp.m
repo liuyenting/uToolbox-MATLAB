@@ -12,7 +12,7 @@ nPhase = parms.Phases;
 psz = parms.PadSize;
 
 % buffer space for results from the frequency domain, x2 upsampling
-fSz = 2*imSz;
+fSz = parms.KpUpsamplingRatio * imSz;
 F = zeros([nPhase, fSz], 'single');
 % initialize the kp
 kp = zeros([nOri, nPhase-1, 2], 'single');
@@ -34,7 +34,7 @@ for iOri = 1:nOri
         %   reciprocal space. This behavior is not observed in the ordinary
         %   reconstruction due to possible losses, hence multiplication as
         %   sine wave modulation in spatial domain is preferred.
-        T = fftshift(fft2(T, fSz(2), fSz(1)));
+        T = fftshift(fft2(ifftshift(T), fSz(2), fSz(1)));
         
         % save the result
         F(iPhase, :, :) = T;
@@ -64,11 +64,11 @@ for iOri = 1:nOri
             'NumberTitle', 'off' ...
         );
         subplot(1, 2, 1);
-            imagesc(abs(squeeze(X(1, :, :))));
+            imagesc(squeeze(X(1, :, :)));
             axis image;
             title('m_1^-');
         subplot(1, 2, 2);
-            imagesc(abs(squeeze(X(2, :, :))));
+            imagesc(squeeze(X(2, :, :)));
             axis image;
             title('m_1^+');
     end
@@ -76,13 +76,17 @@ for iOri = 1:nOri
     %% calculate kp values
     % find the position of the peak
     X = reshape(X, [2, prod(fSz)]);
-    [~, ind] = max(X, [], 2);
+    [M, ind] = max(X, [], 2);
     [y, x] = ind2sub(fSz, ind);  
-    %DEBUG not quite center
+    
+    % distance toward the origin (center of the image)
+    dist = [x, y] - fSz/2;
+    % revert to the original sampling frequency
+    dist = dist / parms.KpUpsamplingRatio;
     
     % save the shift result
-    kp(iOri, 1:2, :) = [x, y] - repmat(fSz/2, [2, 1]);
-    kp(iOri, 3:4, :) = 2*kp(iOri, 1:2, :);
+    kp(iOri, 1:2, :) = dist + imSz/2;
+    kp(iOri, 3:4, :) = 2*dist + imSz/2;
 end
 
 end
@@ -103,9 +107,9 @@ sz = max(size(A), size(B));
 % can be implemented as element-wise multiplication in the reciprocal 
 % space, we simply pad the input images A, B to enough size and perform an
 % FFT/IFFT, viola!
-f1 = fftshift(fft2(A, sz(1), sz(2)));
-f2 = fftshift(fft2(B, sz(1), sz(2)));
+f1 = fftshift(fft2(ifftshift(A), sz(1), sz(2)));
+f2 = fftshift(fft2(ifftshift(B), sz(1), sz(2)));
 fx = f1 .* f2;
-C = ifftshift(ifft2(fx));
+C = fftshift(ifft2(ifftshift(fx)));
 
 end

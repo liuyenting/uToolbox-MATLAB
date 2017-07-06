@@ -33,7 +33,7 @@ for iOri = 1:nOri
         T = T(psz+1:end-psz, psz+1:end-psz);
         
         % FT
-        T = fftshift(fft2(T));
+        T = fftshift(fft2(ifftshift(T)));
         
         % save the result
         F(iPhase, :, :) = T;
