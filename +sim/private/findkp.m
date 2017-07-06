@@ -89,6 +89,30 @@ for iOri = 1:nOri
     kp(iOri, 3:4, :) = 2*dist + imSz/2;
 end
 
+%% print the result
+colname = cell([1, nOri]);
+for iOri = 1:nOri
+    colname{iOri} = sprintf('Orientation %d', iOri);
+end
+
+rowname = cell([1, nPhase-1]);
+for iPhase = 2:2:nPhase
+    i = iPhase/2;
+    rowname{iPhase} = sprintf('m%d-', i);
+    rowname{iPhase+1} = sprintf('m%d+', i);
+end
+
+kpstr = cell([nOri, nPhase-1]);
+for iOri = 1:nOri
+    for iPhase = 1:nPhase-1
+        kpstr{iOri, iPhase} = sprintf( ...
+            '(%.2f, %.2f)', kp(iOri, iPhase, 1), kp(iOri, iPhase, 2) ...
+        );
+    end
+end
+
+result = table(string(kpstr.'), 'VariableNames', colname, 'RowNames', rowname)
+
 end
 
 function C = fxcorr2(A, B)
