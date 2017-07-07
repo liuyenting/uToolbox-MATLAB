@@ -70,5 +70,12 @@ end
 
 end
 
-function cost = costfunc()
+function C = costfunc(I, p)
+%COSTFUNC Cost function to minimize for the phase retrieval algorithm.
+%
+%   C = COSTFUNC(I, P) determines the cost C for specified phases P and 
+%   their respective phase volume sets I.
+
+
+
 end
