@@ -11,29 +11,20 @@ psz = parms.PadSize;
 
 % create the apodization function if not exists
 if isempty(A)
-    [vx, vy] = meshgrid(1:imSz(1), 1:imSz(2));
-    
-    % shift the center
-    vx = vx - imSz(1)/2;
-    vy = vy - imSz(2)/2;
-    % calculate the distance matrix
-    A = sqrt(vx.^2 + vy.^2);
-    % create the coefficients
-    A = pi/(2*parms.ApodizeRatio) * A;
-    % apply the cosine mask
-    A = cos(A);
+    A = filter.tukeywin2(imSz, parms.ApodizeRatio);
+    A = single(A);
     
     % positivity constraints
     A(A < 0) = 0;
     
-    A = single(A);
-    
-    figure('Name', 'Apodization Function', 'NumberTitle', 'off');
-    imagesc(A);
-        axis image;
+%     figure('Name', 'Apodization Function', 'NumberTitle', 'off');
+%     imagesc(A);
+%         axis image;
         
     % reuse for each phase
-    A = repmat(A, [nPhase, imSz]);
+    A = repmat(A, [1, 1, nPhase]);
+    % swap dimension
+    A = permute(A, [3, 1, 2]);
 end
 
 % buffer space for results from the frequency domain
