@@ -7,12 +7,31 @@ persistent A;
 % extract frequent use parameters
 nOri = parms.Orientations;
 nPhase = parms.Phases;
-psz = siparms.PadSize;
+psz = parms.PadSize;
 
 % create the apodization function if not exists
 if isempty(A)
-    %TODO cosine mask
+    [vx, vy] = meshgrid(1:imSz(1), 1:imSz(2));
     
+    % shift the center
+    vx = vx - imSz(1)/2;
+    vy = vy - imSz(2)/2;
+    % calculate the distance matrix
+    A = sqrt(vx.^2 + vy.^2);
+    % create the coefficients
+    A = pi/(2*parms.ApodizeRatio) * A;
+    % apply the cosine mask
+    A = cos(A);
+    
+    % positivity constraints
+    A(A < 0) = 0;
+    
+    A = single(A);
+    
+    figure('Name', 'Apodization Function', 'NumberTitle', 'off');
+    imagesc(A);
+        axis image;
+        
     % reuse for each phase
     A = repmat(A, [nPhase, imSz]);
 end

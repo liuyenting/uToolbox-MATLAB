@@ -2,8 +2,12 @@
 %
 %   TBA
 
+% close all the figures
 close all;
-clearvars;
+% clear variables from the workspace
+clearvars; 
+% wipe persistent variables
+clearvars -global;
 
 %TODO remove OS dependent test code
 if ispc
@@ -41,6 +45,9 @@ siparms.KpUpsamplingRatio = 2;
 siparms.PreDeconv = 5;
 siparms.PostDeconv = 5;
 siparms.PadSize = 10;
+
+% apodization
+siparms.ApodizeRatio = 0.5;
 
 %% verify the input
 % check whether the input directory exsists
