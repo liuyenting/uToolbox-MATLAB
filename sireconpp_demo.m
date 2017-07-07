@@ -130,6 +130,10 @@ for iFile = 1:nFile
     % execute
     J = sim.sireconpp(I, volSz, siparms);
     
+    % save the volume
+    filePath = fullfile(dstDir, fileName);
+    tiff.imsave(J, filePath);
+    
     % cleanup
     fclose('all');
     
