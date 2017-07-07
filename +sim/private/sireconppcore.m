@@ -70,6 +70,8 @@ for iOri = 1:nOri
     % multiply apodization function
     F = F .* A;
     
+    %TODO create the cost function 
+    %TODO apply nonlinear optimization
 end
 
 end
