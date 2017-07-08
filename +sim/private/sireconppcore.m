@@ -68,8 +68,10 @@ for iOri = 1:nOri
     R(:, offset(1):offset(1)+imSz(1)-1, offset(2):offset(2)+imSz(2)-1) = F;
     
     % reference frame
-    R0 =  fftshift(ifft2(ifftshift(squeeze(R(1, :, :)))));
-    
+    T = fftshift(ifft2(ifftshift(squeeze(R(1, :, :)))));
+    % ensure we are not working with imaginary values
+    R(1, :, :) = abs(T);
+
     % create the cost function 
     
     
@@ -79,12 +81,36 @@ end
 
 end
 
-function C = costfunc(I, p)
+function C = costfunc(Rp, sz, p, Ip)
 %COSTFUNC Cost function to minimize for the phase retrieval algorithm.
 %
-%   C = COSTFUNC(I, P) determines the cost C for specified phases P and 
-%   their respective phase volume sets I.
+%   sz: image size
+%   Rp: frequency plane
+%   p : phases
+%   Ip: illumination pattern
 
+np = length(p);
 
+% generate phase shift
+P = repmat(p, [prod(sz), 1]);
+P = reshape(P, [sz, np]);
+P = permute(P, [3, 1, 2]);
+% shift the frequency plains to their correct locations
+Rp = Rp .* P;
+
+% revert back to real space
+for ip = 2:np
+    T = fftshift(ifft2(ifftshift(squeeze(Rp(ip, :, :))))); 
+    Rp(ip, :, :) = abs(T);
+end
+
+% apply modulation pattern
+Rp(2:end, :, :) = Rp(2:end, :, :) .* Ip;
+
+% sum the result to evaluate performance
+C = sum(Rp, 1);
+% maximize the function, use negative sign to use fmin* optimizer
+C = Rp(1, :, :) .* C;
+C = -sum(C(:));
 
 end
