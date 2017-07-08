@@ -24,6 +24,9 @@ end
 % iterate through the layers
 J = zeros([nz, volSz(1:2)], 'single');
 for iz = 1:nz
+    %DEBUG override z
+    iz = floor(nz/2);
+    
     % extract the layer
     L = I(iz, :, :, :, :);
     % use reshape instead of squeeze to avoid single orientation get

@@ -46,8 +46,9 @@ siparms.PreDeconv = 5;
 siparms.PostDeconv = 5;
 siparms.PadSize = 10;
 
-% apodization
+% phase retrieval
 siparms.ApodizeRatio = 0.5;
+siparms.RetrievalInterpRatio = 2;
 
 %% verify the input
 % check whether the input directory exsists

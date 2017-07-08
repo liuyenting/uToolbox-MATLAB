@@ -29,6 +29,9 @@ end
 
 % buffer space for results from the frequency domain
 F = zeros([nPhase, imSz], 'single');
+% buffer space for results from the interpolated real space
+rSz = parms.RetrievalInterpRatio * imSz;
+R = zeros([nPhase, rSz], 'single');
 for iOri = 1:nOri
     for iPhase = 1:nPhase
         % extract volume
@@ -60,6 +63,12 @@ for iOri = 1:nOri
     %% find phases
     % multiply apodization function
     F = F .* A;
+    % upsampling to perform FT interpolation in real space
+    offset = floor((rSz-imSz)/2)+1;
+    R(:, offset(1):offset(1)+imSz(1)-1, offset(2):offset(2)+imSz(2)-1) = F;
+    
+    % reference frame
+    R0 =  fftshift(ifft2(ifftshift(squeeze(R(1, :, :)))));
     
     % create the cost function 
     
