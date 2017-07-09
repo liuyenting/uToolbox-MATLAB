@@ -84,7 +84,7 @@ for iOri = 1:nOri
     % revert to the original sampling frequency
     dist = dist / parms.KpUpsamplingRatio;
     
-    % save the shift result
+    % convert to positions and save them
     kp(iOri, 1:2, :) = dist + imSz/2;
     kp(iOri, 3:4, :) = 2*dist + imSz/2;
 end
