@@ -68,12 +68,27 @@ for iOri = 1:nOri
     R(:, offset(1):offset(1)+imSz(1)-1, offset(2):offset(2)+imSz(2)-1) = F;
     
     % reference frame
-    T = fftshift(ifft2(ifftshift(squeeze(R(1, :, :)))));
-    % ensure we are not working with imaginary values
-    R(1, :, :) = abs(T);
-
-    % create the illumination pattern
+    R(1, :, :) = fftshift(ifft2(ifftshift(squeeze(R(1, :, :)))));
     
+    % revert from position to shift
+    shift = (squeeze(kp(iOri, :, :)) - repmat(imSz/2, [nPhase-1, 1]));
+    % the ratio in current upsampled dimension
+    shift = shift ./ repmat(rSz, [nPhase-1, 1]);
+    % calculate shift in unit spatial frequency, the result is negated
+    % since we are trying to shift it back to where it should be
+    shift = -(2*pi) * shift;
+    
+    % create multiplication matrix of shift coefficients
+    shift = repmat(shift, [prod(rSz), 1]);
+    shift = reshape(shift, [rSz, 2]);
+    shift = permute(shift, [3, 1, 2]);
+    % create the illumination pattern
+    [vx, vy] = meshgrid(1:rSz(1), 1:rSz(2));
+    vx = vx - (rSz(1)+1);
+    vy = vy - (rSz(2)+1);
+    %TODO design a method to repmat across 4-D
+    %NOTE v14.m, ln275-301
+    IL = exp(1i * (vx*shift(1, :, :) + vy*shift(2, :, :)));
     
     % apply nonlinear optimization
     problem = struct;
@@ -112,15 +127,14 @@ Rp = Rp .* P;
 
 % revert back to real space
 for ip = 2:np
-    T = fftshift(ifft2(ifftshift(squeeze(Rp(ip, :, :))))); 
-    Rp(ip, :, :) = abs(T);
+    Rp(ip, :, :) = fftshift(ifft2(ifftshift(squeeze(Rp(ip, :, :))))); 
 end
 
 % apply modulation pattern
 Rp(2:end, :, :) = Rp(2:end, :, :) .* IL;
 
 % sum the result to evaluate performance
-C = sum(Rp, 1);
+C = abs(sum(Rp, 1));
 % maximize the function, use negative sign to use fmin* optimizer
 C = squeeze(Rp(1, :, :)) .* C;
 C = -sum(C(:));
