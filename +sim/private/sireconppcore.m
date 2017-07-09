@@ -81,7 +81,7 @@ end
 
 end
 
-function C = costfunc(Rp, sz, p, Ip)
+function C = costfunc(Rp, sz, p, IL)
 %COSTFUNC Cost function to minimize for the phase retrieval algorithm.
 %
 %   sz: image size
@@ -105,12 +105,12 @@ for ip = 2:np
 end
 
 % apply modulation pattern
-Rp(2:end, :, :) = Rp(2:end, :, :) .* Ip;
+Rp(2:end, :, :) = Rp(2:end, :, :) .* IL;
 
 % sum the result to evaluate performance
 C = sum(Rp, 1);
 % maximize the function, use negative sign to use fmin* optimizer
-C = Rp(1, :, :) .* C;
+C = squeeze(Rp(1, :, :)) .* C;
 C = -sum(C(:));
 
 end
