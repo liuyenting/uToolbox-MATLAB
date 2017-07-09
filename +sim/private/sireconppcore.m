@@ -72,11 +72,23 @@ for iOri = 1:nOri
     % ensure we are not working with imaginary values
     R(1, :, :) = abs(T);
 
-    % create the cost function 
+    % create the illumination pattern
     
     
     % apply nonlinear optimization
-    
+    problem = struct;
+    problem.objective = @(x) costfunc(R, rSz, x, IL);
+    problem.x0 = zeros([1, (nPhase-1)/2]);
+    problem.Aineq = [];
+    problem.bineq = [];
+    problem.Aeq = [];
+    problem.beq = [];
+    problem.lb = zeros([1, (nPhase-1)/2]);
+    problem.ub = repmat(2*pi, [1, (nPhase-1)/2]);
+    problem.nonlcon = [];
+    problem.solver = 'fmincon';
+    problem.options = [];
+    p = fmincon(problem);
 end
 
 end
