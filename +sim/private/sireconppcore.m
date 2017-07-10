@@ -118,13 +118,16 @@ function C = costfunc(Rp, sz, p0, pr)
 
 np = length(p0);
 
-% generate phase shift
-P = repmat(p0, [prod(sz), 1]);
-P = reshape(P, [sz, np]);
-P = permute(P, [3, 1, 2]);
+% interleave the phases since we have m_i^- and p_i^+
+p0 = [-p0; p0];
+np = 2*np;
+p0 = reshape(p0, [np, 1]);
+% generate initial phase shift matrix
+p0 = repmat(p0, [prod(sz), 1]);
+p0 = reshape(p0, [sz, np]);
+p0 = permute(p0, [3, 1, 2]);
 % shift the frequency plains to their correct locations
-Rp = Rp .* P;
-%TODO missing exp(1i*ip)/exp(-1i*ip), v14.m ln290,291
+Rp(2:end, :, :) = Rp(2:end, :, :) .* p0;
 
 % revert back to real space
 for ip = 2:np
