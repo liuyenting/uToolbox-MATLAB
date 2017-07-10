@@ -124,10 +124,13 @@ P = reshape(P, [sz, np]);
 P = permute(P, [3, 1, 2]);
 % shift the frequency plains to their correct locations
 Rp = Rp .* P;
+%TODO missing exp(1i*ip)/exp(-1i*ip), v14.m ln290,291
 
 % revert back to real space
 for ip = 2:np
-    Rp(ip, :, :) = fftshift(ifft2(ifftshift(squeeze(Rp(ip, :, :))))); 
+    T = squeeze(Rp(ip, :, :));
+    
+    Rp(ip, :, :) = fftshift(ifft2(ifftshift(T))); 
 end
 
 % apply modulation pattern
