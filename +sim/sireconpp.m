@@ -18,7 +18,7 @@ if isempty(kp)
     % create projection view along orientations and phases
     Ip = sim.wfproj(I, volSz, parms);
     % find the Kp values for each orientations
-    kp = findkp(Ip, volSz(1:2), M, parms, false);
+    kp = findkp(Ip, volSz(1:2), M, parms, true);
 end
 
 % iterate through the layers

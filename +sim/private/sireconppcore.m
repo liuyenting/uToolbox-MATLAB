@@ -139,7 +139,7 @@ p0 = repmat(p0, [prod(sz), 1]);
 p0 = reshape(p0, [sz, np]);
 p0 = permute(p0, [3, 1, 2]);
 % shift the frequency plains to their correct locations
-Rp = Rp .* p0;
+%Rp = Rp .* p0;
 
 % revert back to real space
 for ip = 1:np
