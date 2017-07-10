@@ -77,22 +77,22 @@ for iOri = 1:nOri
     % calculate shift in unit spatial frequency, the result is negated
     % since we are trying to shift it back to where it should be
     shift = -(2*pi) * shift;
-    
-    % create multiplication matrix of shift coefficients
-    shift = repmat(shift, [prod(rSz), 1]);
-    shift = reshape(shift, [rSz, 2]);
-    shift = permute(shift, [3, 1, 2]);
-    % create the illumination pattern
+  
+    % create the relative phase shift matrix
     [vx, vy] = meshgrid(1:rSz(1), 1:rSz(2));
     vx = vx - (rSz(1)+1);
     vy = vy - (rSz(2)+1);
-    %TODO design a method to repmat across 4-D
-    %NOTE v14.m, ln275-301
-    IL = exp(1i * (vx*shift(1, :, :) + vy*shift(2, :, :)));
+    pr = zeros([nPhase-1, rSz]);
+    for iPhase = 1:nPhase-1
+        % distance matrix
+        D = vx*shift(iPhase, 1) + vy*shift(iPhase, 2);
+        % convert to imaginary part in order to apply shift in R-space
+        pr(iPhase, :, :) = exp(1i * D);
+    end
     
     % apply nonlinear optimization
     problem = struct;
-    problem.objective = @(x) costfunc(R, rSz, x, IL);
+    problem.objective = @(x) costfunc(R, rSz, x, pr);
     problem.x0 = zeros([1, (nPhase-1)/2]);
     problem.Aineq = [];
     problem.bineq = [];
@@ -108,18 +108,18 @@ end
 
 end
 
-function C = costfunc(Rp, sz, p, IL)
+function C = costfunc(Rp, sz, p0, pr)
 %COSTFUNC Cost function to minimize for the phase retrieval algorithm.
 %
 %   sz: image size
 %   Rp: frequency plane
-%   p : phases
-%   Ip: illumination pattern
+%   p0: initial phase shift
+%    p: relative phsae shift, determined by kp
 
-np = length(p);
+np = length(p0);
 
 % generate phase shift
-P = repmat(p, [prod(sz), 1]);
+P = repmat(p0, [prod(sz), 1]);
 P = reshape(P, [sz, np]);
 P = permute(P, [3, 1, 2]);
 % shift the frequency plains to their correct locations
@@ -128,13 +128,11 @@ Rp = Rp .* P;
 
 % revert back to real space
 for ip = 2:np
-    T = squeeze(Rp(ip, :, :));
-    
-    Rp(ip, :, :) = fftshift(ifft2(ifftshift(T))); 
+    Rp(ip, :, :) = fftshift(ifft2(ifftshift(squeeze(Rp(ip, :, :))))); 
 end
 
 % apply modulation pattern
-Rp(2:end, :, :) = Rp(2:end, :, :) .* IL;
+Rp(2:end, :, :) = Rp(2:end, :, :) .* pr;
 
 % sum the result to evaluate performance
 C = abs(sum(Rp, 1));
