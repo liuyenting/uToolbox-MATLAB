@@ -147,6 +147,9 @@ for iOri = 1:nOri
 % %         title('m_2');
 % %     drawnow;
     
+    profile on;
+    profile off;
+    
     % apply nonlinear optimization
     problem = struct;
     problem.objective = @(x) costfunc(R(1, :, :), R(2:end, :, :), rSz, x, pr);
@@ -170,6 +173,8 @@ for iOri = 1:nOri
     %TODO combine the data from all the orientation
     J = S;
     
+    profile viewer;
+    
 %     figure('Name', 'Reconstructed', 'NumberTitle', 'off');
 %     imagesc(S);
 %         axis image;
@@ -192,11 +197,12 @@ function [S, varargout] = costfunc(R0, Rp, sz, p0, pr)
 %     h = figure('Name', 'Phase Retrieval', 'NumberTitle', 'off');
 % end
 
+profile resume;
+
 np = length(p0);
 
 % interleave the phases since we have m_i^- and p_i^+
-p0 = 1i * [-p0, p0];
-p0 = exp(p0);
+p0 = exp(1i * [-p0, p0]);
 % since we have -/+, element count has to double
 np = 2*np;
 % flatten the array for the linear duplication later
@@ -218,7 +224,7 @@ p0 = permute(p0, [3, 1, 2]);
 %         axis image;
 %         title('m_i^+');
 % drawnow;
-% shift the frequency plains to their correct locations
+% apply estimated initial phase shift
 Rp = Rp .* p0;
 
 % revert back to real space
@@ -237,7 +243,7 @@ end
 %         title('m_1^+');
 % drawnow;
 
-% apply modulation pattern
+% add relative phase shift deduced from kp values
 Rp = Rp .* pr;
 
 % figure('Name', 'After', 'NumberTitle', 'off'); 
@@ -276,5 +282,7 @@ C = squeeze(C);
 if nargout == 2
     varargout{1} = C;
 end
+
+profile off;
 
 end
