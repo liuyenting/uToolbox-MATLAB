@@ -95,7 +95,7 @@ for iOri = 1:nOri
     % search density
     dp = 20;
     % search grid in [0, 2*pi]
-    phase = linspace(-pi, pi, dp); 
+    phase = linspace(0, 2*pi, dp); 
     % result
     C = zeros(size(phase));
     
@@ -104,73 +104,91 @@ for iOri = 1:nOri
     
     % template for the inital phase
     p0 = zeros([nm, 1], 'single');
-    % reference p0, for estimating p0 convergence
-    p0Ref = ones([nm, 1], 'single');
     
-    hc = figure('Name', 'Cost Funtion', 'NumberTitle', 'off');
+% %     hc = figure('Name', 'Cost Funtion', 'NumberTitle', 'off');
+%     
+%     %% search for m1
+%     for i = 1:dp
+%         %i = floor(dp/4);
+%         C(i) = costfunc( ...
+%             R(1, :, :), ...     % m_0
+%             R(2:3, :, :), ...   % m_i
+%             rSz, ...            % image size
+%             phase(i), ...          % estimated p0
+%             pr(1:2, :, :) ...              % rest of the phases
+%         );
+%     end
+%     [~, ind] = max(C);
+%     p0(1) = phase(ind);
+%     
+% %     figure(hc);
+% %     subplot(2, 1, 1);
+% %         plot(C);
+% %         title('m_1');
+% %     drawnow;
+%     
+%     %% search for m2
+%     for i = 1:dp
+%         %i = floor(dp/4);
+%         C(i) = costfunc( ...
+%             R(1, :, :), ...     % m_0
+%             R(4:5, :, :), ...   % m_i
+%             rSz, ...            % image size
+%             phase(i), ...          % estimated p0
+%             pr(3:4, :, :) ...              % rest of the phases
+%         );
+%     end
+%     [~, ind] = max(C);
+%     p0(2) = phase(ind);
+%     
+% %     figure(hc);
+% %     subplot(2, 1, 2);
+% %         plot(C);
+% %         title('m_2');
+% %     drawnow;
+%     
+%     disp(p0);
     
-    %% search for m1
-    for i = 1:dp
-        C(i) = costfunc( ...
-            R(1, :, :), ...     % m_0
-            R(2:3, :, :), ...   % m_i
-            rSz, ...            % image size
-            phase(i), ...          % estimated p0
-            pr(1:2, :, :) ...              % rest of the phases
-        );
-    end
-    [~, ind] = max(C);
-    p0(1) = phase(ind);
-    
-    figure(hc);
-    subplot(2, 1, 1);
-        plot(C);
-        title('m_1');
-    
-    %% search for m2
-    for i = 1:dp
-        C(i) = costfunc( ...
-            R(1, :, :), ...     % m_0
-            R(4:5, :, :), ...   % m_i
-            rSz, ...            % image size
-            phase(i), ...          % estimated p0
-            pr(3:4, :, :) ...              % rest of the phases
-        );
-    end
-    [~, ind] = max(C);
-    p0(2) = phase(ind);
-    
-    figure(hc);
-    subplot(2, 1, 2);
-        plot(C);
-        title('m_2');
-    
-    disp(p0);
+    % apply nonlinear optimization
+    problem = struct;
+    problem.objective = @(x) costfunc(R(1, :, :), R(2:end, :, :), rSz, x, pr);
+    problem.x0 = [0, 0];
+    problem.Aineq = [];
+    problem.bineq = [];
+    problem.Aeq = [];
+    problem.beq = [];
+    problem.lb = zeros(size(problem.x0));
+    problem.ub = (2*pi) * ones(size(problem.x0));
+    problem.nonlcon = [];
+    problem.solver = 'fmincon';
+    % additional options
+    options = optimoptions( ...
+        'fmincon', ...
+        'Display', 'iter-detailed' ...
+    );
+    problem.options = options;
+    p0 = fmincon(problem);
 
-%     % apply nonlinear optimization
-%     problem = struct;
-%     problem.objective = @(x) costfunc(R(1, :, :), R(2:end, :, :), rSz, x, pr);
-%     problem.x0 = [pi/3, 2*pi/3];
-%     problem.Aineq = [];
-%     problem.bineq = [];
-%     problem.Aeq = [];
-%     problem.beq = [];
-%     problem.lb = zeros(size(problem.x0));
-%     problem.ub = (2*pi) * ones(size(problem.x0));
-%     problem.nonlcon = [];
-%     problem.solver = 'fmincon';
-%     % additional options
-%     options = optimoptions( ...
-%         'fmincon', ...
-%         'Display', 'iter-detailed' ...
-%     );
-%     problem.options = options;
-%     p = fmincon(problem);
+    %% the actual reconstruction
+    [~, S] = costfunc( ...
+        R(1, :, :), ...     % m_0
+        R(2:end, :, :), ...   % m_i
+        rSz, ...            % image size
+        p0, ...          % estimated p0
+        pr ...              % rest of the phases
+    );
+    %TODO combine the data from all the orientation
+    J = S;
+    
+    figure('Name', 'Reconstructed', 'NumberTitle', 'off');
+    imagesc(S);
+        axis image;
+    drawnow;
 end
 
 end
 
-function C = costfunc(R0, Rp, sz, p0, pr)
+function [S, varargout] = costfunc(R0, Rp, sz, p0, pr)
 %COSTFUNC Cost function to minimize for the phase retrieval algorithm.
 %
 %   sz: image size
@@ -187,14 +205,29 @@ end
 np = length(p0);
 
 % interleave the phases since we have m_i^- and p_i^+
-p0 = 1i * [-p0; p0];
+p0 = 1i * [-p0, p0];
 p0 = exp(p0);
+% since we have -/+, element count has to double
 np = 2*np;
-p0 = reshape(p0, [np, 1]);
-% generate initial phase shift matrix
+% flatten the array for the linear duplication later
+p0 = reshape(p0', [1, np]);
+% duplicate the elements, double the size due to -/+
 p0 = repmat(p0, [prod(sz), 1]);
+% reshape to the proper matrix size
 p0 = reshape(p0, [sz, np]);
+% m_i major instead of X/Y major
 p0 = permute(p0, [3, 1, 2]);
+% %DEBUG preview
+% figure('Name', 'Initial Phase Shift', 'NumberTitle', 'off');
+% subplot(1, 2, 1);
+%     imagesc(mod(imag(squeeze(p0(1, :, :))), 2*pi));
+%         axis image;
+%         title('m_i^-');
+% subplot(1, 2, 2);
+%     imagesc(mod(imag(squeeze(p0(2, :, :))), 2*pi));
+%         axis image;
+%         title('m_i^+');
+% drawnow;
 % shift the frequency plains to their correct locations
 Rp = Rp .* p0;
 
@@ -203,25 +236,55 @@ for ip = 1:np
     Rp(ip, :, :) = fftshift(ifft2(ifftshift(squeeze(Rp(ip, :, :))))); 
 end
 
+% figure('Name', 'Before', 'NumberTitle', 'off'); 
+% subplot(1, 2, 1);
+%     imagesc(log(abs(squeeze(Rp(1, :, :))))); 
+%         axis image;
+%         title('m_1^-');
+% subplot(1, 2, 2);
+%     imagesc(log(abs(squeeze(Rp(2, :, :)))));
+%         axis image;
+%         title('m_1^+');
+% drawnow;
+
 % apply modulation pattern
 Rp = Rp .* pr;
 
+% figure('Name', 'After', 'NumberTitle', 'off'); 
+% subplot(1, 2, 1);
+%     imagesc(log(abs(squeeze(Rp(1, :, :))))); 
+%         axis image;
+%         title('m_1^-');
+% subplot(1, 2, 2);
+%     imagesc(log(abs(squeeze(Rp(2, :, :)))));
+%         axis image;
+%         title('m_1^+');
+% drawnow;
+
 % sum the result to evaluate performance
 C = sum([R0; Rp], 1);
+% ensure we are working with the magnitude instead of imaginary numbers
+C = abs(C);
+
+% maximize the function, use negative sign to use fmin* optimizer
+% remember to squeeze R0 since it is extracted from a multi-dimension array
+S = R0 .* C;
+% S = -sum(S(:));
+S = sum(S(:));
+
+% % output is required to be double instead of single
+% S = double(S);
+
 % squeeze the dimension
-C = abs(squeeze(C));
+C = squeeze(C);
 
 figure(h);
 imagesc(C);
     axis image;
 drawnow;
 
-% maximize the function, use negative sign to use fmin* optimizer
-C = R0 .* C;
-% C = -sum(C(:));
-C = sum(C(:));
-
-% % output is required to be double instead of single
-% C = double(C);
+if nargout == 2
+    varargout{1} = C;
+end
 
 end
