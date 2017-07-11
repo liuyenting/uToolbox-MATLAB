@@ -24,9 +24,9 @@ end
 % iterate through the layers
 J = zeros([nz, parms.RetrievalInterpRatio*volSz(1:2)], 'single');
 for iz = 1:nz
-    %DEBUG override z
-    iz = floor(nz/2);
-    nz = 1;
+%     %DEBUG override z
+%     iz = floor(nz/2);
+%     nz = 1;
     
     fprintf('z = %d\n', iz);
     

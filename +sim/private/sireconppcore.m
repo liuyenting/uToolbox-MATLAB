@@ -46,10 +46,7 @@ for iOri = 1:nOri
         T = T(psz+1:end-psz, psz+1:end-psz);
         
         % FT
-        T = fftshift(fft2(ifftshift(T)));
-        
-        % save the result
-        F(iPhase, :, :) = T;
+        F(iPhase, :, :) = fftshift(fft2(ifftshift(T)));
     end
     
     %% retrieve domains
@@ -67,8 +64,8 @@ for iOri = 1:nOri
     offset = floor((rSz-imSz)/2)+1;
     R(:, offset(1):offset(1)+imSz(1)-1, offset(2):offset(2)+imSz(2)-1) = F;
     
-    % reference frame
-    R(1, :, :) = fftshift(ifft2(ifftshift(squeeze(R(1, :, :))), 'symmetric'));
+    % reference, m_0
+    Rref = fftshift(ifft2(ifftshift(squeeze(R(1, :, :))), 'symmetric'));
     
     % revert from position to shift
     shift = (squeeze(kp(iOri, :, :)) - repmat(imSz/2, [nPhase-1, 1]));
@@ -76,7 +73,7 @@ for iOri = 1:nOri
     shift = shift ./ repmat(rSz, [nPhase-1, 1]);
     % calculate shift in unit spatial frequency, the result is negated
     % since we are trying to shift it back to where it should be
-    shift = -(2*pi) * shift;
+    shift = (2*pi) * (-shift);
   
     % create the relative phase shift matrix
     [vx, vy] = meshgrid(1:rSz(1), 1:rSz(2));
@@ -89,21 +86,22 @@ for iOri = 1:nOri
         % convert to imaginary part in order to apply shift in R-space
         pr(iPhase, :, :) = exp(1i * D);
     end
+    pr = real(pr);
     
     %% search the optimal inital phase
-    % search density
-    dp = 20;
-    % search grid in [0, 2*pi]
-    phase = linspace(0, 2*pi, dp); 
-    % result
-    C = zeros(size(phase));
-    
-    % types of m_i
-    nm = (nPhase-1)/2;
-    
-    % template for the inital phase
-    p0 = zeros([nm, 1], 'single');
-    
+%     % search density
+%     dp = 20;
+%     % search grid in [0, 2*pi]
+%     phase = linspace(0, 2*pi, dp); 
+%     % result
+%     C = zeros(size(phase));
+%     
+%     % types of m_i
+%     nm = (nPhase-1)/2;
+%     
+%     % template for the inital phase
+%     p0 = zeros([nm, 1], 'single');
+%     
 % %     hc = figure('Name', 'Cost Funtion', 'NumberTitle', 'off');
 %     
 %     %% search for m1
@@ -146,16 +144,16 @@ for iOri = 1:nOri
 % %         title('m_2');
 % %     drawnow;
     
-    profile on;
-    profile off;
+%     profile on;
+%     profile off;
     
     % apply nonlinear optimization
     problem = struct;
-    problem.objective = @(x) costfunc(R(1, :, :), R(2:end, :, :), rSz, x, pr);
+    problem.objective = @(x) costfunc(Rref, R(2:end, :, :), rSz, x, pr);
     problem.x0 = [0, 0];
     problem.solver = 'fminsearch';
     % additional options
-    options = optimset('Display', 'final', 'TolX', 1e-4);
+    options = optimset('Display', 'final', 'TolX', 1e-6);
     problem.options = options;
     p0 = fminsearch(problem);
     
@@ -163,7 +161,7 @@ for iOri = 1:nOri
 
     %% the actual reconstruction
     [~, S] = costfunc( ...
-        R(1, :, :), ...     % m_0
+        Rref, ...     % m_0
         R(2:end, :, :), ...   % m_i
         rSz, ...            % image size
         p0, ...          % estimated p0
@@ -172,7 +170,7 @@ for iOri = 1:nOri
     %TODO combine the data from all the orientation
     J = S;
     
-    profile viewer;
+%     profile viewer;
     
 %     figure('Name', 'Reconstructed', 'NumberTitle', 'off');
 %     imagesc(S);
@@ -196,7 +194,7 @@ function [S, varargout] = costfunc(R0, Rp, sz, p0, pr)
 %     h = figure('Name', 'Phase Retrieval', 'NumberTitle', 'off');
 % end
 
-profile resume;
+% profile resume;
 
 np = length(p0);
 
@@ -224,7 +222,7 @@ p0 = permute(p0, [3, 1, 2]);
 %         title('m_i^+');
 % drawnow;
 % apply estimated initial phase shift
-Rp = Rp .* p0;
+Rp = Rp .* real(p0);
 
 % revert back to real space
 for ip = 1:np
@@ -257,9 +255,10 @@ Rp = Rp .* pr;
 % drawnow;
 
 % sum the result to evaluate performance
-C = sum([R0; Rp], 1);
+%C = complex(R0) + squeeze(sum(Rp, 1));
+C = R0 + squeeze(sum(Rp, 1));
 % ensure we are working with the magnitude instead of imaginary numbers
-C = abs(C);
+%C = abs(C);
 
 % maximize the function, use negative sign to use fmin* optimizer
 % remember to squeeze R0 since it is extracted from a multi-dimension array
@@ -282,6 +281,6 @@ if nargout == 2
     varargout{1} = C;
 end
 
-profile off;
+% profile off;
 
 end
