@@ -146,28 +146,18 @@ for iOri = 1:nOri
 % %         plot(C);
 % %         title('m_2');
 % %     drawnow;
-%     
-%     disp(p0);
     
     % apply nonlinear optimization
     problem = struct;
     problem.objective = @(x) costfunc(R(1, :, :), R(2:end, :, :), rSz, x, pr);
     problem.x0 = [0, 0];
-    problem.Aineq = [];
-    problem.bineq = [];
-    problem.Aeq = [];
-    problem.beq = [];
-    problem.lb = zeros(size(problem.x0));
-    problem.ub = (2*pi) * ones(size(problem.x0));
-    problem.nonlcon = [];
-    problem.solver = 'fmincon';
+    problem.solver = 'fminsearch';
     % additional options
-    options = optimoptions( ...
-        'fmincon', ...
-        'Display', 'iter-detailed' ...
-    );
+    options = optimset('Display', 'final', 'TolX', 1e-4);
     problem.options = options;
-    p0 = fmincon(problem);
+    p0 = fminsearch(problem);
+    
+    disp(p0);
 
     %% the actual reconstruction
     [~, S] = costfunc( ...
@@ -180,10 +170,10 @@ for iOri = 1:nOri
     %TODO combine the data from all the orientation
     J = S;
     
-    figure('Name', 'Reconstructed', 'NumberTitle', 'off');
-    imagesc(S);
-        axis image;
-    drawnow;
+%     figure('Name', 'Reconstructed', 'NumberTitle', 'off');
+%     imagesc(S);
+%         axis image;
+%     drawnow;
 end
 
 end
@@ -192,15 +182,15 @@ function [S, varargout] = costfunc(R0, Rp, sz, p0, pr)
 %COSTFUNC Cost function to minimize for the phase retrieval algorithm.
 %
 %   sz: image size
-%   Rp: frequency plane
+%   Rp: frequency pla_{"ne
 %   p0: initial phase shift
 %    p: relative phsae shift, determined by kp
 
-persistent h;
-
-if isempty(h) || ~isvalid(h)
-    h = figure('Name', 'Phase Retrieval', 'NumberTitle', 'off');
-end
+% persistent h;
+% 
+% if isempty(h) || ~isvalid(h)
+%     h = figure('Name', 'Phase Retrieval', 'NumberTitle', 'off');
+% end
 
 np = length(p0);
 
@@ -269,19 +259,19 @@ C = abs(C);
 % maximize the function, use negative sign to use fmin* optimizer
 % remember to squeeze R0 since it is extracted from a multi-dimension array
 S = R0 .* C;
-% S = -sum(S(:));
-S = sum(S(:));
+S = - sum(S(:)) / (sum(R0(:)) * sum(C(:)));
+% S = sum(S(:));
 
-% % output is required to be double instead of single
-% S = double(S);
+% output is required to be double instead of single
+S = double(S);
 
 % squeeze the dimension
 C = squeeze(C);
 
-figure(h);
-imagesc(C);
-    axis image;
-drawnow;
+% figure(h);
+% imagesc(C);
+%     axis image;
+% drawnow;
 
 if nargout == 2
     varargout{1} = C;
