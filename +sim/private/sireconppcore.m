@@ -91,25 +91,81 @@ for iOri = 1:nOri
         pr(iPhase, :, :) = exp(1i * D);
     end
     
-    % apply nonlinear optimization
-    problem = struct;
-    problem.objective = @(x) costfunc(R(1, :, :), R(2:end, :, :), rSz, x, pr);
-    problem.x0 = [0.01, 0.01];
-    problem.Aineq = [];
-    problem.bineq = [];
-    problem.Aeq = [];
-    problem.beq = [];
-    problem.lb = zeros(size(problem.x0));
-    problem.ub = (2*pi) * ones(size(problem.x0));
-    problem.nonlcon = [];
-    problem.solver = 'fmincon';
-    % additional options
-    options = optimoptions( ...
-        'fmincon', ...
-        'Display', 'iter-detailed' ...
-    );
-    problem.options = options;
-    p = fmincon(problem);
+    %% search the optimal inital phase
+    % search density
+    dp = 20;
+    % search grid in [0, 2*pi]
+    phase = linspace(-pi, pi, dp); 
+    % result
+    C = zeros(size(phase));
+    
+    % types of m_i
+    nm = (nPhase-1)/2;
+    
+    % template for the inital phase
+    p0 = zeros([nm, 1], 'single');
+    % reference p0, for estimating p0 convergence
+    p0Ref = ones([nm, 1], 'single');
+    
+    hc = figure('Name', 'Cost Funtion', 'NumberTitle', 'off');
+    
+    %% search for m1
+    for i = 1:dp
+        C(i) = costfunc( ...
+            R(1, :, :), ...     % m_0
+            R(2:3, :, :), ...   % m_i
+            rSz, ...            % image size
+            phase(i), ...          % estimated p0
+            pr(1:2, :, :) ...              % rest of the phases
+        );
+    end
+    [~, ind] = max(C);
+    p0(1) = phase(ind);
+    
+    figure(hc);
+    subplot(2, 1, 1);
+        plot(C);
+        title('m_1');
+    
+    %% search for m2
+    for i = 1:dp
+        C(i) = costfunc( ...
+            R(1, :, :), ...     % m_0
+            R(4:5, :, :), ...   % m_i
+            rSz, ...            % image size
+            phase(i), ...          % estimated p0
+            pr(3:4, :, :) ...              % rest of the phases
+        );
+    end
+    [~, ind] = max(C);
+    p0(2) = phase(ind);
+    
+    figure(hc);
+    subplot(2, 1, 2);
+        plot(C);
+        title('m_2');
+    
+    disp(p0);
+
+%     % apply nonlinear optimization
+%     problem = struct;
+%     problem.objective = @(x) costfunc(R(1, :, :), R(2:end, :, :), rSz, x, pr);
+%     problem.x0 = [pi/3, 2*pi/3];
+%     problem.Aineq = [];
+%     problem.bineq = [];
+%     problem.Aeq = [];
+%     problem.beq = [];
+%     problem.lb = zeros(size(problem.x0));
+%     problem.ub = (2*pi) * ones(size(problem.x0));
+%     problem.nonlcon = [];
+%     problem.solver = 'fmincon';
+%     % additional options
+%     options = optimoptions( ...
+%         'fmincon', ...
+%         'Display', 'iter-detailed' ...
+%     );
+%     problem.options = options;
+%     p = fmincon(problem);
 end
 
 end
@@ -131,7 +187,8 @@ end
 np = length(p0);
 
 % interleave the phases since we have m_i^- and p_i^+
-p0 = [-p0; p0];
+p0 = 1i * [-p0; p0];
+p0 = exp(p0);
 np = 2*np;
 p0 = reshape(p0, [np, 1]);
 % generate initial phase shift matrix
@@ -139,7 +196,7 @@ p0 = repmat(p0, [prod(sz), 1]);
 p0 = reshape(p0, [sz, np]);
 p0 = permute(p0, [3, 1, 2]);
 % shift the frequency plains to their correct locations
-%Rp = Rp .* p0;
+Rp = Rp .* p0;
 
 % revert back to real space
 for ip = 1:np
@@ -150,21 +207,21 @@ end
 Rp = Rp .* pr;
 
 % sum the result to evaluate performance
-C = abs(sum([R0; Rp], 1));
+C = sum([R0; Rp], 1);
 % squeeze the dimension
-C = squeeze(C);
+C = abs(squeeze(C));
 
 figure(h);
 imagesc(C);
     axis image;
 drawnow;
-pause(0.5);
 
 % maximize the function, use negative sign to use fmin* optimizer
 C = R0 .* C;
-C = -sum(C(:));
+% C = -sum(C(:));
+C = sum(C(:));
 
-% output is required to be double instead of single
-C = double(C);
+% % output is required to be double instead of single
+% C = double(C);
 
 end
