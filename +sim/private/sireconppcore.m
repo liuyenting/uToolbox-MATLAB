@@ -68,8 +68,7 @@ for iOri = 1:nOri
     R(:, offset(1):offset(1)+imSz(1)-1, offset(2):offset(2)+imSz(2)-1) = F;
     
     % reference frame
-    T = fftshift(ifft2(ifftshift(squeeze(R(1, :, :)))));
-    R(1, :, :) = abs(T);
+    R(1, :, :) = fftshift(ifft2(ifftshift(squeeze(R(1, :, :))), 'symmetric'));
     
     % revert from position to shift
     shift = (squeeze(kp(iOri, :, :)) - repmat(imSz/2, [nPhase-1, 1]));
@@ -229,7 +228,7 @@ Rp = Rp .* p0;
 
 % revert back to real space
 for ip = 1:np
-    Rp(ip, :, :) = fftshift(ifft2(ifftshift(squeeze(Rp(ip, :, :))))); 
+    Rp(ip, :, :) = fftshift(ifft2(ifftshift(squeeze(Rp(ip, :, :))), 'symmetric')); 
 end
 
 % figure('Name', 'Before', 'NumberTitle', 'off'); 

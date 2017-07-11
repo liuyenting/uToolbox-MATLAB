@@ -34,10 +34,7 @@ for iOri = 1:nOri
         %   reciprocal space. This behavior is not observed in the ordinary
         %   reconstruction due to possible losses, hence multiplication as
         %   sine wave modulation in spatial domain is preferred.
-        T = fftshift(fft2(ifftshift(T), fSz(2), fSz(1)));
-        
-        % save the result
-        F(iPhase, :, :) = T;
+        F(iPhase, :, :) = fftshift(fft2(ifftshift(T), fSz(2), fSz(1)));
     end
     
     %% retrieve domains
@@ -139,6 +136,6 @@ sz = max(size(A), size(B));
 f1 = fftshift(fft2(ifftshift(A), sz(1), sz(2)));
 f2 = fftshift(fft2(ifftshift(B), sz(1), sz(2)));
 fx = f1 .* f2;
-C = fftshift(ifft2(ifftshift(fx)));
+C = fftshift(ifft2(ifftshift(fx), 'symmetric'));
 
 end
