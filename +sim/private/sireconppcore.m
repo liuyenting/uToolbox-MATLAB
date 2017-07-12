@@ -274,7 +274,7 @@ C = real(C);
 % maximize the function, use negative sign to use fmin* optimizer
 % remember to squeeze R0 since it is extracted from a multi-dimension array
 S = R0 .* C;
-S = - sum(S(:));% / (sum(R0(:)) * sum(C(:)));
+S = -sum(S(:));% / (sum(R0(:)) * sum(C(:)));
 % S = sum(S(:));
 
 % output is required to be double instead of single
