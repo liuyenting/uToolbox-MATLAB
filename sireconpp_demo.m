@@ -105,6 +105,9 @@ siparms.PSF = Ipsf;
 % ignore warnings for unknown tags for current session
 warning('off', 'MATLAB:imagesci:tiffmexutils:libtiffWarning');
 
+profile on;
+profile off;
+    
 nFile = numel(list);
 tOuter = tic;
 %OVERRIDE
@@ -143,3 +146,5 @@ for iFile = 1:nFile
 end
 tElapse = toc(tOuter);
 fprintf('%f seconds to process the incoming data\n', tElapse);
+
+profile viewer;

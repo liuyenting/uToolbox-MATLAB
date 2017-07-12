@@ -27,6 +27,8 @@ for iz = 1:nz
 %     %DEBUG override z
 %     iz = floor(nz/2);
 %     nz = 1;
+
+    tStart = tic;
     
     fprintf('z = %d\n', iz);
     
@@ -39,6 +41,9 @@ for iz = 1:nz
     
     % run the reconstruction on specific layer
     J(iz, :, :) = sireconppcore(L, volSz(1:2), M, kp, parms);
+    
+    tElapsed = toc(tStart);
+    fprintf('%.2fs elapsed\n\n', tElapsed);
 end
 
 end

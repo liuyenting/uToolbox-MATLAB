@@ -27,11 +27,16 @@ if isempty(A)
     A = permute(A, [3, 1, 2]);
 end
 
-% buffer space for results from the frequency domain
-F = zeros([nPhase, imSz], 'single');
-% buffer space for results from the interpolated real space
+% interpolated size
 rSz = parms.RetrievalInterpRatio * imSz;
-R = zeros([nPhase, rSz], 'single');
+
+% buffer space for results from the frequency domain, each for the original
+% image and the padded image
+F = zeros([nPhase, imSz], 'single');
+Fp = zeros([nPhase, rSz], 'single');
+% interpolated result
+R = zeros([nOri, nPhase, rSz], 'single');
+
 for iOri = 1:nOri
     for iPhase = 1:nPhase
         % extract volume
@@ -42,11 +47,10 @@ for iOri = 1:nOri
         T = padarray(T, [psz, psz], 0, 'both');
         % RL deconvolution
         T = deconvlucy(T, parms.PSF, parms.PreDeconv);
-        % crop the result
-        T = T(psz+1:end-psz, psz+1:end-psz);
         
-        % FT
-        F(iPhase, :, :) = fftshift(fft2(ifftshift(T)));
+        % perform Fourier transform without the padded region
+        F(iPhase, :, :) = ...
+            fftshift(fft2(ifftshift(T(psz+1:end-psz, psz+1:end-psz))));
     end
     
     %% retrieve domains
@@ -61,11 +65,14 @@ for iOri = 1:nOri
     % multiply apodization function
     F = F .* A;
     % upsampling to perform FT interpolation in real space
-    offset = floor((rSz-imSz)/2)+1;
-    R(:, offset(1):offset(1)+imSz(1)-1, offset(2):offset(2)+imSz(2)-1) = F;
+    li = floor((rSz-imSz)/2)+1;
+    ui = li+imSz-1;
+    Fp(:, li(1):ui(1), li(2):ui(2)) = F;
     
     % reference, m_0
-    Rref = fftshift(ifft2(ifftshift(squeeze(R(1, :, :))), 'symmetric'));
+    Rref = fftshift(ifft2(ifftshift(squeeze(Fp(1, :, :)))));
+    Rref = squeeze(Rref);
+    R(iOri, 1, :, :) = Rref;
     
     % revert from position to shift
     shift = (squeeze(kp(iOri, :, :)) - repmat(imSz/2, [nPhase-1, 1]));
@@ -88,64 +95,6 @@ for iOri = 1:nOri
     end
     
     %% search the optimal inital phase
-%     % search density
-%     dp = 20;
-%     % search grid in [0, 2*pi]
-%     phase = linspace(0, 2*pi, dp); 
-%     % result
-%     C = zeros(size(phase));
-%     
-%     % types of m_i
-%     nm = (nPhase-1)/2;
-%     
-%     % template for the inital phase
-%     p0 = zeros([nm, 1], 'single');
-%     
-% %     hc = figure('Name', 'Cost Funtion', 'NumberTitle', 'off');
-%     
-%     %% search for m1
-%     for i = 1:dp
-%         %i = floor(dp/4);
-%         C(i) = costfunc( ...
-%             R(1, :, :), ...     % m_0
-%             R(2:3, :, :), ...   % m_i
-%             rSz, ...            % image size
-%             phase(i), ...          % estimated p0
-%             pr(1:2, :, :) ...              % rest of the phases
-%         );
-%     end
-%     [~, ind] = max(C);
-%     p0(1) = phase(ind);
-%     
-% %     figure(hc);
-% %     subplot(2, 1, 1);
-% %         plot(C);
-% %         title('m_1');
-% %     drawnow;
-%     
-%     %% search for m2
-%     for i = 1:dp
-%         %i = floor(dp/4);
-%         C(i) = costfunc( ...
-%             R(1, :, :), ...     % m_0
-%             R(4:5, :, :), ...   % m_i
-%             rSz, ...            % image size
-%             phase(i), ...          % estimated p0
-%             pr(3:4, :, :) ...              % rest of the phases
-%         );
-%     end
-%     [~, ind] = max(C);
-%     p0(2) = phase(ind);
-%     
-% %     figure(hc);
-% %     subplot(2, 1, 2);
-% %         plot(C);
-% %         title('m_2');
-% %     drawnow;
-    
-%     profile on;
-%     profile off;
-    
 %     % apply nonlinear optimization
 %     problem = struct;
 %     problem.objective = @(x) costfunc(Rref, R(2:end, :, :), rSz, x, pr);
@@ -155,49 +104,57 @@ for iOri = 1:nOri
 %     options = optimset('Display', 'final', 'TolX', 1e-6);
 %     problem.options = options;
 %     p0 = fminsearch(problem);
+
     options = optimoptions( ...
         'fmincon', ...
         'FiniteDifferenceStepSize', pi/10, ...
         'StepTolerance', 1e-2, ...
-        'Display', 'final' ...
+        'Display', 'iter-detailed' ...
     );
     p0 = fmincon( ...
-        @(x) costfunc(Rref, R(2:end, :, :), rSz, x, pr), ...
+        @(x) costfunc(Rref, Fp(2:end, :, :), x, pr), ...
         [0, 0], ...
         [], [], [], [], ...
         [-pi, -pi], [pi, pi], ...
         [], ...
         options ...
     );
-
-    disp(p0);
-
-    %% the actual reconstruction
-    [~, S] = costfunc( ...
-        Rref, ...     % m_0
-        R(2:end, :, :), ...   % m_i
-        rSz, ...            % image size
-        p0, ...          % estimated p0
-        pr ...              % rest of the phases
+    
+    p0w = mod(p0, 2*pi);
+    fprintf('o=%d, m1=%.2f, m2=%.2f, ratio=%.2f\n', iOri, p0w(1), p0w(2), p0w(2)/p0w(1));
+    
+    % save the optimal shifted result
+    [~, Ropt] = costfunc( ...
+        Rref, ...               % m_0
+        Fp(2:end, :, :), ...    % m_i
+        p0, ...                 % estimated p0
+        pr ...                  % relative phase shifts
     );
-    %TODO combine the data from all the orientation
-    J = S;
-    
-%     profile viewer;
-    
-%     figure('Name', 'Reconstructed', 'NumberTitle', 'off');
-%     imagesc(S);
-%         axis image;
-%     drawnow;
+    R(iOri, 2:end, :, :) = Ropt;
 end
+
+%% the actual reconstruction
+% reshape to ignore differences between orientation and phase dimension
+R = reshape(R, [nOri*nPhase, rSz]);
+% sum all the orientations and phases
+J = squeeze(sum(R, 1));
+
+J = abs(J);
+
+%% preview the result
+% % show the reconstructed result
+% figure('Name', 'Reconstructed', 'NumberTitle', 'off');
+% imagesc(J);
+%     axis image;
+% drawnow;
 
 end
 
-function [S, varargout] = costfunc(R0, Rp, sz, p0, pr)
+function [S, varargout] = costfunc(R0, Rp, p0, pr)
 %COSTFUNC Cost function to minimize for the phase retrieval algorithm.
 %
 %   sz: image size
-%   Rp: frequency pla_{"ne
+%   Rp: frequency plane
 %   p0: initial phase shift
 %    p: relative phsae shift, determined by kp
 
@@ -207,7 +164,7 @@ function [S, varargout] = costfunc(R0, Rp, sz, p0, pr)
 %     h = figure('Name', 'Phase Retrieval', 'NumberTitle', 'off');
 % end
 
-% profile resume;
+profile resume;
 
 np = length(p0);
 
@@ -217,27 +174,11 @@ p0 = exp(1i * [-p0, p0]);
 np = 2*np;
 % flatten the array for the linear duplication later
 p0 = reshape(p0', [1, np]);
-% duplicate the elements, double the size due to -/+
-p0 = repmat(p0, [prod(sz), 1]);
-% reshape to the proper matrix size
-p0 = reshape(p0, [sz, np]);
-p0 = permute(p0, [3, 1, 2]);
-% %DEBUG preview
-% figure('Name', 'Initial Phase Shift', 'NumberTitle', 'off');
-% subplot(1, 2, 1);
-%     imagesc(mod(imag(squeeze(p0(1, :, :))), 2*pi));
-%         axis image;
-%         title('m_i^-');
-% subplot(1, 2, 2);
-%     imagesc(mod(imag(squeeze(p0(2, :, :))), 2*pi));
-%         axis image;
-%         title('m_i^+');
-% drawnow;
-% apply estimated initial phase shift
-Rp = Rp .* p0;
 
-% revert back to real space
+Rp = bsxfun(@times, Rp, reshape(p0, [np, 1, 1]));
+
 for ip = 1:np
+    % back to real space
     Rp(ip, :, :) = fftshift(ifft2(ifftshift(squeeze(Rp(ip, :, :))))); 
 end
 
@@ -266,32 +207,28 @@ Rp = Rp .* pr;
 %         title('m_1^+');
 % drawnow;
 
+if nargout == 2
+    varargout{1} = Rp;
+end
+
 % sum the result to evaluate performance
-C = complex(R0) + squeeze(sum(Rp, 1));
+S = R0 + squeeze(sum(Rp, 1));
 % ensure we are working with the magnitude instead of imaginary numbers
-C = real(C);
+S = abs(S);
+
+% figure(h);
+% imagesc(S);
+%     axis image;
+% drawnow;
 
 % maximize the function, use negative sign to use fmin* optimizer
 % remember to squeeze R0 since it is extracted from a multi-dimension array
-S = R0 .* C;
-S = -sum(S(:));% / (sum(R0(:)) * sum(C(:)));
-% S = sum(S(:));
+S = abs(R0) .* S;
+S = -sum(S(:)); % / (sum(R0(:)) * sum(C(:)));
 
 % output is required to be double instead of single
 S = double(S);
 
-% squeeze the dimension
-C = squeeze(C);
-
-% figure(h);
-% imagesc(C);
-%     axis image;
-% drawnow;
-
-if nargout == 2
-    varargout{1} = C;
-end
-
-% profile off;
+profile off;
 
 end
