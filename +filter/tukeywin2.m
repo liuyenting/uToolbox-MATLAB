@@ -8,6 +8,8 @@ function W = tukeywin2(sz, ratio)
 %
 %   See also: TUKEYWIN1
 
+mSz = min(sz);
+tpl = filter.tukeywin1(
 Wx = filter.tukeywin1(sz(1), ratio);
 Wx = Wx.';
 

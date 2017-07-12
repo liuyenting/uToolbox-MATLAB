@@ -49,11 +49,11 @@ for iOri = 1:nOri
         subplot(1, 3, 2);
             imagesc(log(abs(F(:, :, 2))));
             axis image;
-            title('m_1^+');
+            title('m_1^-');
         subplot(1, 3, 3);
             imagesc(log(abs(F(:, :, 3))));
             axis image;
-            title('m_1^-');
+            title('m_1^+');
     end
     
     %% retrieve domains
@@ -92,7 +92,7 @@ for iOri = 1:nOri
     %% calculate kp values
     % find the position of the peak
     X = reshape(X, [prod(fSz), 2]);
-    [M, ind] = max(X);
+    [~, ind] = max(X);
     [y, x] = ind2sub(fSz, ind.');  
     
     % distance toward the origin (center of the image)

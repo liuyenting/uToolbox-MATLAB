@@ -17,9 +17,9 @@ if isempty(A)
     % positivity constraints
     A(A < 0) = 0;
     
-%     figure('Name', 'Apodization Function', 'NumberTitle', 'off');
-%     imagesc(A);
-%         axis image;
+    figure('Name', 'Apodization Function', 'NumberTitle', 'off');
+    imagesc(A);
+        axis image;
 end
 
 % interpolated size
@@ -30,7 +30,7 @@ rSz = parms.RetrievalInterpRatio*imSz;
 F = zeros([imSz, nPhase], 'single');
 Fp = zeros([rSz, nPhase], 'single');
 % interpolated result
-R = zeros([rSz, nPhase, nOri], 'single');
+Fopt = zeros([rSz, nPhase, nOri], 'single');
 
 % buffer space for the relative matrix (single orientation only)
 pr = zeros([rSz, nPhase-1], 'single');
@@ -84,49 +84,54 @@ for iOri = 1:nOri
     
     %% find phases
     % multiply apodization function
-    F = bsxfun(@times, F, A);
+    F = F .* A;
     % upsampling to perform FT interpolation in real space
     li = floor((rSz-imSz)/2)+1;
     ui = li+imSz-1;
     Fp(li(1):ui(1), li(2):ui(2), :) = F;
     
     % reference, m_0
-    Rref = fftshift(ifft2(ifftshift(Fp(:, :, 1))));
-    R(:, :, 1, iOri) = Rref;
+    Fref = Fp(:, :, 1);
+    Fopt(:, :, 1, iOri) = Fref;
     
     %% search the optimal inital phase
+    % unit spatial frequency
+    lim = (2*pi) ./ rSz;
+    
     options = optimoptions( ...
         'fmincon', ...
-        'FiniteDifferenceStepSize', pi/10, ...
+        'FiniteDifferenceStepSize', max(lim), ...
         'StepTolerance', 1e-2, ...
-        'Display', 'notify-detailed' ...
+        'Display', 'iter-detailed' ...
     );
     p0 = fmincon( ...
-        @(x) costfunc(Rref, Fp(:, :, 2:end), x, pr), ...
-        [pi/2, pi/2], ...
+        @(x) costfunc(Fref, Fp(:, :, 2:end), x, pr), ...
+        [0, 0], ...
         [], [], [], [], ...
         [-pi, -pi], [pi, pi], ...
         [], ...
         options ...
     );
 
+    % round p0 to nearest multiple of unit spatial frequency  
+    p0 = round(p0./lim) .* lim;
     fprintf('.... m1=%f, m2=%f\n', p0(1), p0(2));
     
     % save the optimal shifted result
-    [~, Ropt] = costfunc( ...
-        Rref, ...               % m_0
+    [~, Fres] = costfunc( ...
+        Fref, ...               % m_0
         Fp(:, :, 2:end), ...    % m_i
         p0, ...                 % estimated p0
         pr ...                  % relative phase shifts
     );
-    R(:, :, 2:end, iOri) = Ropt;
+    Fopt(:, :, 2:end, iOri) = Fres;
 end
 
 %% the actual reconstruction
 % sum all the orientations and phases
-R = reshape(R, [rSz, nOri*nPhase]);
-J = sum(R, 3);
-J = abs(J);
+Fopt = reshape(Fopt, [rSz, nOri*nPhase]);
+J = sum(Fopt, 3);
+J = fftshift(ifft2(ifftshift(J), 'symmetric'));
 
 %% preview the result
 % % show the reconstructed result
@@ -137,7 +142,7 @@ J = abs(J);
 
 end
 
-function [S, varargout] = costfunc(Rref, Rp, p0, pr)
+function [S, varargout] = costfunc(Fref, Fp, p0, pr)
 %COSTFUNC Cost function to minimize for the phase retrieval algorithm.
 %
 %   sz: image size
@@ -159,35 +164,24 @@ p0 = exp(1i * [-p0; p0]);
 p0 = p0(:);
 np = length(p0);
 
-Rp = bsxfun(@times, Rp, reshape(p0, [1, 1, np]));
+Fp = bsxfun(@times, Fp, reshape(p0, [1, 1, np]));
 
 % back to time domain
 for ip = 1:np
-    Rp(:, :, ip) = fftshift(ifft2(ifftshift(Rp(:, :, ip)))); 
+    Fp(:, :, ip) = fftshift(ifft2(ifftshift(Fp(:, :, ip)))); 
 end
 
-% figure('Name', 'Before', 'NumberTitle', 'off'); 
-% subplot(1, 2, 1);
-%     imagesc(log(abs(squeeze(Rp(1, :, :))))); 
-%         axis image;
-%         title('m_1^-');
-% subplot(1, 2, 2);
-%     imagesc(log(abs(squeeze(Rp(2, :, :)))));
-%         axis image;
-%         title('m_1^+');
-% drawnow;
+% add relative phase shift deduced from kp values (imaginary number in the
+% time domain)
+Fp = Fp .* pr;
 
-% add relative phase shift deduced from kp values
-Rp = Rp .* pr;
-
+Fp = fftshift(fft2(ifftshift(Fp)));
 if nargout == 2
-    varargout{1} = Rp;
+    varargout{1} = Fp;
 end
 
 % sum the result to evaluate performance
-S = Rref + sum(Rp, 3);
-% ensure we are working with the magnitude instead of imaginary numbers
-S = abs(S);
+S = Fref + sum(Fp, 3);
 
 % figure(h);
 % imagesc(S);
@@ -195,9 +189,8 @@ S = abs(S);
 % drawnow;
 
 % maximize the function, use negative sign to use fmin* optimizer
-% remember to squeeze R0 since it is extracted from a multi-dimension array
-S = abs(Rref) .* S;
-S = -sum(S(:)); % / (sum(R0(:)) * sum(C(:)));
+S = abs(Fref .* S);
+S = -sum(S(:));
 
 % output is required to be double instead of single
 S = double(S);

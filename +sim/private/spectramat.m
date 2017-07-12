@@ -7,6 +7,8 @@ function M = spectramat(np, I0, I1)
 %
 %   See also: TBA
 
+%TODO modify to adpat to N-D SIM
+
 % create the phase array
 P = linspace(0, 2*pi, np+1);
 P = P(1:end-1).';
