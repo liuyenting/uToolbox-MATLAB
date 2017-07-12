@@ -22,16 +22,16 @@ if isempty(kp)
     kp = findkp(Ip, volSz(1:2), M, parms, false);
 end
 
-%DEBUG override
-is = floor(nz/2);
-nz = 1;
+% %DEBUG override
+% is = floor(nz/2);
+% nz = 1;
 
 % iterate through the layers
 J = zeros([parms.RetrievalInterpRatio*imSz, nz], 'single');
 
-%DEBUG override
-% for iz = 1:nz
-for iz = is:is+nz-1
+% %DEBUG override
+% for iz = is:is+nz-1
+for iz = 1:nz
     tStart = tic;
     
     fprintf('z = %d\n', iz);
@@ -48,7 +48,7 @@ for iz = is:is+nz-1
     J(:, :, iz) = sireconppcore(L, imSz, M, kp, parms);
     
     tElapsed = toc(tStart);
-    fprintf('%.2fs elapsed\n\n', tElapsed);
+    fprintf('.. %.3fs\n\n', tElapsed);
 end
 
 end

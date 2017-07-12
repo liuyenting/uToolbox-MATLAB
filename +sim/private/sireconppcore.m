@@ -40,6 +40,8 @@ vx = vx - (rSz(1)+1);
 vy = vy - (rSz(2)+1);
 
 for iOri = 1:nOri
+    fprintf('.. o = %d\n', iOri);
+    
     %% create relative phase shift matrix
     % revert from position to shift
     shift = kp(:, :, iOri) - imSz.'/2;
@@ -108,10 +110,7 @@ for iOri = 1:nOri
         options ...
     );
 
-    fprintf( ...
-        '.. o=%d\n.. m1=%.2f, m2=%.2f\n.. ratio=%.2f\n', ...
-        iOri, p0(1), p0(2), p0(2)/p0(1) ...
-    );
+    fprintf('.... m1=%f, m2=%f\n', p0(1), p0(2));
     
     % save the optimal shifted result
     [~, Ropt] = costfunc( ...
@@ -130,11 +129,11 @@ J = sum(R, 3);
 J = abs(J);
 
 %% preview the result
-% show the reconstructed result
-figure('Name', 'Reconstructed', 'NumberTitle', 'off');
-imagesc(J);
-    axis image;
-drawnow;
+% % show the reconstructed result
+% figure('Name', 'Reconstructed', 'NumberTitle', 'off');
+% imagesc(J);
+%     axis image;
+% drawnow;
 
 end
 

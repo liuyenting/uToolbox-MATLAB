@@ -142,9 +142,9 @@ for iFile = 1:nFile
     fclose('all');
     
     tElapse = toc(tInner);
-    fprintf('%f seconds elapsed\n', tElapse);
+    fprintf('%.3fs elapsed\n', tElapse);
 end
 tElapse = toc(tOuter);
-fprintf('%f seconds to process the incoming data\n', tElapse);
+fprintf('+++ %.3fs to complete the time lapse +++\n', tElapse);
 
 profile viewer;
