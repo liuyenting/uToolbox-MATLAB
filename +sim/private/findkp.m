@@ -77,7 +77,7 @@ for iOri = 1:nOri
     [y, x] = ind2sub(fSz, ind);  
     
     % distance toward the origin (center of the image)
-    dist = [x, y] - fSz/2 + 1;
+    dist = [x, y] - fSz/2;
     %TODO +1 or -1 or 0 here?
     % revert to the original sampling frequency
     dist = dist / parms.KpUpsamplingRatio;

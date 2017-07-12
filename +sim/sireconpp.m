@@ -21,13 +21,16 @@ if isempty(kp)
     kp = findkp(Ip, volSz(1:2), M, parms, false);
 end
 
+%DEBUG override
+is = floor(nz/2);
+nz = 1;
+
 % iterate through the layers
 J = zeros([nz, parms.RetrievalInterpRatio*volSz(1:2)], 'single');
-for iz = 1:nz
-%     %DEBUG override z
-%     iz = floor(nz/2);
-%     nz = 1;
 
+%DEBUG override
+% for iz = 1:nz
+for iz = is:is+nz-1
     tStart = tic;
     
     fprintf('z = %d\n', iz);

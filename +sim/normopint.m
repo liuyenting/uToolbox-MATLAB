@@ -8,37 +8,24 @@ nPhases = parms.Phases;
 nz = sz(3);
 
 % find out normalization ratio
-ratio = zeros([nz, nOri, nPhases], 'single');
+ratio = zeros([nPhases, nOri, nz], 'single');
 for io = 1:nOri
     for ip = 1:nPhases
         % extract the volume
-        S = I(:, io, ip, :, :);
-        S = squeeze(S);
+        S = I(:, :, :, ip, io);
         
         % sum along X, Y dimension
-        ratio(:, io, ip) = sum(sum(S, 3), 2);
+        ratio(ip, io, :) = sum(reshape(S, [sz(1)*sz(2), sz(3)]));
     end
 end
 % mean along the orientation and phases
-mratio = mean(mean(ratio, 3), 2);
+mratio = mean(reshape(ratio, [nOri*nPhases, nz]), 1);
 % divide all the values with the ratio
-ratio = ratio ./ repmat(mratio, [1, nOri, nPhases]);
+ratio = bsxfun(@rdivide, ratio, reshape(mratio, [1, 1, nz]));
 
 % normalize
-for io = 1:nOri
-    for ip = 1:nPhases
-        % extract the volume
-        N = I(:, io, ip, :, :);
-        N = squeeze(N);
-        
-        % divide the ratio
-        r = ratio(:, io, ip);
-        N = N ./ repmat(r, [1, sz(1), sz(2)]);
-        
-        % save to output
-        I(:, io, ip, :, :) = N;
-    end
-end
+ratio = permute(ratio, [3, 1, 2]);
+I = bsxfun(@rdivide, I, reshape(ratio, [1, 1, nz, nPhases, nOri]));
 
 end
 

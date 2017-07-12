@@ -21,16 +21,10 @@ osz(3) = osz(3) / (no*np);
 B = reshape(A, [osz(1:2), no, np, osz(3)]);
 
 % re-order so that orientation and phases are the slowest
-%   X Y O P Z  ->  Z O P X Y
-%     X Y O P  ->  O P X Y
-nd = length(osz);
-if nd == 2
-    order = [3, 4, 1, 2];
-elseif nd == 3
-    order = [5, 3, 4, 1, 2];
-else
-    error('sim:phmajor', 'Unsupported dimension format.');
-end
+%   X Y O P Z  ->  X Y | P O | Z
+%     X Y O P  ->  X Y | P O
+order = 1:length(osz)+2;
+order = [order(1:2), order(end:-1:3)];
 B = permute(B, order);
 
 % save the new volume size

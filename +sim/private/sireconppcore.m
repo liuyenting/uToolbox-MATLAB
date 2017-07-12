@@ -37,7 +37,31 @@ Fp = zeros([nPhase, rSz], 'single');
 % interpolated result
 R = zeros([nOri, nPhase, rSz], 'single');
 
+% buffer space for the relative matrix (single orientation only)
+pr = zeros([nPhase-1, rSz], 'single');
+% grids for the relative phase shift matrix
+[vx, vy] = meshgrid(1:rSz(1), 1:rSz(2));
+vx = vx - (rSz(1)+1);
+vy = vy - (rSz(2)+1);
+
 for iOri = 1:nOri
+    %% create relative phase shift matrix
+    % revert from position to shift
+    shift = (squeeze(kp(iOri, :, :)) - repmat(imSz/2, [nPhase-1, 1]));
+    % the ratio in current upsampled dimension
+    shift = shift ./ repmat(rSz, [nPhase-1, 1]);
+    % calculate shift in unit spatial frequency, the result is negated
+    % since we are trying to shift it back to where it should be
+    shift = (2*pi) * (-shift);
+    
+    for iPhase = 1:nPhase-1
+        % fill-in the distance matrix with phase shifts (in unit spatial
+        % frequency)
+        D = vx*shift(iPhase, 1) + vy*shift(iPhase, 2);
+        % convert to imaginary part in order to apply shift in R-space
+        pr(iPhase, :, :) = exp(1i * D);
+    end
+    
     for iPhase = 1:nPhase
         % extract volume
         T = I(iOri, iPhase, :, :);
@@ -71,28 +95,7 @@ for iOri = 1:nOri
     
     % reference, m_0
     Rref = fftshift(ifft2(ifftshift(squeeze(Fp(1, :, :)))));
-    Rref = squeeze(Rref);
-    R(iOri, 1, :, :) = Rref;
-    
-    % revert from position to shift
-    shift = (squeeze(kp(iOri, :, :)) - repmat(imSz/2, [nPhase-1, 1]));
-    % the ratio in current upsampled dimension
-    shift = shift ./ repmat(rSz, [nPhase-1, 1]);
-    % calculate shift in unit spatial frequency, the result is negated
-    % since we are trying to shift it back to where it should be
-    shift = (2*pi) * (-shift);
-  
-    % create the relative phase shift matrix
-    [vx, vy] = meshgrid(1:rSz(1), 1:rSz(2));
-    vx = vx - (rSz(1)+1);
-    vy = vy - (rSz(2)+1);
-    pr = zeros([nPhase-1, rSz], 'single');
-    for iPhase = 1:nPhase-1
-        % distance matrix
-        D = vx*shift(iPhase, 1) + vy*shift(iPhase, 2);
-        % convert to imaginary part in order to apply shift in R-space
-        pr(iPhase, :, :) = exp(1i * D);
-    end
+    R(iOri, 1, :, :) = abs(Rref);
     
     %% search the optimal inital phase
 %     % apply nonlinear optimization
@@ -119,9 +122,8 @@ for iOri = 1:nOri
         [], ...
         options ...
     );
-    
-    p0w = mod(p0, 2*pi);
-    fprintf('o=%d, m1=%.2f, m2=%.2f, ratio=%.2f\n', iOri, p0w(1), p0w(2), p0w(2)/p0w(1));
+
+    fprintf('o=%d, m1=%.2f, m2=%.2f, ratio=%.2f\n', iOri, p0(1), p0(2), p0(2)/p0(1));
     
     % save the optimal shifted result
     [~, Ropt] = costfunc( ...
@@ -142,11 +144,11 @@ J = squeeze(sum(R, 1));
 J = abs(J);
 
 %% preview the result
-% % show the reconstructed result
-% figure('Name', 'Reconstructed', 'NumberTitle', 'off');
-% imagesc(J);
-%     axis image;
-% drawnow;
+% show the reconstructed result
+figure('Name', 'Reconstructed', 'NumberTitle', 'off');
+imagesc(J);
+    axis image;
+drawnow;
 
 end
 
@@ -223,7 +225,7 @@ S = abs(S);
 
 % maximize the function, use negative sign to use fmin* optimizer
 % remember to squeeze R0 since it is extracted from a multi-dimension array
-S = abs(R0) .* S;
+S = R0 .* S;
 S = -sum(S(:)); % / (sum(R0(:)) * sum(C(:)));
 
 % output is required to be double instead of single
