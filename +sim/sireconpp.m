@@ -6,6 +6,7 @@ function J = sireconpp(I, volSz, parms)
 persistent kp;
 
 % extract frequently used parameters
+imSz = volSz(1:2);
 nz = volSz(3);
 
 % generate spectral matrix on-the-fly
@@ -26,7 +27,7 @@ is = floor(nz/2);
 nz = 1;
 
 % iterate through the layers
-J = zeros([nz, parms.RetrievalInterpRatio*volSz(1:2)], 'single');
+J = zeros([parms.RetrievalInterpRatio*imSz, nz], 'single');
 
 %DEBUG override
 % for iz = 1:nz
@@ -36,14 +37,15 @@ for iz = is:is+nz-1
     fprintf('z = %d\n', iz);
     
     % extract the layer
-    L = I(iz, :, :, :, :);
+    L = I(:, :, iz, :, :);
     % use reshape instead of squeeze to avoid single orientation get
     % squeezed as well
     sz = size(L);
-    L = reshape(L, sz(2:end));
+    sz(3) = [];
+    L = reshape(L, sz);
     
     % run the reconstruction on specific layer
-    J(iz, :, :) = sireconppcore(L, volSz(1:2), M, kp, parms);
+    J(:, :, iz) = sireconppcore(L, imSz, M, kp, parms);
     
     tElapsed = toc(tStart);
     fprintf('%.2fs elapsed\n\n', tElapsed);

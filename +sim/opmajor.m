@@ -21,9 +21,11 @@ osz(3) = osz(3) / (no*np);
 B = reshape(A, [osz(1:2), no, np, osz(3)]);
 
 % re-order so that orientation and phases are the slowest
-%   X Y O P Z  ->  X Y | P O | Z
-%     X Y O P  ->  X Y | P O
-order = 1:length(osz)+2;
+%   X Y O P Z  ->  X Y | Z P O
+%     X Y O P  ->  X Y | 1 P O
+% maximum order hard-coded to 5 indicates that maximum supported dimension
+% is XYZ
+order = 1:5;
 order = [order(1:2), order(end:-1:3)];
 B = permute(B, order);
 

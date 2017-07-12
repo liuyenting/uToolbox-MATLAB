@@ -12,15 +12,14 @@ nPhase = parms.Phases;
 psz = parms.PadSize;
 
 % buffer space for results from the frequency domain, x2 upsampling
-fSz = parms.KpUpsamplingRatio * imSz;
-F = zeros([nPhase, fSz], 'single');
+fSz = parms.KpUpsamplingRatio*imSz;
+F = zeros([fSz, nPhase], 'single');
 % initialize the kp
-kp = zeros([nOri, nPhase-1, 2], 'single');
+kp = zeros([2, nPhase-1, nOri], 'single');
 for iOri = 1:nOri
     for iPhase = 1:nPhase
         % extract volume
-        T = I(iOri, iPhase, :, :);
-        T = squeeze(T);
+        T = I(:, :, iPhase, iOri);
         
         % pad the surrounding sides
         T = padarray(T, [psz, psz], 0, 'both');
@@ -34,25 +33,45 @@ for iOri = 1:nOri
         %   reciprocal space. This behavior is not observed in the ordinary
         %   reconstruction due to possible losses, hence multiplication as
         %   sine wave modulation in spatial domain is preferred.
-        F(iPhase, :, :) = fftshift(fft2(ifftshift(T), fSz(2), fSz(1)));
+        F(:, :, iPhase) = fftshift(fft2(ifftshift(T), fSz(2), fSz(1)));
+    end
+    
+    % preview the result
+    if show
+        figure( ...
+            'Name', 'Reciprocal Space', ...
+            'NumberTitle', 'off' ...
+        );
+        subplot(1, 3, 1);
+            imagesc(log(abs(F(:, :, 1))));
+            axis image;
+            title('m_0');
+        subplot(1, 3, 2);
+            imagesc(log(abs(F(:, :, 2))));
+            axis image;
+            title('m_1^+');
+        subplot(1, 3, 3);
+            imagesc(log(abs(F(:, :, 3))));
+            axis image;
+            title('m_1^-');
     end
     
     %% retrieve domains
     % flatten the array
-    F = reshape(F, [iPhase, prod(fSz)]);
+    F = reshape(F, [prod(fSz), nPhase]);
     % solve the matrix
-    F = M \ F;
+    F = (M \ F')';
     % reshape back to original image size
-    F = reshape(F, [iPhase, fSz]);
+    F = reshape(F, [fSz, nPhase]);
     
     %% find peaks (frequencies)
-    % compute thr magnitude for peak search
-    F = abs(F(1:3, :, :));
+    % compute the magnitude for peak search
+    F = abs(F(:, :, 1:3));
     
     % find the m1-/m1+ terms
-    X = zeros([2, fSz], 'single');
-    X(1, :, :) = fxcorr2(squeeze(F(1, :, :)), squeeze(F(2, :, :)));
-    X(2, :, :) = fxcorr2(squeeze(F(1, :, :)), squeeze(F(3, :, :)));
+    X = zeros([fSz, 2], 'single');
+    X(:, :, 1) = fxcorr2(F(:, :, 1), F(:, :, 2));
+    X(:, :, 2) = fxcorr2(F(:, :, 1), F(:, :, 3));
     
     % preview the result
     if show
@@ -61,20 +80,20 @@ for iOri = 1:nOri
             'NumberTitle', 'off' ...
         );
         subplot(1, 2, 1);
-            imagesc(squeeze(X(1, :, :)));
+            imagesc(X(:, :, 1));
             axis image;
             title('m_1^-');
         subplot(1, 2, 2);
-            imagesc(squeeze(X(2, :, :)));
+            imagesc(X(:, :, 2));
             axis image;
             title('m_1^+');
     end
     
     %% calculate kp values
     % find the position of the peak
-    X = reshape(X, [2, prod(fSz)]);
-    [M, ind] = max(X, [], 2);
-    [y, x] = ind2sub(fSz, ind);  
+    X = reshape(X, [prod(fSz), 2]);
+    [M, ind] = max(X);
+    [y, x] = ind2sub(fSz, ind.');  
     
     % distance toward the origin (center of the image)
     dist = [x, y] - fSz/2;
@@ -83,8 +102,8 @@ for iOri = 1:nOri
     dist = dist / parms.KpUpsamplingRatio;
     
     % convert to positions and save them
-    kp(iOri, 1:2, :) = dist + imSz/2;
-    kp(iOri, 3:4, :) = 2*dist + imSz/2;
+    kp(:, 1:2, iOri) = (dist + imSz/2).';
+    kp(:, 3:4, iOri) = (2*dist + imSz/2).';
 end
 
 %% print the result
@@ -100,17 +119,17 @@ for iPhase = 2:2:nPhase
     rowname{iPhase} = sprintf('m%d+', i);
 end
 
-kpstr = cell([nOri, nPhase-1]);
+kpstr = cell([nPhase-1, nOri]);
 for iOri = 1:nOri
     for iPhase = 1:nPhase-1
-        kpstr{iOri, iPhase} = sprintf( ...
-            '(%.2f, %.2f)', kp(iOri, iPhase, 1), kp(iOri, iPhase, 2) ...
+        kpstr{iPhase, iOri} = sprintf( ...
+            '(%.2f, %.2f)', kp(1, iPhase, iOri), kp(2, iPhase, iOri) ...
         );
     end
 end
 
 result = array2table( ...
-    kpstr.', ...
+    kpstr, ...
     'VariableNames', colname, ...
     'RowNames', rowname ...
 );
@@ -125,6 +144,11 @@ function C = fxcorr2(A, B)
 %   of C is the maximum size of A and B on X and Y dimension.
 %
 %   See also: FFT2, IFFT2, FFTSHIFT, IFFTSHIFT
+
+% real data only
+if ~isreal(A) || ~isreal(B)
+    error('sim:findkp:fxcorr2', 'Only real data are allowed.');
+end
 
 % find the region that can cover both A and B
 % size of an image is [nrows (y), ncols (x)]

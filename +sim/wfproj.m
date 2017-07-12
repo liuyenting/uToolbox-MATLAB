@@ -25,16 +25,14 @@ nOri = parms.Orientations;
 nPhase = parms.Phases;
 
 %% create MIP for each orientation and phase
-Ip = zeros([nOri, nPhase, volSz(1:2)], 'single');
+Ip = zeros([volSz(1:2), nPhase, nOri], 'single');
 for iOri = 1:nOri
     for iPhase = 1:nPhase
         % extract the volume
-        P = I(:, iOri, iPhase, :, :);
-        P = squeeze(P);
+        P = I(:, :, :, iPhase, iOri);
 
         % MIP along Z axis
-        P = max(P, [], 1);
-        P = squeeze(P);
+        P = max(P, [], 3);
 
         % save to file
         fname = sprintf('o%d_p%d.tif', iOri, iPhase);
@@ -42,14 +40,13 @@ for iOri = 1:nOri
         tiff.imsave(P, fpath);
 
         % save the result for further processing
-        Ip(iOri, iPhase, :, :) = P;
+        Ip(:, :, iPhase, iOri) = P;
     end
 end
 
 %% pseudo widefield image
-WF = reshape(Ip, [nOri*nPhase, volSz(1:2)]);
-WF = sum(WF, 1);
-WF = squeeze(WF);
+WF = reshape(Ip, [volSz(1:2), nOri*nPhase]);
+WF = sum(WF, 3);
 tiff.imsave(WF, fullfile(wfDir, 'widefield.tif'));
 
 if nargout == 1
