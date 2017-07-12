@@ -86,7 +86,6 @@ for iOri = 1:nOri
         % convert to imaginary part in order to apply shift in R-space
         pr(iPhase, :, :) = exp(1i * D);
     end
-    pr = real(pr);
     
     %% search the optimal inital phase
 %     % search density
@@ -147,16 +146,30 @@ for iOri = 1:nOri
 %     profile on;
 %     profile off;
     
-    % apply nonlinear optimization
-    problem = struct;
-    problem.objective = @(x) costfunc(Rref, R(2:end, :, :), rSz, x, pr);
-    problem.x0 = [0, 0];
-    problem.solver = 'fminsearch';
-    % additional options
-    options = optimset('Display', 'final', 'TolX', 1e-6);
-    problem.options = options;
-    p0 = fminsearch(problem);
-    
+%     % apply nonlinear optimization
+%     problem = struct;
+%     problem.objective = @(x) costfunc(Rref, R(2:end, :, :), rSz, x, pr);
+%     problem.x0 = [0, 0];
+%     problem.solver = 'fminsearch';
+%     % additional options
+%     options = optimset('Display', 'final', 'TolX', 1e-6);
+%     problem.options = options;
+%     p0 = fminsearch(problem);
+    options = optimoptions( ...
+        'fmincon', ...
+        'FiniteDifferenceStepSize', pi/10, ...
+        'StepTolerance', 1e-2, ...
+        'Display', 'final' ...
+    );
+    p0 = fmincon( ...
+        @(x) costfunc(Rref, R(2:end, :, :), rSz, x, pr), ...
+        [0, 0], ...
+        [], [], [], [], ...
+        [-pi, -pi], [pi, pi], ...
+        [], ...
+        options ...
+    );
+
     disp(p0);
 
     %% the actual reconstruction
@@ -198,9 +211,9 @@ function [S, varargout] = costfunc(R0, Rp, sz, p0, pr)
 
 np = length(p0);
 
-% interleave the phases since we have m_i^- and p_i^+
+% interleave the phases and double the element count since we now have 
+% m_i^- and p_i^+
 p0 = exp(1i * [-p0, p0]);
-% since we have -/+, element count has to double
 np = 2*np;
 % flatten the array for the linear duplication later
 p0 = reshape(p0', [1, np]);
@@ -208,7 +221,6 @@ p0 = reshape(p0', [1, np]);
 p0 = repmat(p0, [prod(sz), 1]);
 % reshape to the proper matrix size
 p0 = reshape(p0, [sz, np]);
-% m_i major instead of X/Y major
 p0 = permute(p0, [3, 1, 2]);
 % %DEBUG preview
 % figure('Name', 'Initial Phase Shift', 'NumberTitle', 'off');
@@ -222,11 +234,11 @@ p0 = permute(p0, [3, 1, 2]);
 %         title('m_i^+');
 % drawnow;
 % apply estimated initial phase shift
-Rp = Rp .* real(p0);
+Rp = Rp .* p0;
 
 % revert back to real space
 for ip = 1:np
-    Rp(ip, :, :) = fftshift(ifft2(ifftshift(squeeze(Rp(ip, :, :))), 'symmetric')); 
+    Rp(ip, :, :) = fftshift(ifft2(ifftshift(squeeze(Rp(ip, :, :))))); 
 end
 
 % figure('Name', 'Before', 'NumberTitle', 'off'); 
@@ -255,15 +267,14 @@ Rp = Rp .* pr;
 % drawnow;
 
 % sum the result to evaluate performance
-%C = complex(R0) + squeeze(sum(Rp, 1));
-C = R0 + squeeze(sum(Rp, 1));
+C = complex(R0) + squeeze(sum(Rp, 1));
 % ensure we are working with the magnitude instead of imaginary numbers
-%C = abs(C);
+C = real(C);
 
 % maximize the function, use negative sign to use fmin* optimizer
 % remember to squeeze R0 since it is extracted from a multi-dimension array
 S = R0 .* C;
-S = - sum(S(:)) / (sum(R0(:)) * sum(C(:)));
+S = - sum(S(:));% / (sum(R0(:)) * sum(C(:)));
 % S = sum(S(:));
 
 % output is required to be double instead of single
