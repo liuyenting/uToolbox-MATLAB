@@ -8,14 +8,21 @@ function W = tukeywin2(sz, ratio)
 %
 %   See also: TUKEYWIN1
 
-mSz = min(sz);
-tpl = filter.tukeywin1(
-Wx = filter.tukeywin1(sz(1), ratio);
-Wx = Wx.';
+[vx, vy] = meshgrid(1:sz(1), 1:sz(2));
+vx = vx - sz(1)/2;
+vy = vy - sz(2)/2;
+% generate the distance matrix
+[~, D] = cart2pol(vx, vy);
 
-Wy = filter.tukeywin1(sz(2), ratio);
+% radius is limited by the minimal dimension
+r = min(sz);
 
-W = Wy .* Wx;
+% create the LUT
+x = linspace(-r/2, r/2, r);
+y = filter.tukeywin1(r, ratio);
+
+% return 0 for out-of-bound values
+W = interp1(x, y, D, 'linear', 0);
 
 end
 
