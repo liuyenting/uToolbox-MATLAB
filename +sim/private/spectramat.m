@@ -23,9 +23,13 @@ M = [ ...
     I1 * exp(-1i * 2*P) ...
 ];
 
-% type cast
+% divide a constant factor which scale the intensity of the captured image
+% (assusmed to be) 1
+M = M / (I0+2*I1);
+
+% type cast to single precision in order to avoid unnecessary type cast in
+% rest of the pipeline
 M = single(M);
-M = M / 9;
 
 end
 
