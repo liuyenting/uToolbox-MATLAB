@@ -17,9 +17,9 @@ if isempty(A)
     % positivity constraints
     A(A < 0) = 0;
     
-    figure('Name', 'Apodization Function', 'NumberTitle', 'off');
-    imagesc(A);
-        axis image;
+%     figure('Name', 'Apodization Function', 'NumberTitle', 'off');
+%     imagesc(A);
+%         axis image;
 end
 
 % interpolated size
@@ -92,7 +92,8 @@ for iOri = 1:nOri
     
     % reference, m_0
     Fref = Fp(:, :, 1);
-    Fopt(:, :, 1, iOri) = Fref;
+    %NOTE why? normalize?
+    Fopt(:, :, 1, iOri) = Fref / nOri;
     
     %% search the optimal inital phase
     % unit spatial frequency
@@ -102,7 +103,7 @@ for iOri = 1:nOri
         'fmincon', ...
         'FiniteDifferenceStepSize', max(lim), ...
         'StepTolerance', 1e-2, ...
-        'Display', 'iter-detailed' ...
+        'Display', 'notify-detailed' ...
     );
     p0 = fmincon( ...
         @(x) costfunc(Fref, Fp(:, :, 2:end), x, pr), ...
@@ -134,21 +135,21 @@ J = sum(Fopt, 3);
 J = fftshift(ifft2(ifftshift(J), 'symmetric'));
 
 %% preview the result
-% % show the reconstructed result
-% figure('Name', 'Reconstructed', 'NumberTitle', 'off');
-% imagesc(J);
-%     axis image;
-% drawnow;
+% show the reconstructed result
+figure('Name', 'Reconstructed', 'NumberTitle', 'off');
+imagesc(J);
+    axis image;
+drawnow;
 
 end
 
 function [S, varargout] = costfunc(Fref, Fp, p0, pr)
 %COSTFUNC Cost function to minimize for the phase retrieval algorithm.
 %
-%   sz: image size
-%   Rp: frequency plane
-%   p0: initial phase shift
-%    p: relative phsae shift, determined by kp
+%   Fref: reference frequency plane, m_0
+%     Fp: frequency plane, m_i
+%     p0: initial phase shift
+%     pr: relative phsae shift, determined by kp
 
 % persistent h;
 % 
@@ -159,17 +160,15 @@ function [S, varargout] = costfunc(Fref, Fp, p0, pr)
 profile resume;
 
 % interleave the phases since we now have m_i^- and m_i^+
-p0 = exp(1i * [-p0; p0]);
+p0 = exp(1i * [-p0; +p0]);
 % flatten the array for the linear duplication later
 p0 = p0(:);
 np = length(p0);
 
-Fp = bsxfun(@times, Fp, reshape(p0, [1, 1, np]));
+Fp = Fp .* reshape(p0, [1, 1, np]);
 
 % back to time domain
-for ip = 1:np
-    Fp(:, :, ip) = fftshift(ifft2(ifftshift(Fp(:, :, ip)))); 
-end
+Fp = fftshift(ifft2(ifftshift(Fp), 'symmetric'));
 
 % add relative phase shift deduced from kp values (imaginary number in the
 % time domain)
@@ -177,7 +176,8 @@ Fp = Fp .* pr;
 
 Fp = fftshift(fft2(ifftshift(Fp)));
 if nargout == 2
-    varargout{1} = Fp;
+    %NOTE why? normalize?
+    varargout{1} = Fp / 3;
 end
 
 % sum the result to evaluate performance
