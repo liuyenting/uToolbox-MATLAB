@@ -90,20 +90,22 @@ for iOri = 1:nOri
     end
     
     %% calculate kp values
+    %TODO generalize to N-D SIM
     % find the position of the peak
     X = reshape(X, [prod(fSz), 2]);
     [~, ind] = max(X);
     [y, x] = ind2sub(fSz, ind.');  
     
     % distance toward the origin (center of the image)
-    dist = [x, y] - fSz/2;
-    %TODO +1 or -1 or 0 here?
+    midpt = floor(fSz/2)+1;
+    dist = [x, y] - midpt;
     % revert to the original sampling frequency
     dist = dist / parms.KpUpsamplingRatio;
     
     % convert to positions and save them
-    kp(:, 1:2, iOri) = (dist + imSz/2).';
-    kp(:, 3:4, iOri) = (2*dist + imSz/2).';
+    midpt = floor(imSz/2)+1;
+    kp(:, 1:2, iOri) = (dist + midpt).';
+    kp(:, 3:4, iOri) = (2*dist + midpt).';
 end
 
 %% print the result

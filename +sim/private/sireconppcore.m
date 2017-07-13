@@ -14,9 +14,6 @@ if isempty(A)
     A = filter.tukeywin2(imSz, parms.ApodizeRatio);
     A = single(A);
     
-    % positivity constraints
-    A(A < 0) = 0;
-    
 %     figure('Name', 'Apodization Function', 'NumberTitle', 'off');
 %     imagesc(A);
 %         axis image;
@@ -36,15 +33,17 @@ Fopt = zeros([rSz, nPhase, nOri], 'single');
 pr = zeros([rSz, nPhase-1], 'single');
 % grids for the relative phase shift matrix
 [vx, vy] = meshgrid(1:rSz(1), 1:rSz(2));
-vx = vx - (rSz(1)+1);
-vy = vy - (rSz(2)+1);
+midpt = floor(rSz/2) + 1;
+vx = vx - midpt(1);
+vy = vy - midpt(2);
 
 for iOri = 1:nOri
     fprintf('.. o = %d\n', iOri);
     
     %% create relative phase shift matrix
     % revert from position to shift
-    shift = kp(:, :, iOri) - imSz.'/2;
+    midpt = floor(imSz/2)+1;
+    shift = kp(:, :, iOri) - midpt.';
     % the ratio in current upsampled dimension
     shift = bsxfun(@rdivide, shift, rSz.');
     % calculate shift in unit spatial frequency, the result is negated
@@ -92,8 +91,22 @@ for iOri = 1:nOri
     
     % reference, m_0
     Fref = Fp(:, :, 1);
-    %NOTE why? normalize?
-    Fopt(:, :, 1, iOri) = Fref / nOri;
+    %TODO weighting 
+    Fopt(:, :, 1, iOri) = Fref;
+    
+    %% test run
+    nt = 20;
+    pt = linspace(0, 2*pi, nt);
+    ct = zeros([nt, 1]);
+    for t = 1:nt
+        p = pt(t); 
+        ct(t) = costfunc(Fref, Fp(:, :, 4:5), p, pr(:, :, 3:4));
+        fprintf('t = %d, p1 = %f, c = %f\n', t, p, ct(t));
+        pause(2);
+    end
+    figure('Name', 'Cost Function t-Plot', 'NumberTitle', 'off');
+    plot(ct);
+        xlabel('Phase Shift');
     
     %% search the optimal inital phase
     % unit spatial frequency
@@ -103,7 +116,7 @@ for iOri = 1:nOri
         'fmincon', ...
         'FiniteDifferenceStepSize', max(lim), ...
         'StepTolerance', 1e-2, ...
-        'Display', 'notify-detailed' ...
+        'Display', 'iter-detailed' ...
     );
     p0 = fmincon( ...
         @(x) costfunc(Fref, Fp(:, :, 2:end), x, pr), ...
@@ -129,6 +142,7 @@ for iOri = 1:nOri
 end
 
 %% the actual reconstruction
+%TODO use generalized Weiner filter
 % sum all the orientations and phases
 Fopt = reshape(Fopt, [rSz, nOri*nPhase]);
 J = sum(Fopt, 3);
@@ -143,7 +157,7 @@ drawnow;
 
 end
 
-function [S, varargout] = costfunc(Fref, Fp, p0, pr)
+function [err, varargout] = costfunc(Fref, Fp, p0, pr)
 %COSTFUNC Cost function to minimize for the phase retrieval algorithm.
 %
 %   Fref: reference frequency plane, m_0
@@ -151,11 +165,11 @@ function [S, varargout] = costfunc(Fref, Fp, p0, pr)
 %     p0: initial phase shift
 %     pr: relative phsae shift, determined by kp
 
-% persistent h;
-% 
-% if isempty(h) || ~isvalid(h)
-%     h = figure('Name', 'Phase Retrieval', 'NumberTitle', 'off');
-% end
+persistent h;
+
+if isempty(h) || ~isvalid(h)
+    h = figure('Name', 'Phase Retrieval', 'NumberTitle', 'off');
+end
 
 profile resume;
 
@@ -168,32 +182,50 @@ np = length(p0);
 Fp = Fp .* reshape(p0, [1, 1, np]);
 
 % back to time domain
-Fp = fftshift(ifft2(ifftshift(Fp), 'symmetric'));
+Fp = fftshift(ifft2(ifftshift(Fp)));
 
 % add relative phase shift deduced from kp values (imaginary number in the
 % time domain)
 Fp = Fp .* pr;
 
+% if nargout == 2
+%     %TODO weighting 
+%     varargout{1} = Fp;
+% end
 Fp = fftshift(fft2(ifftshift(Fp)));
 if nargout == 2
-    %NOTE why? normalize?
-    varargout{1} = Fp / 3;
+    %TODO weighting 
+    varargout{1} = Fp;
 end
 
 % sum the result to evaluate performance
-S = Fref + sum(Fp, 3);
+% S = Fref + sum(Fp, 3);
+S = sum(Fp, 3);
 
-% figure(h);
-% imagesc(S);
-%     axis image;
-% drawnow;
+R = fftshift(ifft2(ifftshift(Fref + S), 'symmetric'));
+figure(h);
+imagesc(R);
+    axis image;
+    colormap(gray);
+drawnow;
 
 % maximize the function, use negative sign to use fmin* optimizer
-S = abs(Fref .* S);
-S = -sum(S(:));
+% S = abs(Fref .* S);
+% S = -sum(S(:));
+N = conj(Fref) .* S;
+D = abs(Fref).^2;
+% regression coefficient
+s = sum(N(:)) / sum(D(:));
+
+% error
+%err = abs(Fref - s * S);
+err = abs(Fref - S);
+err = sum(err(:));
+
+% s = -abs(s);
 
 % output is required to be double instead of single
-S = double(S);
+err = double(err);
 
 profile off;
 

@@ -11,8 +11,8 @@ clearvars -global;
 
 %TODO remove OS dependent test code
 if ispc
-    srcDir = 'F:\\Andy\\06302017_SIM\\Tan1_3_3DSIM';
-    psfFileName = 'F:\\Andy\\06302017_SIM\\PSF\\PSF_NA1p1_520nm_x100nm.tif';
+    srcDir = 'D:\\Andy\\06302017_SIM\\Tan1_3_3DSIM';
+    psfFileName = 'D:\\Andy\\06302017_SIM\\PSF\\PSF_NA1p1_520nm_x100nm.tif';
 else
     srcDir = 'data/sim/06302017_SIM/Tan1_3_3DSIM';
     psfFileName = 'data/sim/06302017_SIM/PSF/PSF_NA1p1_520nm_x100nm.tif';
@@ -147,4 +147,4 @@ end
 tElapse = toc(tOuter);
 fprintf('+++ %.3fs to complete the time lapse +++\n', tElapse);
 
-profile viewer;
+% profile viewer;

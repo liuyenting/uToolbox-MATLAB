@@ -4,9 +4,9 @@ function batchshear
 %   perform the operation.
 
 % Acquisition paramters.
-acqParam.ObjectiveAngle = -32.8; % [deg]
-acqParam.ZStepWidth = 0.3;      % [um]
-acqParam.PixelWidth = 0.102;    % [um]
+acqParam.ObjectiveAngle = 32.8; % [deg]
+acqParam.ZStepWidth = 0.6;      % [um]
+acqParam.PixelWidth = 0.103175;    % [um]
 
 %% Verify input.
 % Ask for directory.
