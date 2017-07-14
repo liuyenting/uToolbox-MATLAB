@@ -157,12 +157,12 @@ end
 J = wnrrecon(Fopt, imSz, popt, pr, parms);
 
 %% preview the result
-% % show the reconstructed result
-% figure('Name', 'Reconstructed', 'NumberTitle', 'off');
-% imagesc(J);
-%     axis image;
-%     colormap(gray);
-% drawnow;
+% show the reconstructed result
+figure('Name', 'Reconstructed', 'NumberTitle', 'off');
+imagesc(J);
+    axis image;
+    colormap(gray);
+drawnow;
 
 end
 
