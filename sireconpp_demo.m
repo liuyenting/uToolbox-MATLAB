@@ -50,6 +50,12 @@ siparms.PadSize = 10;
 siparms.ApodizeRatio = 0.5;
 siparms.RetrievalInterpRatio = 2;
 
+% generalized Wiener filter
+siparms.NA = 1.1;           % effective NA
+siparms.Wavelength = 520;   % [nm]
+siparms.PixelSize = 100;    % [um] or [um, um]
+siparms.WienerConstant = 1e-8;
+
 %% verify the input
 % check whether the input directory exsists
 if exist(srcDir, 'dir') ~= 7
@@ -66,6 +72,11 @@ if exist(dstDir, 'dir') == 7
         % recreate the folder
         util.rmcontent(dstDir);
     end
+end
+
+% duplicate pixel size if isotropic
+if length(siparms.PixelSize) == 1
+    siparms.PixelSize = siparms.PixelSize * [1, 1];
 end
 
 %% create the destination directory

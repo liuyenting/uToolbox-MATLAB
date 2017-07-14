@@ -23,7 +23,7 @@ if isempty(kp)
 end
 
 % %DEBUG override
-% is = floor(nz/2);
+% is = 42;
 % nz = 1;
 
 % iterate through the layers
