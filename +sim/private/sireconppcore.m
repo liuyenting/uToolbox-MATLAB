@@ -2,22 +2,10 @@ function J = sireconppcore(I, imSz, M, kp, parms)
 %SIRECONPPCORE Summary of this function goes here
 %   Detailed explanation goes here
 
-persistent A;
-
 % extract frequent use parameters
 nOri = parms.Orientations;
 nPhase = parms.Phases;
 psz = parms.PadSize;
-
-% create the apodization function if not exists
-if isempty(A)
-    A = filter.tukeywin2(imSz, parms.ApodizeRatio);
-    A = single(A);
-    
-%     figure('Name', 'Apodization Function', 'NumberTitle', 'off');
-%     imagesc(A);
-%         axis image;
-end
 
 % interpolated size
 rSz = parms.RetrievalInterpRatio*imSz;

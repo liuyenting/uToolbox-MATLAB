@@ -3,6 +3,18 @@ function J = wnrrecon(Fopt, imSz, popt, pr, parms)
 %   
 %   TBA
 
+persistent A;
+
+% create the apodization function if not exists
+if isempty(A)
+    A = filter.tukeywin2(imSz, parms.ApodizeRatio);
+    A = single(A);
+    
+%     figure('Name', 'Apodization Function', 'NumberTitle', 'off');
+%     imagesc(A);
+%         axis image;
+end
+
 % extract frequent use parameters
 nOri = parms.Orientations;
 nPhase = parms.Phases;
@@ -43,6 +55,8 @@ for iOri = 1:nOri
         % extract volume
         T = Fopt(:, :, iPhase, iOri);
         
+        T = (T ./ Iotf);
+        
         % calculate the average noise spectrum
         Pn = T .* m;
         Pn = Pn .* conj(Pn);
@@ -68,7 +82,7 @@ for iOri = 1:nOri
         T = Fopt(:, :, iPhase, iOri);
         
         %% multiply the filter function
-        T = T .* C(:, :, iPhase, iOri);
+        T = (T ./ Iotf) .* C(:, :, iPhase, iOri);
         
         % upsampling to perform FT interpolation in real space
         li = floor((rSz-imSz)/2)+1;
