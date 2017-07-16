@@ -13,15 +13,13 @@ rSz = parms.RetrievalInterpRatio*imSz;
 % buffer space for results from the frequency domain, each for the original
 % image and the padded image
 F = zeros([imSz, nPhase], 'single');
-Fp = zeros([rSz, nPhase], 'single');
-% interpolated result
-% Fopt = zeros([rSz, nPhase, nOri], 'single');
-Fopt = zeros([imSz, nPhase, nOri], 'single');
+Fp = zeros([rSz, nPhase, nOri], 'single');
+
 % initial phase 
 popt = zeros([(nPhase-1)/2, nOri], 'single');
 
 % buffer space for the relative matrix (single orientation only)
-pr = zeros([rSz, nPhase-1], 'single');
+pr = zeros([rSz, nPhase-1, nOri], 'single');
 % grids for the relative phase shift matrix
 [vx, vy] = meshgrid(1:rSz(1), 1:rSz(2));
 midpt = floor(rSz/2)+1;
@@ -46,7 +44,7 @@ for iOri = 1:nOri
         % frequency)
         D = vx*shift(1, iPhase) + vy*shift(2, iPhase);
         % convert to imaginary part in order to apply shift in R-space
-        pr(:, :, iPhase) = exp(1i * D);
+        pr(:, :, iPhase, iOri) = exp(1i * D);
     end
     
     for iPhase = 1:nPhase
@@ -78,12 +76,7 @@ for iOri = 1:nOri
     % upsampling to perform FT interpolation in real space
     li = floor((rSz-imSz)/2)+1;
     ui = li+imSz-1;
-    Fp(li(1):ui(1), li(2):ui(2), :) = F;
-    
-    % reference, m_0
-%     Fref = Fp(:, :, 1);
-    Fref = F(:, :, 1);
-    Fopt(:, :, 1, iOri) = Fref;
+    Fp(li(1):ui(1), li(2):ui(2), :, iOri) = F;
     
 %     %% test run
 %     nt = 20;
@@ -101,7 +94,6 @@ for iOri = 1:nOri
     
     %% search the optimal inital phase
     % unit spatial frequency
-%     lim = (2*pi) ./ rSz;
     lim = (2*pi) ./ imSz;
     
     options = optimoptions( ...
@@ -110,9 +102,9 @@ for iOri = 1:nOri
         'StepTolerance', 1e-2, ...
         'Display', 'notify-detailed' ...
     );
-%         @(x) costfunc(Fref, Fp(:, :, 2:end), x, pr), ...
+
     p0 = fmincon( ...
-        @(x) costfunc(Fref, F(:, :, 2:end), imSz, rSz, x, pr), ...
+        @(x) costfunc(Fp(:, :, 1), Fp(:, :, 2:end), x, pr), ...
         [0, 0], ...
         [], [], [], [], ...
         [-pi, -pi], [pi, pi], ...
@@ -124,15 +116,7 @@ for iOri = 1:nOri
     p0 = round(p0./lim) .* lim;
     fprintf('.... m1=%f, m2=%f\n', p0(1), p0(2));
     
-    % save the optimal shifted result
-    [~, Fres] = costfunc( ...
-        Fref, ...               % m_0
-        F(:, :, 2:end), ...    % m_i
-        imSz, rSz, ...
-        p0, ...                 % estimated p0
-        pr ...                  % relative phase shifts
-    );
-    Fopt(:, :, 2:end, iOri) = Fres;
+    % save the optimal initial phase shift
     popt(:, iOri) = p0;
 end
 
@@ -142,7 +126,7 @@ end
 % Fopt = reshape(Fopt, [rSz, nOri*nPhase]);
 % J = sum(Fopt, 3);
 % J = fftshift(ifft2(ifftshift(J), 'symmetric'));
-J = wnrrecon(Fopt, imSz, popt, pr, parms);
+J = wnrrecon(Fp, imSz, popt, pr, parms);
 
 %% preview the result
 % show the reconstructed result
@@ -154,7 +138,7 @@ drawnow;
 
 end
 
-function [err, varargout] = costfunc(Fref, F, imSz, rSz, p0, pr)
+function err = costfunc(Fref, F, p0, pr)
 %COSTFUNC Cost function to minimize for the phase retrieval algorithm.
 %
 %   Fref: reference frequency plane, m_0
@@ -172,39 +156,24 @@ profile resume;
 
 % interleave the phases since we now have m_i^- and m_i^+
 p0 = exp(1i * [+p0; -p0]);
-% flatten the array for the linear duplication later
+% flatten the array for linear duplication
 p0 = p0(:);
 np = length(p0);
 
 F = F .* reshape(p0, [1, 1, np]);
 
-if nargout == 2
-    varargout{1} = F;
-end
-
-%TODO inject filter function
-%TODO pad to rSz
-% upsampling to perform FT interpolation in real space
-li = floor((rSz-imSz)/2)+1;
-ui = li+imSz-1;
-Fp = zeros([rSz, 4], 'single');
-Fp(li(1):ui(1), li(2):ui(2), :) = F;
-
 % back to time domain
-Fp = fftshift(ifft2(ifftshift(Fp)));
+F = fftshift(ifft2(ifftshift(F)));
 
 % add relative phase shift deduced from kp values (imaginary number in the
 % time domain)
-Fp = Fp .* pr;
+F = F .* pr;
 
-Fp = fftshift(fft2(ifftshift(Fp)));
-% if nargout == 2
-%     varargout{1} = Fp;
-% end
+F = fftshift(fft2(ifftshift(F)));
 
-% sum the result to evaluate performance
+% % sum the result to evaluate performance
 % S = Fref + sum(Fp, 3);
-
+% 
 % R = fftshift(ifft2(ifftshift(S), 'symmetric'));
 % figure(h);
 % imagesc(R);
@@ -212,13 +181,8 @@ Fp = fftshift(fft2(ifftshift(Fp)));
 %     colormap(gray);
 % drawnow;
 
-% pad F reference
-Ftmp = zeros([rSz, 4], 'single');
-Ftmp(li(1):ui(1), li(2):ui(2)) = Fref;
-Fref = Ftmp;
-
 % error
-err = abs(Fref - Fp);
+err = abs(Fref - F);
 err = sum(err(:)) / np;
 
 % output is required to be double instead of single
