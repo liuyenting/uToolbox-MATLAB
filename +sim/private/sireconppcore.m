@@ -13,7 +13,7 @@ rSz = parms.RetrievalInterpRatio*imSz;
 % buffer space for results from the frequency domain, each for the original
 % image and the padded image
 F = zeros([imSz, nPhase], 'single');
-Fp = zeros([rSz, nPhase, nOri], 'single');
+Fp = zeros([imSz, nPhase, nOri], 'single');
 
 % initial phase 
 popt = zeros([(nPhase-1)/2, nOri], 'single');
@@ -73,10 +73,11 @@ for iOri = 1:nOri
     %% find phases
 %     % multiply apodization function
 %     F = F .* A;
-    % upsampling to perform FT interpolation in real space
-    li = floor((rSz-imSz)/2)+1;
-    ui = li+imSz-1;
-    Fp(li(1):ui(1), li(2):ui(2), :, iOri) = F;
+%     % upsampling to perform FT interpolation in real space
+%     li = floor((rSz-imSz)/2)+1;
+%     ui = li+imSz-1;
+%     Fp(li(1):ui(1), li(2):ui(2), :, iOri) = F;
+    Fp(:, :, :, iOri) = F;
     
 %     %% test run
 %     nt = 20;
@@ -104,7 +105,7 @@ for iOri = 1:nOri
     );
 
     p0 = fmincon( ...
-        @(x) costfunc(Fp(:, :, 1), Fp(:, :, 2:end), x, pr), ...
+        @(x) costfunc(F(:, :, 1), F(:, :, 2:end), imSz, rSz, x, pr), ...
         [0, 0], ...
         [], [], [], [], ...
         [-pi, -pi], [pi, pi], ...
@@ -126,19 +127,49 @@ end
 % Fopt = reshape(Fopt, [rSz, nOri*nPhase]);
 % J = sum(Fopt, 3);
 % J = fftshift(ifft2(ifftshift(J), 'symmetric'));
-J = wnrrecon(Fp, imSz, popt, pr, parms);
+
+%TODO temporary smaller relative phase shift matrix
+
+% buffer space for the relative matrix (single orientation only)
+prs = zeros([imSz, nPhase-1, nOri], 'single');
+% grids for the relative phase shift matrix
+[vx, vy] = meshgrid(1:imSz(1), 1:imSz(2));
+midpt = floor(imSz/2)+1;
+vx = vx - midpt(1);
+vy = vy - midpt(2);
+
+for iOri = 1:nOri
+    % revert from position to shift
+    midpt = floor(imSz/2)+1;
+    shift = kp(:, :, iOri) - midpt.';
+    % the ratio in current upsampled dimension
+    shift = bsxfun(@rdivide, shift, imSz.');
+    % calculate shift in unit spatial frequency, the result is negated
+    % since we are trying to shift it back to where it should be
+    shift = (2*pi) * (-shift);
+    
+    for iPhase = 1:nPhase-1
+        % fill-in the distance matrix with phase shifts (in unit spatial
+        % frequency)
+        D = vx*shift(1, iPhase) + vy*shift(2, iPhase);
+        % convert to imaginary part in order to apply shift in R-space
+        prs(:, :, iPhase, iOri) = exp(1i * D);
+    end
+end
+
+J = wnrrecon(F, imSz, popt, prs, pr, parms);
 
 %% preview the result
-% show the reconstructed result
-figure('Name', 'Reconstructed', 'NumberTitle', 'off');
-imagesc(J);
-    axis image;
-    colormap(gray);
-drawnow;
+% % show the reconstructed result
+% figure('Name', 'Reconstructed', 'NumberTitle', 'off');
+% imagesc(J);
+%     axis image;
+% %     colormap(gray);
+% drawnow;
 
 end
 
-function err = costfunc(Fref, F, p0, pr)
+function err = costfunc(Fref, F, imSz, rSz, p0, pr)
 %COSTFUNC Cost function to minimize for the phase retrieval algorithm.
 %
 %   Fref: reference frequency plane, m_0
@@ -162,14 +193,20 @@ np = length(p0);
 
 F = F .* reshape(p0, [1, 1, np]);
 
+Fp = zeros([rSz, np], 'single');
+% upsampling to perform FT interpolation in real space
+li = floor((rSz-imSz)/2)+1;
+ui = li+imSz-1;
+Fp(li(1):ui(1), li(2):ui(2), :) = F;
+
 % back to time domain
-F = fftshift(ifft2(ifftshift(F)));
+Fp = fftshift(ifft2(ifftshift(Fp)));
 
 % add relative phase shift deduced from kp values (imaginary number in the
 % time domain)
-F = F .* pr;
+Fp = Fp .* pr;
 
-F = fftshift(fft2(ifftshift(F)));
+Fp = fftshift(fft2(ifftshift(Fp)));
 
 % % sum the result to evaluate performance
 % S = Fref + sum(Fp, 3);
@@ -181,8 +218,14 @@ F = fftshift(fft2(ifftshift(F)));
 %     colormap(gray);
 % drawnow;
 
+Frefp = zeros(rSz, 'single');
+% upsampling to perform FT interpolation in real space
+li = floor((rSz-imSz)/2)+1;
+ui = li+imSz-1;
+Frefp(li(1):ui(1), li(2):ui(2)) = Fref;
+
 % error
-err = abs(Fref - F);
+err = abs(Frefp - Fp);
 err = sum(err(:)) / np;
 
 % output is required to be double instead of single

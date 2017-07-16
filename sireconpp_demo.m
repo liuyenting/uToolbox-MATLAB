@@ -54,7 +54,7 @@ siparms.RetrievalInterpRatio = 2;
 siparms.NA = 1.1;           % effective NA
 siparms.Wavelength = 520;   % [nm]
 siparms.PixelSize = 100;    % [um] or [um, um]
-siparms.WienerConstant = 0.01;
+siparms.WienerConstant = 0.001;
 
 %% verify the input
 % check whether the input directory exsists
