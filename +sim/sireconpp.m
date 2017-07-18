@@ -23,21 +23,24 @@ if isempty(kp)
 end
 
 %DEBUG override
-is = 42;
+offset = 42;
 nz = 1;
 
 % iterate through the layers
 J = zeros([parms.RetrievalInterpRatio*imSz, nz], 'single');
-% 
-%DEBUG override
-for iz = is:is+nz-1
-% for iz = 1:nz
+
+for iz = 1:nz
     tStart = tic;
     
     fprintf('z = %d\n', iz);
     
     % extract the layer
-    L = I(:, :, iz, :, :);
+    %DEBUG apply offset to specific layer
+    if exist('offset', 'var') == 1
+        L = I(:, :, iz + (offset-1), :, :);
+    else
+        L = I(:, :, iz, :, :);
+    end
     % use reshape instead of squeeze to avoid single orientation get
     % squeezed as well
     sz = size(L);
