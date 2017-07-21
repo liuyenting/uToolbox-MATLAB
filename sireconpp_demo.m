@@ -39,9 +39,6 @@ siparms.Phases = 5;
 siparms.I0 = 1;
 siparms.I1 = 1;
 
-% kp FFT upsampling ratio
-siparms.KpUpsamplingRatio = 2;
-
 % deconvolution
 siparms.PreDeconv = 5;
 siparms.PostDeconv = 5;
@@ -100,10 +97,8 @@ end
 
 %% load the file list
 %TODO load 488nm only for now
-imds = imageDatastore( ...
-    fullfile(srcDir, '*488*.tif*'), ...
-    'ReadFcn', @tiff.TIFFStack ...
-);
+imds = imageDatastore(fullfile(srcDir, '*488*.tif*'), ...
+                      'ReadFcn', @tiff.TIFFStack);
 
 %% preload the PSF
 Ipsf = tiff.imread(psfFileName);

@@ -12,35 +12,33 @@ nOri = parms.Orientations;
 nPhase = parms.Phases;
 
 %% pre-allocate
-% frequency domains
-F = zeros([imSz, nPhase], 'single');
 % initialize the kp
 kp = zeros([2, nPhase-1, nOri], 'single');
 
 %% process
 for iOri = 1:nOri
     % convert to frequency space
-    F = fftshift(fft2(ifftshift(I(:, :, :, iOri)), imSz(2), imSz(1)));
+    D = fftshift(fft2(ifftshift(I(:, :, :, iOri)), imSz(2), imSz(1)));
     
     %% retrieve domains
     % flatten the array
-    F = reshape(F, [prod(imSz), nPhase]);
+    D = reshape(D, [prod(imSz), nPhase]);
     % solve the matrix
-    F = (M \ F')';
+    D = (M \ D')';
     % reshape back to original image size
-    F = reshape(F, [imSz, nPhase]);
+    D = reshape(D, [imSz, nPhase]);
     
     %% find peaks (frequencies)
     % compute the magnitude for peak search
-    F = abs(F);
+    D = abs(D);
     
     % solve each term
     X = zeros([imSz, 2], 'single');
     for iPhase = 2:2:nPhase
         %% standard FFT cross-correlation
         % find the m_i -/+ terms
-        X(:, :, 1) = fxcorr2(F(:, :, 1), F(:, :, iPhase));
-        X(:, :, 2) = fxcorr2(F(:, :, 1), F(:, :, iPhase+1));
+        X(:, :, 1) = fxcorr2(D(:, :, 1), D(:, :, iPhase));
+        X(:, :, 2) = fxcorr2(D(:, :, 1), D(:, :, iPhase+1));
         
         % preview the result
         if parms.Debug

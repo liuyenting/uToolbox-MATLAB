@@ -9,7 +9,17 @@ persistent kp;
 volSz = size(I);
 
 imSz = volSz(1:2);
-nz = volSz(3);
+%DEBUG process single layer only
+if parms.Debug
+    offset = 42;
+    nz = 1;
+else
+    nz = volSz(3);
+end
+
+%% pre-allocate
+% iterate through the layers
+J = zeros([parms.RetrievalInterpRatio*imSz, nz], 'single');
 
 %% process
 % generate spectral matrix on-the-fly
@@ -23,21 +33,13 @@ if isempty(kp)
     kp = findkp(Ip, M, parms);
 end
 
-if parms.Debug
-    offset = 42;
-    nz = 1;
-end
-
-% iterate through the layers
-J = zeros([parms.RetrievalInterpRatio*imSz, nz], 'single');
-
 for iz = 1:nz
     tStart = tic;
     
-    fprintf('z = %d\n', iz);
+    fprintf('\tz = %d\n', iz);
     
     % extract the layer
-    %DEBUG apply offset to specific layer
+    %DEBUG process single layer only
     if parms.Debug
         L = I(:, :, iz + (offset-1), :, :);
     else
@@ -50,10 +52,10 @@ for iz = 1:nz
     L = reshape(L, sz);
     
     % run the reconstruction on specific layer
-    J(:, :, iz) = sireconppcore(L, imSz, M, kp, parms);
+    J(:, :, iz) = sireconppcore(L, M, kp, parms);
     
     tElapsed = toc(tStart);
-    fprintf('.. %.3fs\n\n', tElapsed);
+    fprintf('\t%.3fs\n\n', tElapsed);
 end
 
 end

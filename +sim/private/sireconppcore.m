@@ -1,6 +1,12 @@
-function J = sireconppcore(I, imSz, M, kp, parms)
+function J = sireconppcore(I, M, kp, parms)
 %SIRECONPPCORE Summary of this function goes here
-%   Detailed explanation goes here
+%   
+%   TBA
+
+%% parameters
+volSz = size(I);
+
+imSz = volSz(1:2);
 
 % extract frequent use parameters
 nOri = parms.Orientations;
