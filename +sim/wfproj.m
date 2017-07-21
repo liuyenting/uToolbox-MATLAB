@@ -1,5 +1,5 @@
 function [Ip, varargout] = wfproj(I, parms)
-% WFPROJ Create widefield projection.
+%WFPROJ Create widefield projection.
 %   
 %   IP = WFPROJ(I, PARMS) generates the Z projection along all orientations
 %   and phases.

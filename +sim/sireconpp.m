@@ -14,20 +14,19 @@ nz = volSz(3);
 %% process
 % generate spectral matrix on-the-fly
 M = spectramat(parms.Phases, parms.I0, parms.I1);
-% phase shift values
-kp = [];
 
 % probe for the existence of Kp values
 if isempty(kp)
     % create projection view along orientations and phases
     Ip = sim.wfproj(I, parms);
-    % find the Kp values for each orientations
-    kp = findwavvec(Ip, M, parms, true);
+    % find the the pattern wave vector for each orientation
+    kp = findkp(Ip, M, parms);
 end
 
-%DEBUG override
-offset = 42;
-nz = 1;
+if parms.Debug
+    offset = 42;
+    nz = 1;
+end
 
 % iterate through the layers
 J = zeros([parms.RetrievalInterpRatio*imSz, nz], 'single');
@@ -39,7 +38,7 @@ for iz = 1:nz
     
     % extract the layer
     %DEBUG apply offset to specific layer
-    if exist('offset', 'var') == 1
+    if parms.Debug
         L = I(:, :, iz + (offset-1), :, :);
     else
         L = I(:, :, iz, :, :);
