@@ -1,11 +1,16 @@
 function M = spectramat(np, varargin)
 %SPECTRAMAT Generate spectra matrix for the linear system.
 %   
-%   M = SPECTRAMAT(NP, I0, I1) generates the coefficient matrix using
-%   number of phases and beam intensities. Use alongside with the phase
-%   solver.
+%   M = SPECTRAMAT(NP) uses beam intensity 1 to generate the coefficient
+%   matrix using number of phases.
+%   M = SPECTRAMAT(NP, I)
+%   M = SPECTRAMAT(NP, I0, I1) uses the assigned beam intensity to
+%   normalize the coefficient matrix, if 3-D SIM is requested with single
+%   beam intensity, then it assume the beam intensities are the same (I).
 %
-%   See also: TBA
+%   Note
+%   ----
+%   One should use this function alongside with the phase solver.
 
 %% parameters
 % identify the type of SIM
@@ -62,6 +67,7 @@ elseif nd == 3
     M = M / (I0+2*I1);
 end
 
+%% output
 % type cast to single precision in order to avoid unnecessary type cast in
 % rest of the pipeline
 M = single(M);
