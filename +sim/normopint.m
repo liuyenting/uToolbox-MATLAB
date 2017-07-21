@@ -1,11 +1,13 @@
-function I = normopint(I, sz, parms)
+function I = normopint(I, parms)
 %NORMOPINT Normalize intensities across different illumination setups.
 %   Detailed explanation goes here
+
+volSz = size(I);
 
 % extract parameters
 nOri = parms.Orientations;
 nPhase = parms.Phases;
-nz = sz(3);
+nz = volSz(3);
 
 % find out normalization ratio
 ratio = zeros([nPhase, nOri, nz], 'single');
@@ -15,7 +17,7 @@ for io = 1:nOri
         S = I(:, :, :, ip, io);
         
         % sum along X, Y dimension
-        ratio(ip, io, :) = sum(reshape(S, [sz(1)*sz(2), sz(3)]));
+        ratio(ip, io, :) = sum(reshape(S, [volSz(1)*volSz(2), nz]));
     end
 end
 % mean along the orientation and phases

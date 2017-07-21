@@ -11,8 +11,8 @@ clearvars -global;
 
 %TODO remove OS dependent test code
 if ispc
-    srcDir = 'F:\\Andy\\06302017_SIM\\Tan1_3_3DSIM';
-    psfFileName = 'F:\\Andy\\06302017_SIM\\PSF\\PSF_NA1p1_520nm_x100nm.tif';
+    srcDir = 'D:\\Andy\\06302017_SIM\\Tan1_3_3DSIM';
+    psfFileName = 'D:\\Andy\\06302017_SIM\\PSF\\PSF_NA1p1_520nm_x100nm.tif';
 else
     srcDir = 'data/sim/06302017_SIM/Tan1_3_3DSIM';
     psfFileName = 'data/sim/06302017_SIM/PSF/PSF_NA1p1_520nm_x100nm.tif';
@@ -28,9 +28,10 @@ dstDir = [srcDir, dstSuffix];
 %% setup parameters
 siparms = struct;
 
-siparms.DebugPath = fullfile(dstDir, 'calibrate');
+siparms.Debug = true;
+siparms.DebugPath = fullfile(dstDir, 'debug');
 
-% classes
+% acquisition info
 siparms.Orientations = 1;
 siparms.Phases = 5;
 
@@ -59,18 +60,23 @@ siparms.WienerConstant = 0.001;
 %% verify the input
 % check whether the input directory exsists
 if exist(srcDir, 'dir') ~= 7
-    error('sim:sireconpp_demo', 'Input directory does not exist.');
+    error(generatemsgid('InvalidInput'), ...
+          'Input directory does not exist.');
 end
 
 % check whether the output directory is empty
 if exist(dstDir, 'dir') == 7
     content = dir(dstDir);
     if numel(content) > 2
-        %error('sim:sireconpp_demo', 'Output directory is not empty.');
-        
-        warning('sim:sireconpp_demo', 'Output directory is not empty.');
-        % recreate the folder
-        util.rmcontent(dstDir);
+        if siparms.Debug
+            warning(generatemsgid('InvalidOutput'), ...
+                    'Output directory is not empty.');
+            % recreate the folder
+            util.rmcontent(dstDir);
+        else
+            error(generatemsgid('InvalidOutput'), ...
+                  'Output directory is not empty.');
+        end
     end
 end
 
@@ -83,21 +89,21 @@ end
 % destination root
 status = mkdir(dstDir);
 if ~status
-    error('sim:sireconpp_demo', ...
+    error(generatemsgid('InvalidOutput'), ...
           'Unable to create the output directory.');
 end
 
 % create the directory
-status = mkdir(siparms.DebugPath);
-if ~status
-    error('sim:sireconpp_demo', ...
-          'Unable to create the debug output directory.');
+if siparms.Debug
+    mkdir(siparms.DebugPath);
 end
 
 %% load the file list
-%TODO only load 488nm for simplicity
-list = dir(fullfile(srcDir, '*488nm*.tif*'));
-list = {list.name};
+%TODO load 488nm only for now
+imds = imageDatastore( ...
+    fullfile(srcDir, '*488*.tif*'), ...
+    'ReadFcn', @tiff.TIFFStack ...
+);
 
 %% preload the PSF
 Ipsf = tiff.imread(psfFileName);
@@ -118,36 +124,32 @@ warning('off', 'MATLAB:imagesci:tiffmexutils:libtiffWarning');
 
 profile on;
 profile off;
-    
-nFile = numel(list);
+   
 tOuter = tic;
-%OVERRIDE
-nFile = 1;
-for iFile = 1:nFile
+while hasdata(imds)
     tInner = tic;
     
     % load the file
-    fileName = list{iFile};
-    fprintf('[%s]\n', fileName);
-    filePath = fullfile(srcDir, fileName);
+    [I, info] = read(imds);
+    imSz = size(I);
+    fPath = info.Filename;
     
-    I = tiff.TIFFStack(filePath);
-    sz = size(I);
-    
-    % re-order the stack to phase-wise
-    [I, volSz] = sim.opmajor(I, sz, siparms.Orientations, siparms.Phases);
+    [~, fName, fExt] = fileparts(fPath); 
+    fprintf('[%s]\n', fName);
     
     % convert to floating point
     I = single(I);
+    % re-order the stack to phase-wise
+    I = sim.opmajor(I, siparms.Orientations, siparms.Phases);
     
     % normalize the intensity across phases
-    I = sim.normopint(I, volSz, siparms);
+    I = sim.normopint(I, siparms);
     % execute
     J = sim.sireconpp(I, volSz, siparms);
     
     % save the volume
-    filePath = fullfile(dstDir, fileName);
-    tiff.imsave(J, filePath);
+    fPath = fullfile(dstDir, [fName, '.', fExt]);
+    tiff.imsave(J, fPath);
     
     % cleanup
     fclose('all');
