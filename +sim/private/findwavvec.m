@@ -1,5 +1,5 @@
-function kp = findkp(I, imSz, M, parms, show)
-%FINDKP Summary of this function goes here
+function kp = findwavvec(I, M, parms, show)
+%FINDWAVVEC Find the precise values of the pattern wave vector.
 %   Detailed explanation goes here
 
 if nargin == 3
@@ -10,6 +10,9 @@ end
 nOri = parms.Orientations;
 nPhase = parms.Phases;
 psz = parms.PadSize;
+
+imSz = size(I);
+imSz = imSz(1:2);
 
 % buffer space for results from the frequency domain, x2 upsampling
 fSz = parms.KpUpsamplingRatio*imSz;

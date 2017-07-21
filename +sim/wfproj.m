@@ -1,31 +1,22 @@
-function [Ip, varargout] = wfproj(I, volSz, parms)
+function [Ip, varargout] = wfproj(I, parms)
 %WFPROJ Create widefield projection.
-%   Detailed explanation goes here
+%   
+%   TBA
 
-%% create the directory
-wfDir = fullfile(parms.DebugPath, 'widefield');
-if exist(wfDir, 'dir') == 7
-    content = dir(wfDir);
-    if numel(content) > 2
-        warning('sim:wfproj', ...
-                'Widefield output directory is not empty, overwrite.');
-        util.rmcontent(wfDir);
-    end
-else 
-    % create the directory
-    status = mkdir(wfDir);
-    if ~status
-        error('sim:wfproj', ...
-              'Unable to create the widefield output directory.');
-    end
-end
+%% parameters
+volSz = size(I);
 
-% extract commonly used parameters
+imSz = volSz(1:2);
+
 nOri = parms.Orientations;
 nPhase = parms.Phases;
 
+%% create the directory
+wfDir = fullfile(parms.DebugPath, 'z_projection');
+mkdir(wfDir);
+
 %% create MIP for each orientation and phase
-Ip = zeros([volSz(1:2), nPhase, nOri], 'single');
+Ip = zeros([imSz, nPhase, nOri], 'single');
 for iOri = 1:nOri
     for iPhase = 1:nPhase
         % extract the volume
@@ -35,17 +26,16 @@ for iOri = 1:nOri
         P = max(P, [], 3);
 
         % save to file
-        fname = sprintf('o%d_p%d.tif', iOri, iPhase);
-        fpath = fullfile(wfDir, fname);
-        tiff.imsave(P, fpath);
-
+        fName = sprintf('o%d_p%d.tif', iOri, iPhase);
+        fPath = fullfile(wfDir, fName);
+        tiff.imsave(P, fPath);
         % save the result for further processing
         Ip(:, :, iPhase, iOri) = P;
     end
 end
 
 %% pseudo widefield image
-WF = reshape(Ip, [volSz(1:2), nOri*nPhase]);
+WF = reshape(Ip, [imSz, nOri*nPhase]);
 WF = sum(WF, 3);
 tiff.imsave(WF, fullfile(wfDir, 'widefield.tif'));
 

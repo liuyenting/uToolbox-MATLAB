@@ -20,9 +20,9 @@ kp = [];
 % probe for the existence of Kp values
 if isempty(kp)
     % create projection view along orientations and phases
-    Ip = sim.wfproj(I, volSz, parms);
+    Ip = sim.wfproj(I, parms);
     % find the Kp values for each orientations
-    kp = findkp(Ip, volSz(1:2), M, parms, true);
+    kp = findwavvec(Ip, M, parms, true);
 end
 
 %DEBUG override

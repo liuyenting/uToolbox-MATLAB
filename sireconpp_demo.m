@@ -60,7 +60,7 @@ siparms.WienerConstant = 0.001;
 %% verify the input
 % check whether the input directory exsists
 if exist(srcDir, 'dir') ~= 7
-    error(generatemsgid('InvalidInput'), ...
+    error(generatemsgid('InvalidInDir'), ...
           'Input directory does not exist.');
 end
 
@@ -69,12 +69,12 @@ if exist(dstDir, 'dir') == 7
     content = dir(dstDir);
     if numel(content) > 2
         if siparms.Debug
-            warning(generatemsgid('InvalidOutput'), ...
+            warning(generatemsgid('InvalidOutDir'), ...
                     'Output directory is not empty.');
             % recreate the folder
             util.rmcontent(dstDir);
         else
-            error(generatemsgid('InvalidOutput'), ...
+            error(generatemsgid('InvalidOutDir'), ...
                   'Output directory is not empty.');
         end
     end
@@ -89,7 +89,7 @@ end
 % destination root
 status = mkdir(dstDir);
 if ~status
-    error(generatemsgid('InvalidOutput'), ...
+    error(generatemsgid('InvalidOutDir'), ...
           'Unable to create the output directory.');
 end
 
