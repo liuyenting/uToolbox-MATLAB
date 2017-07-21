@@ -1,14 +1,17 @@
-function J = sireconpp(I, volSz, parms)
+function J = sireconpp(I, parms)
 %SIRECONPP Plan-by-plan SI reconstruction.
 %
 %   TBA
 
 persistent kp;
 
-% extract frequently used parameters
+%% parameters
+volSz = size(I);
+
 imSz = volSz(1:2);
 nz = volSz(3);
 
+%% process
 % generate spectral matrix on-the-fly
 M = spectramat(parms.Phases, parms.I0, parms.I1);
 % phase shift values

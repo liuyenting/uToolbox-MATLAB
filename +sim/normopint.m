@@ -2,13 +2,14 @@ function I = normopint(I, parms)
 %NORMOPINT Normalize intensities across different illumination setups.
 %   Detailed explanation goes here
 
+%% parameters
 volSz = size(I);
 
-% extract parameters
 nOri = parms.Orientations;
 nPhase = parms.Phases;
 nz = volSz(3);
 
+%% process
 % find out normalization ratio
 ratio = zeros([nPhase, nOri, nz], 'single');
 for io = 1:nOri

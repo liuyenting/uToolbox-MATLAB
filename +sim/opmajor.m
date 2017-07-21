@@ -12,12 +12,14 @@ function varargout = opmajor(I, no, np)
 %   dimension, while orientation is the slowest dimension.
 %   e.g. O1P1P2P3 O2P1P2P3 O3P1P2P3 (XYZ variations are not shown)
 
+%% parameters
 sz = size(I);
 % size of a single plane
 imSz = sz(1:2);
 % number of slices (Z)
 nz = sz(3) / (no*np);
 
+%% process
 % reshape the dimension to consider orientations and phases
 I = reshape(I, [imSz, np, no, nz]);
 
@@ -29,6 +31,7 @@ I = reshape(I, [imSz, np, no, nz]);
 order = [1, 2, 5, 3, 4];
 I = permute(I, order);
 
+%% output
 if nargout == 1
     varargout{1} = I;
 elseif nargout == 2

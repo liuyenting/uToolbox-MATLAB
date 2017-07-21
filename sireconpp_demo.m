@@ -145,7 +145,7 @@ while hasdata(imds)
     % normalize the intensity across phases
     I = sim.normopint(I, siparms);
     % execute
-    J = sim.sireconpp(I, volSz, siparms);
+    J = sim.sireconpp(I, siparms);
     
     % save the volume
     fPath = fullfile(dstDir, [fName, '.', fExt]);
@@ -155,7 +155,7 @@ while hasdata(imds)
     fclose('all');
     
     tElapse = toc(tInner);
-    fprintf('%.3fs elapsed\n', tElapse);
+    fprintf('\t%.3fs elapsed\n', tElapse);
 end
 tElapse = toc(tOuter);
 fprintf('+++ %.3fs to complete the time lapse +++\n', tElapse);
