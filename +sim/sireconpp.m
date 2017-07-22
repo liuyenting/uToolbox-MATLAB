@@ -33,6 +33,8 @@ if isempty(kp)
     kp = findkp(Ip, M, parms);
 end
 
+dispkp(kp, parms);
+
 for iz = 1:nz
     tStart = tic;
     

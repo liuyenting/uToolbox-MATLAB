@@ -72,35 +72,6 @@ for iOri = 1:nOri
     end
 end
 
-%% print the result
-% generate column and row labels
-colname = cell([1, nOri]);
-for iOri = 1:nOri
-    colname{iOri} = sprintf('Orientation%d', iOri);
-end
-rowname = cell([1, nPhase-1]);
-for iPhase = 2:2:nPhase
-    i = iPhase/2;
-    rowname{iPhase-1} = sprintf('m%d-', i);
-    rowname{iPhase} = sprintf('m%d+', i);
-end
-
-% generate (x, y) coordinate pair
-kpstr = cell([nPhase-1, nOri]);
-for iOri = 1:nOri
-    for iPhase = 1:nPhase-1
-        kpstr{iPhase, iOri} = sprintf( ...
-            '(%.2f, %.2f)', kp(1, iPhase, iOri), kp(2, iPhase, iOri) ...
-        );
-    end
-end
-
-% create the table and print-out
-result = array2table(kpstr, ...
-                     'VariableNames', colname, 'RowNames', rowname);
-fprintf('\n');
-disp(result);
-
 end
 
 function C = fxcorr2(A, B)
