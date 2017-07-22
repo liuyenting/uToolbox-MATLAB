@@ -114,7 +114,7 @@ end
 % create the table and print-out
 result = array2table(kpstr, ...
                      'VariableNames', colname, 'RowNames', rowname);
-disp('\n');
+fprintf('\n');
 disp(result);
 
 end

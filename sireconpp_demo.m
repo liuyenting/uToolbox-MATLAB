@@ -39,6 +39,10 @@ siparms.Phases = 5;
 siparms.I0 = 1;
 siparms.I1 = 1;
 
+% transfer function
+siparms.RefractiveIndex = 1.33;     % effective NA
+siparms.Wavelength = 520;           % [nm]
+
 % deconvolution
 siparms.PreDeconv = 5;
 siparms.PostDeconv = 5;
@@ -49,9 +53,7 @@ siparms.ApodizeRatio = 0.5;
 siparms.RetrievalInterpRatio = 2;
 
 % generalized Wiener filter
-siparms.NA = 1.1;           % effective NA
-siparms.Wavelength = 520;   % [nm]
-siparms.PixelSize = 100;    % [um] or [um, um]
+siparms.PixelSize = 100;            % [um] or [um, um]
 siparms.WienerConstant = 0.001;
 
 %% verify the input

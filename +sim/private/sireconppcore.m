@@ -3,19 +3,26 @@ function J = sireconppcore(I, M, kp, parms)
 %   
 %   TBA
 
+persistent TF;
+
 %% parameters
 volSz = size(I);
 
 imSz = volSz(1:2);
 
-% extract frequent use parameters
 nOri = parms.Orientations;
 nPhase = parms.Phases;
-psz = parms.PadSize;
+padSz = parms.PadSize;
 
 % interpolated size
 rSz = parms.RetrievalInterpRatio*imSz;
 
+%% pre-calculation
+if isempty(TF)
+    TF = psft2tf(parms.PSF, kp);
+end
+
+%% pre-allocate
 % buffer space for results from the frequency domain, each for the original
 % image and the padded image
 F = zeros([imSz, nPhase], 'single');
@@ -32,6 +39,7 @@ midpt = floor(rSz/2)+1;
 vx = vx - midpt(1);
 vy = vy - midpt(2);
 
+%% process
 for iOri = 1:nOri
     fprintf('.. o = %d\n', iOri);
     
@@ -58,11 +66,11 @@ for iOri = 1:nOri
         T = I(:, :, iPhase, iOri);
         
         % pad the surrounding sides
-        T = padarray(T, [psz, psz], 0, 'both');
+        T = padarray(T, [padSz, padSz], 0, 'both');
         % RL deconvolution
         T = deconvlucy(T, parms.PSF, parms.PreDeconv);
         % crop the result
-        T = T(psz+1:end-psz, psz+1:end-psz);
+        T = T(padSz+1:end-padSz, padSz+1:end-padSz);
         
         % perform Fourier transform without the padded region
         F(:, :, iPhase) = fftshift(fft2(ifftshift(T)));

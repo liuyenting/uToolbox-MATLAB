@@ -1,7 +1,8 @@
-function [ output_args ] = psf2tf( input_args )
+function TF = psf2tf(PSF, kp, parms)
 %PSF2TF Convert PSF to transfer functions.
-%   Detailed explanation goes here
+%   
+%   TBA
+
 
 
 end
-
