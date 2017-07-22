@@ -17,9 +17,9 @@ padSz = parms.PadSize;
 % interpolated size
 rSz = parms.RetrievalInterpRatio*imSz;
 
-%% pre-calculation
+%% pre-calculate
 if isempty(TF)
-    TF = psft2tf(parms.PSF, kp);
+    TF = sim.psf2tf(imSz, parms.PSF, kp, parms);
 end
 
 %% pre-allocate

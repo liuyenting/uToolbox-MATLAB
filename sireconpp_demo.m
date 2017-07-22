@@ -40,6 +40,7 @@ siparms.I0 = 1;
 siparms.I1 = 1;
 
 % transfer function
+siparms.PixelSize = 100;            % [nm] or [nm, nm]
 siparms.RefractiveIndex = 1.33;     % effective NA
 siparms.Wavelength = 520;           % [nm]
 
@@ -53,7 +54,6 @@ siparms.ApodizeRatio = 0.5;
 siparms.RetrievalInterpRatio = 2;
 
 % generalized Wiener filter
-siparms.PixelSize = 100;            % [um] or [um, um]
 siparms.WienerConstant = 0.001;
 
 %% verify the input
@@ -79,7 +79,7 @@ if exist(dstDir, 'dir') == 7
     end
 end
 
-% duplicate pixel size if isotropic
+% duplicate the pixel size if isotropic
 if length(siparms.PixelSize) == 1
     siparms.PixelSize = siparms.PixelSize * [1, 1];
 end

@@ -32,7 +32,6 @@ if isempty(kp)
     % find the the pattern wave vector for each orientation
     kp = findkp(Ip, M, parms);
 end
-
 dispkp(kp, parms);
 
 for iz = 1:nz
