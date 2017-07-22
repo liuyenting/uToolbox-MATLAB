@@ -39,22 +39,6 @@ for iOri = 1:nOri
         % find the m_i -/+ terms
         X(:, :, 1) = fxcorr2(D(:, :, 1), D(:, :, iPhase));
         X(:, :, 2) = fxcorr2(D(:, :, 1), D(:, :, iPhase+1));
-        
-        % preview the result
-        if parms.Debug
-            figure( ...
-                'Name', 'xcorr result of m_- and m_+ terms', ...
-                'NumberTitle', 'off' ...
-            );
-            subplot(1, 2, 1);
-                imagesc(X(:, :, 1));
-                axis image;
-                title('m_i^-');
-            subplot(1, 2, 2);
-                imagesc(X(:, :, 2));
-                axis image;
-                title('m_i^+');
-        end
 
         % find the position of the peak
         X = reshape(X, [prod(imSz), 2]);
