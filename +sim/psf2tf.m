@@ -38,7 +38,7 @@ TF = zeros([imSz, nPhase], 'single');
 %   * 3-D SIM m2
 kp = kp(:, end-1:end, :);
 
-% convert units of kp values to spatial frequency
+% convert from pixel to spatial frequency
 kp = kp ./ (imSz.*pxSz).';
 % combine frequency components
 f = hypot(kp(1, :, :), kp(2, :, :));
@@ -135,23 +135,47 @@ if parms.Debug
     end
 end
 
-%% process
-for iOri = 1:nOri
-    for iPhase = 2:nPhase
-        %% apply to system OTF
-        TF(:, :, iPhase, iOri) = psf2otf(PSF .* Im, imSz);
-        
-        %DEBUG
-        figure(hPost);
-        subplot(1, 2, 1);
-        imagesc(PSF);
-            axis image;
-            title('System PSF');
-        subplot(1, 2, 2);
-        imagesc(abs(ifftshift(TF(:, :, iPhase, iOri))).^0.7);
-            axis image;
-            title('Modulated');
+%% remove initial phase k0
+for iPhase = 2:2:nPhase
+    Dm = D(:, :, iPhase);
+    Dp = D(:, :, iPhase+1);
+    
+    options = optimoptions(@lsqnonlin, ...
+                           'Display', 'iter-detailed', ...
+                           'FiniteDifferenceType', 'central', ...
+                           'FiniteDifferenceStepSize', 2*pi/imSz(1));
+    s = lsqnonlin(@(s)(errfunc(s, Dm, Dp)), pi, [], [], options);
+    
+    D(:, :, iPhase) = exp(-1i*s)*Dm;
+    D(:, :, iPhase+1) = exp(1i*s)*Dp;
+end
+
+    % cost function for the non-linear fitting
+    function err = errfunc(s, m, p)
+        err = exp(-1i*s)*m - exp(1i*s)*p;
+        % return type is required to be double
+        err = double(err);
     end
+
+%% bead mask
+%TODO compensate for non-deal point source
+
+%% average and LPF
+% cutoff frequency
+f = 2*parms.NA / lambda;
+% cut-off radius in pixel
+r = f * (imSz.*pxSz);
+
+midpt = floor(imSz/2)+1;
+for iPhase = 1:nPhase
+    T = D(:, :, iPhase);
+    % shift to natural order for processing
+    T = ifftshift(T);
+    
+    % create radial profile
+    % Note: Due to the limitation of radial sampler, only square image is
+    % plausible for now.
+    TF(:, :, iPhase) = statistics.radialmean(T, midpt, floor(r));
 end
 
 end
