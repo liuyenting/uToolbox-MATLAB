@@ -43,7 +43,7 @@ sz = estimsize(coords, res, 'MaxSquare');
 fprintf('pixel size = %.2fnm, image size = %dx%d\n', res, sz(1), sz(2));
 
 %% Frequency
-pxPerFreq = radialsum(ones(sz));
+pxPerFreq = statistics.radialsum(ones(sz));
 % radial sample counts
 nrs = length(pxPerFreq);
 
