@@ -26,13 +26,10 @@ pxSz = parms.PixelSize;
 n = parms.RefractiveIndex;
 lambda = parms.Wavelength;
 
-%% pre-calculate
-OTF = psf2otf(PSF, imSz);
-
+%% pre-allocate
 hIL = figure('Name', 'Illumination Pattern', 'NumberTitle', 'off');
 hPost = figure('Name', 'Transfer Function', 'NumberTitle', 'off');
 
-%% pre-allocate
 % domains
 D = zeros([imSz, nPhase], 'single');
 % the transfer functions
@@ -91,7 +88,7 @@ elseif nd == 3
     kz = 2*pi * (n/lambda - sqrt((n/lambda)^2 - (f/2)^2));
 
     % I = 4*cos(kx*sin(theta) + phi)*cos(kz*(cos(theta)-1)) + 
-    %     2*cos(2*kx*sin(theta) + phi) 
+    %     2*cos(2*kx*sin(theta) + 2*phi) 
     %
     % kz*(cos(theta)-1) = kz*(-kz * lambda/n)
     %                   = - kz^2 * lambda/n
@@ -100,7 +97,7 @@ elseif nd == 3
     
     % Since we are working with planes instead of a volume, z is always 1
     % for the kz term (B).
-    Im = 4*cos(A*vx + phi)*cos(B) + 2*cos(2*A*vx + phi);
+    Im = 4*cos(A*vx + phi)*cos(B) + 2*cos(2*A*vx + 2*phi);
 end
 % shift lowest value from negative to 0
 % Note: 2-D SIM has 2 beam sources, while 3-D SIM has 3.
