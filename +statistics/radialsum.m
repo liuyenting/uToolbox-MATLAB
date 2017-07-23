@@ -1,14 +1,13 @@
 function s = radialsum(I, smplratio)
 %RADIALSUM Calculate the radial sum of an image with interpolation.
 %
-%   S = RADIALSUM(I, ARES) calculate radial sum at different spatial 
-%   frequency using angular resolution of ARES. ARES is default to 1 degree
-%   if not assigned.
-%   SMPLRATIO implies the sampling ratio, (0, 1], default at 0.5.
+%   TBA
 %
-%   See also RADIALSMPLR
+%   TODO use cutoff pixel position instead of ratio
+%
+%   See also RADIALSMPLR.
 
-% find the minimal dimension
+%% parameters
 sz = size(I);
 if sz(1) ~= sz(2)
     error(generatemsgid('NotSquare'), 'Not a square matrix.');
@@ -24,7 +23,7 @@ else
     end
 end
 
-%% Find the center of the image.
+%% find the center of the image.
 % radius sample location
 r = 1:floor((sz(1)/2) * smplratio);
 % find the center
@@ -43,7 +42,7 @@ end
 s = zeros(size(r));
 intp = griddedInterpolant(I);
 for i = 1:length(s)
-    smpl = radialsmplr(intp, [xi, yi], r(i), 1);
+    smpl = radsmplr(intp, [xi, yi], r(i), 1);
     s(i) = sum(smpl);
 end
 
