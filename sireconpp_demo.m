@@ -41,8 +41,9 @@ siparms.I1 = 1;
 
 % transfer function
 siparms.PixelSize = 100;            % [nm] or [nm, nm]
-siparms.RefractiveIndex = 1.33;     % effective NA
+siparms.RefractiveIndex = 1.33;     % refractive index of the medium
 siparms.Wavelength = 520;           % [nm]
+siparms.NA = 1.1;                   % effective numerical aperture
 
 % deconvolution
 siparms.PreDeconv = 5;
