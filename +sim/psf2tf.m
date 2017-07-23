@@ -27,18 +27,10 @@ n = parms.RefractiveIndex;
 lambda = parms.Wavelength;
 
 %% pre-allocate
-hIL = figure('Name', 'Illumination Pattern', 'NumberTitle', 'off');
-hPost = figure('Name', 'Transfer Function', 'NumberTitle', 'off');
-
 % domains
 D = zeros([imSz, nPhase], 'single');
 % the transfer functions
 TF = zeros([imSz, nPhase], 'single');
-
-% the grid for computation
-[vx, ~] = meshgrid(1:psfSz(1), 1:psfSz(2));
-% convert to real word scale
-vx = vx * pxSz(1);
 
 %% generate illumination patterns
 % use the last two components for frequency estimation (kx, kz)
@@ -76,9 +68,14 @@ phi = phi(1:end-1).';
 % insert singleton dimension to enable implicit padding
 phi = reshape(phi, 1, 1, []);
 
+% the grid for computation
+[vx, ~] = meshgrid(1:psfSz(1), 1:psfSz(2));
+% convert to real word scale
+vx = vx*pxSz(1);
+
 if nd == 2
     % I = 2*cos(2*kx*sin(theta) + phi)
-    %TODO
+    Im = 2*cos(2*A*vx + phi);
 elseif nd == 3
     % kz component
     %   fz = (1-cos(theta)) * n/lambda
@@ -104,7 +101,7 @@ end
 Im = Im + nd;
 
 if parms.Debug
-    figure(hIL);
+    figure('Name', 'Illumination Patterns', 'NumberTitle', 'off');
     for iPhase = 1:nPhase
         subplot(1, nPhase, iPhase);
         imagesc(Im(:, :, iPhase));
@@ -129,12 +126,13 @@ D = (M \ D')';
 % reshape back to original image size
 D = reshape(D, [imSz, nPhase]);
 
-%DEBUG
-figure;
-for iPhase = 1:nPhase
-    subplot(1, nPhase, iPhase);
-    imagesc(abs(ifftshift(D(:, :, iPhase))));
-        axis image;
+if parms.Debug
+    figure('Name', 'Transfer Functions', 'NumberTitle', 'off');
+    for iPhase = 1:nPhase
+        subplot(1, nPhase, iPhase);
+        imagesc(abs(ifftshift(D(:, :, iPhase))));
+            axis image;
+    end
 end
 
 %% process
