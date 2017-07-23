@@ -19,7 +19,7 @@ rSz = parms.RetrievalInterpRatio*imSz;
 
 %% pre-calculate
 if isempty(TF)
-    TF = sim.psf2tf(imSz, parms.PSF, kp, parms);
+    TF = sim.psf2tf(imSz, parms.PSF, M, kp, parms);
 end
 
 %% pre-allocate

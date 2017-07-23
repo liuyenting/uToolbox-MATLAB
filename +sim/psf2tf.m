@@ -1,4 +1,4 @@
-function TF = psf2tf(imSz, PSF, kp, parms)
+function TF = psf2tf(imSz, PSF, M, kp, parms)
 %PSF2TF Convert PSF to transfer functions.
 %   
 %   TBA
@@ -29,20 +29,116 @@ lambda = parms.Wavelength;
 %% pre-calculate
 OTF = psf2otf(PSF, imSz);
 
-hPre = figure('Name', 'Illumination Pattern', 'NumberTitle', 'off');
+hIL = figure('Name', 'Illumination Pattern', 'NumberTitle', 'off');
 hPost = figure('Name', 'Transfer Function', 'NumberTitle', 'off');
 
 %% pre-allocate
-TF = zeros([imSz, nPhase, nOri], 'single');
-
-% first phases require no special treatments
-TF(:, :, 1, :) = repmat(OTF, [1, 1, 1, nOri]);
+% domains
+D = zeros([imSz, nPhase], 'single');
+% the transfer functions
+TF = zeros([imSz, nPhase], 'single');
 
 % the grid for computation
-[vx, vy] = meshgrid(1:psfSz(1), 1:psfSz(2));
+[vx, ~] = meshgrid(1:psfSz(1), 1:psfSz(2));
 % convert to real word scale
 vx = vx * pxSz(1);
-vy = vy * pxSz(2);
+
+%% generate illumination patterns
+% use the last two components for frequency estimation (kx, kz)
+%   * 2-D SIM m1
+%   * 3-D SIM m2
+kp = kp(:, end-1:end, :);
+
+% convert units of kp values to spatial frequency
+kp = kp ./ (imSz.*pxSz).';
+% combine frequency components
+f = hypot(kp(1, :, :), kp(2, :, :));
+% average the frequency values from each orientation and -/+ terms
+f = reshape(f, 2*nOri, 1);
+f = mean(f);
+
+% turns into the actual wave number
+%   k = 2*pi / p
+%     = 2*pi * f
+% Note: While p is period and f is frequency, we are working backward from 
+% the reciprocal space, hence f is used instead of p.
+
+% beam angle
+%   p = lambda / (2*n*sin(theta)), p is period
+%   sin(theta) = lambda / (2*n*p)
+%              = lambda / (2*n) * f
+
+% kx*sin(theta) = (2*pi * f) * lambda / (2*n) * f
+%               = 2*pi * f^2 * lambda / (2*n)
+%               = A
+A = 2*pi * f^2 * lambda / (2*n);
+
+% phase array
+phi = linspace(0, 2*pi, nPhase+1);
+phi = phi(1:end-1).';
+% insert singleton dimension to enable implicit padding
+phi = reshape(phi, 1, 1, []);
+
+if nd == 2
+    % I = 2*cos(2*kx*sin(theta) + phi)
+    %TODO
+elseif nd == 3
+    % kz component
+    %   fz = (1-cos(theta)) * n/lambda
+    %      = (1-sqrt(1-sin(theta)^2)) * n/lambda
+    %      = n/lambda - sqrt((n/lambda)^2 - f^2)
+    %   kz = 2*pi * fz
+    kz = 2*pi * (n/lambda - sqrt((n/lambda)^2 - (f/2)^2));
+
+    % I = 4*cos(kx*sin(theta) + phi)*cos(kz*(cos(theta)-1)) + 
+    %     2*cos(2*kx*sin(theta) + phi) 
+    %
+    % kz*(cos(theta)-1) = kz*(-kz * lambda/n)
+    %                   = - kz^2 * lambda/n
+    %                   = B
+    B = - kz^2 * lambda/n;
+    
+    % Since we are working with planes instead of a volume, z is always 1
+    % for the kz term (B).
+    Im = 4*cos(A*vx + phi)*cos(B) + 2*cos(2*A*vx + phi);
+end
+% shift lowest value from negative to 0
+% Note: 2-D SIM has 2 beam sources, while 3-D SIM has 3.
+Im = Im + nd;
+
+if parms.Debug
+    figure(hIL);
+    for iPhase = 1:nPhase
+        subplot(1, nPhase, iPhase);
+        imagesc(Im(:, :, iPhase));
+            axis image;
+            title(sprintf('Phase %d', iPhase));
+    end
+end
+
+%% retrieve domains (bands separation)
+% apply the modulations
+PSF = PSF .* Im;
+
+% retrieve the reciprocal space images
+for iPhase = 1:nPhase
+    D(:, :, iPhase) = psf2otf(PSF(:, :, iPhase), imSz);
+end
+
+% flatten the array
+D = reshape(D, [prod(imSz), nPhase]);
+% solve the matrix
+D = (M \ D')';
+% reshape back to original image size
+D = reshape(D, [imSz, nPhase]);
+
+%DEBUG
+figure;
+for iPhase = 1:nPhase
+    subplot(1, nPhase, iPhase);
+    imagesc(abs(ifftshift(D(:, :, iPhase))));
+        axis image;
+end
 
 %% process
 for iOri = 1:nOri
