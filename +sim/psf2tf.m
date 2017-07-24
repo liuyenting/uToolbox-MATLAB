@@ -43,8 +43,7 @@ kp = kp ./ (imSz.*pxSz).';
 % combine frequency components
 f = hypot(kp(1, :, :), kp(2, :, :));
 % average the frequency values from each orientation and -/+ terms
-f = reshape(f, 2*nOri, 1);
-f = mean(f);
+f = mean(f(:));
 
 % turns into the actual wave number
 %   k = 2*pi / p
@@ -175,7 +174,8 @@ for iPhase = 1:nPhase
     % create radial profile
     % Note: Due to the limitation of radial sampler, only square image is
     % plausible for now.
-    TF(:, :, iPhase) = statistics.radialmean(T, midpt, floor(r));
+    T = statistics.radialmean(T, midpt, floor(r));
+    TF(:, :, iPhase) = fftshift(T);
 end
 
 end

@@ -13,6 +13,7 @@ clearvars -global;
 if ispc
     srcDir = 'D:\\Andy\\06302017_SIM\\Tan1_3_3DSIM';
     psfFileName = 'D:\\Andy\\06302017_SIM\\PSF\\PSF_NA1p1_520nm_x100nm.tif';
+%     psfFileName = 'D:\\Andy\\\ShaoLin\\RAWbeadSI_zp1um_60b_cfp05_20ms_ch0_stack0000_488nm_0000000msec.tif';
 else
     srcDir = 'data/sim/06302017_SIM/Tan1_3_3DSIM';
     psfFileName = 'data/sim/06302017_SIM/PSF/PSF_NA1p1_520nm_x100nm.tif';
@@ -110,8 +111,8 @@ Ipsf = single(Ipsf);
 % center the PSF
 Ipsf = image.centerpsf(Ipsf);
 
-% normalize PSF, ensure kernel sum is 1
-Ipsf = Ipsf / sum(Ipsf(:));
+% % normalize PSF, ensure kernel sum is 1
+% Ipsf = Ipsf / sum(Ipsf(:));
 
 % save into SI parameter
 siparms.PSF = Ipsf;
