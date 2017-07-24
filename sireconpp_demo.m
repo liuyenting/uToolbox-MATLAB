@@ -41,6 +41,7 @@ siparms.I1 = 1;
 
 % transfer function
 siparms.PixelSize = 100;            % [nm] or [nm, nm]
+
 siparms.RefractiveIndex = 1.33;     % refractive index of the medium
 siparms.Wavelength = 520;           % [nm]
 siparms.NA = 1.1;                   % effective numerical aperture
@@ -110,6 +111,11 @@ Ipsf = single(Ipsf);
 % re-order the stack to orientation-wise and phase-wise
 Ipsf = sim.opmajor(Ipsf, siparms.Orientations, siparms.Phases);
 
+% remove the Z dimension
+psfSz = size(Ipsf);
+psfSz = psfSz(1:2);
+Ipsf = reshape(Ipsf, [psfSz, siparms.Phases, siparms.Orientations]);
+
 % % center the PSF
 % Ipsf = image.centerpsf(Ipsf);
 
@@ -119,6 +125,8 @@ Ipsf = sim.opmajor(Ipsf, siparms.Orientations, siparms.Phases);
 % save into SI parameter
 siparms.PSF = Ipsf;
 siparms.TransFunc = [];
+
+%TODO identify 2-D or 3-D SIM from the dimension of PSF
 
 %% iterate through the files
 % ignore warnings for unknown tags for current session

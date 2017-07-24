@@ -11,6 +11,10 @@ imSz = volSz(1:2);
 nOri = parms.Orientations;
 nPhase = parms.Phases;
 
+%% pre-calculate
+% midpoint of current image size
+midpt = floor(imSz/2)+1;
+
 %% pre-allocate
 % initialize the kp
 kp = zeros([2, nPhase-1, nOri], 'single');
@@ -18,7 +22,7 @@ kp = zeros([2, nPhase-1, nOri], 'single');
 %% process
 for iOri = 1:nOri
     % convert to frequency space
-    D = fftshift(fft2(ifftshift(I(:, :, :, iOri)), imSz(2), imSz(1)));
+    D = fftshift(fft2(ifftshift(I(:, :, :, iOri))));
     
     %% retrieve domains
     % flatten the array
@@ -29,46 +33,60 @@ for iOri = 1:nOri
     D = reshape(D, [imSz, nPhase]);
     
     %% find peaks (frequencies)
-    % compute the magnitude for peak search
-    D = abs(D);
-    
-    % solve each term
-    X = zeros([imSz, 2], 'single');
-    for iPhase = 2:2:nPhase
-        %% standard FFT cross-correlation
-        % find the m_i -/+ terms
-        X(:, :, 1) = fxcorr2(D(:, :, 1), D(:, :, iPhase));
-        X(:, :, 2) = fxcorr2(D(:, :, 1), D(:, :, iPhase+1));
-
+    for iPhase = 2:nPhase
+        % transfer functions
+        O0 = parms.TransFunc(:, :, 1);
+        Om = parms.TransFunc(:, :, iPhase);
+        
+        % domains
+        D0 = D(:, :, 1);
+        Dm = D(:, :, iPhase);
+        
+        %% estimate kp
+        X = fxcorr2(D0, Dm);
+        
         % find the position of the peak
-        X = reshape(X, [prod(imSz), 2]);
-        [~, ind] = max(X);
-        [y, x] = ind2sub(imSz, ind);  
+        [~, ind] = max(X(:));
+        [y, x] = ind2sub(imSz, ind);
+        % convert to offset with the center
+        x = x - midpt(1);
+        y = y - midpt(2);
         
-        %% parabolic interpolation
-        X = reshape(X, [imSz, 2]);
+        %% cross-multiply the transfer function
+        % shift back to low frequency region
+        Om = circshift(Om, [-y, -x]);
+        Dm = circshift(Dm, [-y, -x]);
         
-        % iterate through the -/+ terms
-        for i = 1:2
-            x0 = x(i);
-            y0 = y(i); 
-            
-            % position offset from initial guess
-            xo = parapeak([X(x0-1, y0, i), X(x0, y0, i), X(x0+1, y0, i)]);
-            yo = parapeak([X(x0, y0-1, i), X(x0, y0, i), X(x0, y0+1, i)]);
-            
-            % exact position, remove the position offset
-            x(i) = x0 - xo;
-            y(i) = y0 - yo;
-        end
+        % apply the transfer function
+        D0 = D0 .* Om;
+        Dm = Dm .* O0;
+        
+        % mask the region of interest
+        
+        
+        %% coarse kp
+        X = fxcorr2(D0, Dm);
+        X = abs(X);
+        
+        % find the position of the peak
+        [~, ind] = max(X(:));
+        [y, x] = ind2sub(imSz, ind);
+        
+        %% parabolic interpolation   
+        % position offset from initial guess
+        xo = parapeak([X(x-1, y), X(x, y), X(x+1, y)]);
+        yo = parapeak([X(x, y-1), X(x, y), X(x, y+1)]);
+
+        % exact position, remove the position offset
+        x = x - xo;
+        y = y - yo;
         
         %% from position to shift
-        % distance toward the origin (center of the image)
-        midpt = floor(imSz/2)+1;
-        dist = [x; y] - midpt.';
-        
-        % save them
-        kp(:, iPhase-1:iPhase, iOri) = dist;
+        % convert to offset with the center
+        x = x - midpt(1);
+        y = y - midpt(2);
+
+        kp(:, iPhase, iOri) = [x, y];
     end
 end
 
@@ -82,10 +100,10 @@ function C = fxcorr2(A, B)
 %
 %   See also: FFT2, IFFT2, FFTSHIFT, IFFTSHIFT
 
-% real data only
-if ~isreal(A) || ~isreal(B)
-    error(generatemsgid('InvalidInType'), 'Only real data are allowed.');
-end
+% % real data only
+% if ~isreal(A) || ~isreal(B)
+%     error(generatemsgid('InvalidInType'), 'Only real data are allowed.');
+% end
 
 % find the region that can cover both A and B
 %   size of an image is [nrows (y), ncols (x)]

@@ -1,4 +1,4 @@
-function TF = psf2tf(imSz, PSF, M, kp, parms)
+function TF = psf2tf(imSz, PSF, M, parms)
 %PSF2TF Convert PSF to transfer functions.
 %   
 %   TBA
@@ -10,8 +10,6 @@ psfSz = size(PSF);
 
 pxSz = parms.PixelSize;
 
-lambda = parms.Wavelength;
-
 %% pre-allocate
 % domains
 D = zeros([imSz, nPhase], 'single');
@@ -19,12 +17,9 @@ D = zeros([imSz, nPhase], 'single');
 TF = zeros([imSz, nPhase], 'single');
 
 %% retrieve domains (bands separation)
-% apply the modulations
-PSF = PSF .* Im;
-
 % retrieve the reciprocal space images
 for iPhase = 1:nPhase
-    D(:, :, iPhase) = psf2otf(PSF(:, :, iPhase), imSz);
+    D(:, :, iPhase) = fftshift(fft2(ifftshift(PSF(:, :, iPhase)), imSz(2), imSz(1)));
 end
 
 % flatten the array
@@ -33,15 +28,6 @@ D = reshape(D, [prod(imSz), nPhase]);
 D = (M \ D')';
 % reshape back to original image size
 D = reshape(D, [imSz, nPhase]);
-
-if parms.Debug
-    figure('Name', 'Transfer Functions', 'NumberTitle', 'off');
-    for iPhase = 1:nPhase
-        subplot(1, nPhase, iPhase);
-        imagesc(abs(ifftshift(D(:, :, iPhase))));
-            axis image;
-    end
-end
 
 %% remove initial phase k0
 if parms.Debug && false
@@ -66,32 +52,59 @@ for iPhase = 2:2:nPhase
     D(:, :, iPhase+1) = exp(1i*s)*Dp;
 end
 
-    % cost function for the non-linear fitting
-    function err = errfunc(s, m, p)
-        err = exp(-1i*s)*m - exp(1i*s)*p;
-        % return type is required to be double
-        err = double(err);
-    end
-
 %% bead mask
 %TODO compensate for non-deal point source
 
 %% average and LPF
 % cutoff frequency
-f = 2*parms.NA / lambda;
+f = 2*parms.NA / parms.Wavelength;
 % cut-off radius in pixel
 r = f * (imSz.*pxSz);
 
 midpt = floor(imSz/2)+1;
 for iPhase = 1:nPhase
     T = D(:, :, iPhase);
-    % shift to natural order for processing
-    T = ifftshift(T);
     
     % create radial profile
     % Note: Due to the limitation of radial sampler, only square image is
     % functional for now.
     TF(:, :, iPhase) = statistics.radialmean(T, midpt, floor(r));
 end
+
+if parms.Debug
+    figure('Name', 'Transfer Functions', 'NumberTitle', 'off');
+    for iPhase = 1:nPhase
+        % generate title string
+        m = floor(iPhase/2);
+        if iPhase > 1
+            if mod(iPhase, 2) == 0
+                s = '^-';
+            else
+                s = '^+';
+            end
+        else
+            s = '';
+        end
+        t = sprintf('m_%d%s', m, s);
+        
+        subplot(1, nPhase, iPhase);
+        imagesc(abs(D(:, :, iPhase)));
+            axis image;
+            title(t);
+    end
+end
+
+end
+
+function err = errfunc(s, Dm, Dp)
+%ERRFUNC Cost function for the non-linear fitting of phi.
+%
+%   ERR = ERRFUNC(S, DM, DP) applies the complex phase shift S (in real) to
+%   both minus and plus signs, and generates the differences between them.
+%   Output ERR is coerced to the 
+
+err = exp(-1i*s)*Dm - exp(1i*s)*Dp;
+% return type is required to be double
+err = double(err);
 
 end
