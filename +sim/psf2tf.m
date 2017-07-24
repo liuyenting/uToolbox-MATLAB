@@ -150,6 +150,7 @@ for iPhase = 2:2:nPhase
                            'FiniteDifferenceType', 'central', ...
                            'FiniteDifferenceStepSize', stepSz);
     s = lsqnonlin(@(s)(errfunc(s, Dm, Dp)), pi, [], [], options);
+    fprintf('\tk0 (m%d) = %.4f\n', iPhase/2, s);
     
     % apply the cancellations
     D(:, :, iPhase) = exp(-1i*s)*Dm;
@@ -180,9 +181,8 @@ for iPhase = 1:nPhase
     
     % create radial profile
     % Note: Due to the limitation of radial sampler, only square image is
-    % plausible for now.
-    T = statistics.radialmean(T, midpt, floor(r));
-    TF(:, :, iPhase) = fftshift(T);
+    % functional for now.
+    TF(:, :, iPhase) = statistics.radialmean(T, midpt, floor(r));
 end
 
 end
