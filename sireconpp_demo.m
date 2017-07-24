@@ -133,7 +133,6 @@ while hasdata(imds)
     
     % load the file
     [I, info] = read(imds);
-%     imSz = size(I);
     fPath = info.Filename;
     
     [~, fName, fExt] = fileparts(fPath); 
