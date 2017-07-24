@@ -11,9 +11,8 @@ clearvars -global;
 
 %TODO remove OS dependent test code
 if ispc
-    srcDir = 'D:\\Andy\\06302017_SIM\\Tan1_3_3DSIM';
-    psfFileName = 'D:\\Andy\\06302017_SIM\\PSF\\PSF_NA1p1_520nm_x100nm.tif';
-%     psfFileName = 'D:\\Andy\\\ShaoLin\\RAWbeadSI_zp1um_60b_cfp05_20ms_ch0_stack0000_488nm_0000000msec.tif';
+    srcDir = 'D:\\Andy\\5P-2D-SIM\\data';
+    psfFileName = 'D:\\Andy\\5P-2D-SIM\\psf_488nm.tif';
 else
     srcDir = 'data/sim/06302017_SIM/Tan1_3_3DSIM';
     psfFileName = 'data/sim/06302017_SIM/PSF/PSF_NA1p1_520nm_x100nm.tif';
@@ -108,14 +107,18 @@ imds = imageDatastore(fullfile(srcDir, '*488*.tif*'), ...
 Ipsf = tiff.imread(psfFileName);
 Ipsf = single(Ipsf);
 
-% center the PSF
-Ipsf = image.centerpsf(Ipsf);
+% re-order the stack to orientation-wise and phase-wise
+Ipsf = sim.opmajor(Ipsf, siparms.Orientations, siparms.Phases);
+
+% % center the PSF
+% Ipsf = image.centerpsf(Ipsf);
 
 % % normalize PSF, ensure kernel sum is 1
 % Ipsf = Ipsf / sum(Ipsf(:));
 
 % save into SI parameter
 siparms.PSF = Ipsf;
+siparms.TransFunc = [];
 
 %% iterate through the files
 % ignore warnings for unknown tags for current session
@@ -130,7 +133,7 @@ while hasdata(imds)
     
     % load the file
     [I, info] = read(imds);
-    imSz = size(I);
+%     imSz = size(I);
     fPath = info.Filename;
     
     [~, fName, fExt] = fileparts(fPath); 
@@ -138,7 +141,7 @@ while hasdata(imds)
     
     % convert to floating point
     I = single(I);
-    % re-order the stack to phase-wise
+    % re-order the stack to orientation-wise and phase-wise
     I = sim.opmajor(I, siparms.Orientations, siparms.Phases);
     
     % normalize the intensity across phases

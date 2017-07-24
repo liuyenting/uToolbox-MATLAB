@@ -3,7 +3,7 @@ function J = sireconpp(I, parms)
 %
 %   TBA
 
-persistent TF kp;
+persistent kp;
 
 %% parameters
 volSz = size(I);
@@ -21,8 +21,9 @@ end
 % spectral matrix for the band separation
 M = spectramat(parms.Phases, parms.I0, parms.I1);
 
-if isempty(TF)
-    TF = sim.psf2tf(imSz, parms.PSF, M, kp, parms);
+% generate transfer functions if we don't have one yet
+if isempty(parms.TransFunc)
+    parms.TransFunc = psf2tf(imSz, Ipsf, M, parms);
 end
 
 if isempty(kp)
