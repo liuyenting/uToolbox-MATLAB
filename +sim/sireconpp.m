@@ -3,7 +3,7 @@ function J = sireconpp(I, parms)
 %
 %   TBA
 
-persistent kp;
+persistent TF kp;
 
 %% parameters
 volSz = size(I);
@@ -17,15 +17,14 @@ else
     nz = volSz(3);
 end
 
-%% pre-allocate
-% iterate through the layers
-J = zeros([parms.RetrievalInterpRatio*imSz, nz], 'single');
-
-%% process
-% generate spectral matrix on-the-fly
+%% pre-calculate
+% spectral matrix for the band separation
 M = spectramat(parms.Phases, parms.I0, parms.I1);
 
-% probe for the existence of Kp values
+if isempty(TF)
+    TF = sim.psf2tf(imSz, parms.PSF, M, kp, parms);
+end
+
 if isempty(kp)
     % create projection view along orientations and phases
     Ip = sim.wfproj(I, parms);
@@ -34,6 +33,11 @@ if isempty(kp)
 end
 dispkp(kp, parms);
 
+%% pre-allocate
+% iterate through the layers
+J = zeros([parms.RetrievalInterpRatio*imSz, nz], 'single');
+
+%% process
 for iz = 1:nz
     tStart = tic;
     

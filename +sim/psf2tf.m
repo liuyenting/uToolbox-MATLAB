@@ -4,7 +4,6 @@ function TF = psf2tf(imSz, PSF, M, kp, parms)
 %   TBA
 
 %% parameters
-nOri = parms.Orientations;
 nPhase = parms.Phases;
 
 % identify the type of SIM
@@ -44,6 +43,7 @@ kp = kp ./ (imSz.*pxSz).';
 f = hypot(kp(1, :, :), kp(2, :, :));
 % average the frequency values from each orientation and -/+ terms
 f = mean(f(:));
+fprintf('\tPattern Period = %.4fnm\n', 1/f);
 
 % turns into the actual wave number
 %   k = 2*pi / p
@@ -135,16 +135,23 @@ if parms.Debug
 end
 
 %% remove initial phase k0
+if parms.Debug && false
+    dispFlag = 'iter-detailed';
+else
+    dispFlag = 'none';
+end
+stepSz = max(2*pi ./ imSz);
 for iPhase = 2:2:nPhase
     Dm = D(:, :, iPhase);
     Dp = D(:, :, iPhase+1);
-    
+   
     options = optimoptions(@lsqnonlin, ...
-                           'Display', 'iter-detailed', ...
+                           'Display', dispFlag, ...
                            'FiniteDifferenceType', 'central', ...
-                           'FiniteDifferenceStepSize', 2*pi/imSz(1));
+                           'FiniteDifferenceStepSize', stepSz);
     s = lsqnonlin(@(s)(errfunc(s, Dm, Dp)), pi, [], [], options);
     
+    % apply the cancellations
     D(:, :, iPhase) = exp(-1i*s)*Dm;
     D(:, :, iPhase+1) = exp(1i*s)*Dp;
 end

@@ -3,12 +3,10 @@ function J = sireconppcore(I, M, kp, parms)
 %   
 %   TBA
 
-persistent TF;
-
 %% parameters
-volSz = size(I);
-
-imSz = volSz(1:2);
+imSz = size(I);
+% remove the phases
+imSz = imSz(1:2);
 
 nOri = parms.Orientations;
 nPhase = parms.Phases;
@@ -17,10 +15,15 @@ padSz = parms.PadSize;
 % interpolated size
 rSz = parms.RetrievalInterpRatio*imSz;
 
-%% pre-calculate
-if isempty(TF)
-    TF = sim.psf2tf(imSz, parms.PSF, M, kp, parms);
+%% pre-allocate
+
+%% process
+for iOri = 1:nOri
+    fprintf('\t\to = %d\n', iOri);
+    
 end
+
+%% reconstruction
 
 %% pre-allocate
 % buffer space for results from the frequency domain, each for the original
