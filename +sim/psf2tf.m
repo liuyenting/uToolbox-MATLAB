@@ -19,7 +19,8 @@ TF = zeros([imSz, nPhase], 'single');
 %% retrieve domains (bands separation)
 % retrieve the reciprocal space images
 for iPhase = 1:nPhase
-    D(:, :, iPhase) = fftshift(fft2(ifftshift(PSF(:, :, iPhase)), imSz(2), imSz(1)));
+    D(:, :, iPhase) = fftshift(fft2(ifftshift(PSF(:, :, iPhase)), ...
+                                    imSz(2), imSz(1)));
 end
 
 % flatten the array
