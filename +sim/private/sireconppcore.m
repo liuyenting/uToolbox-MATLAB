@@ -12,12 +12,23 @@ nOri = parms.Orientations;
 nPhase = parms.Phases;
 padSz = parms.PadSize;
 
+pxSz = parms.PixelSize;
+
 % interpolated size
 rSz = parms.RetrievalInterpRatio*imSz;
 
 %% pre-allocate
+TF = zeros([imSz, nPhase], 'single');
+s = zeros([nPhase, nOri], 'single');
+
+TF(:, :, 1) = parms.TransFunc(:, :, 1); 
 
 %% find initial phase
+if parms.Debug && false
+    dispFlag = 'iter-detailed';
+else
+    dispFlag = 'none';
+end
 for iOri = 1:nOri
     % convert to frequency space
     D = fftshift(fft2(ifftshift(I(:, :, :, iOri))));
@@ -30,15 +41,18 @@ for iOri = 1:nOri
     % reshape back to original image size
     D = reshape(D, [imSz, nPhase]);
     
-    for iPhase = 1:nPhase
+    for iPhase = 2:nPhase
         O0 = parms.TransFunc(:, :, 1);
         D0 = D(:, :, 1);
         Om = parms.TransFunc(:, :, iPhase);
         Dm = D(:, :, iPhase);
         
         %% shift the result in real-space
+        kx = kp(1, iPhase-1, iOri);
+        ky = kp(2, iPhase-1, iOri);
+        
         % translation in exponential form
-        [theta, radius] = cart2pol(kp(1, iPhase, iOri), kp(2, iPhase, iOri));
+        [theta, radius] = cart2pol(kx, ky);
         shift = radius * exp(1i * theta);
         
         % shift the transfer function
@@ -55,8 +69,42 @@ for iOri = 1:nOri
         D0 = D0 .* Om;
         Dm = Dm .* O0;
         
-        %% linear regression for the coefficient
+        %% generat the mask
+        % grid
+        [vx, vy] = meshgrid(1:imSz(1), 1:imSz(2));
+        midpt = floor(imSz/2)+1;
+        vx = vx - midpt(1);
+        vy = vy - midpt(2);
+        % distance map
+        DM0 = hypot(vx, vy);
+        DMm = hypot(vx + kx, vy + ky);
         
+        % cutoff frequency
+        f = 2*parms.NA / parms.Wavelength;
+        % cut-off radius in pixel
+        r = f * (imSz.*pxSz);
+        r = min(r(1));
+        
+        mask = zeros(imSz, 'single');
+        mask((DM0 < r) & (DMm < r)) = 1;
+        
+        figure('Name', 'Mask', 'NumberTitle', 'off');
+        imagesc(mask);
+            axis image;
+            
+        D0 = D0 .* mask;
+        Dm = Dm .* mask;
+        
+        %% linear regression for the coefficient
+        options = optimoptions(@lsqnonlin, ...
+                               'Display', dispFlag, ...
+                               'FiniteDifferenceType', 'central', ...
+                               'FiniteDifferenceStepSize', [1e-2, 1e-3]);
+        st = lsqnonlin(@(s)(errfunc(s, D0, Dm)), [1, 0], [], [], options);
+        fprintf('\ts = %.4f * exp(1i * %.4f)\n', st(1), st(2));
+        
+        %% save the constant coefficient
+        s(iPhase, iOri) = st(1) * exp(1i * st(2));
     end
 end
 
@@ -216,14 +264,6 @@ end
 
 J = wnrrecon(F, imSz, popt, prs, pr, parms);
 
-%% preview the result
-% % show the reconstructed result
-% figure('Name', 'Reconstructed', 'NumberTitle', 'off');
-% imagesc(J);
-%     axis image;
-% %     colormap(gray);
-% drawnow;
-
 end
 
 function err = costfunc(Fref, F, imSz, rSz, p0, pr)
@@ -289,5 +329,16 @@ err = sum(err(:)) / np;
 err = double(err);
 
 profile off;
+
+end
+
+function err = errfunc(s, a, b)
+%ERRFUNC Cost function for the non-linear fitting of phi.
+%
+%   TBA
+
+err = b.*(s(1) * exp(1i*s(2))) - a;
+% return type is required to be double
+err = double(err);
 
 end
