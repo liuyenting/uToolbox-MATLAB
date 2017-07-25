@@ -17,15 +17,53 @@ rSz = parms.RetrievalInterpRatio*imSz;
 
 %% pre-allocate
 
-%% process
+%% find initial phase
 for iOri = 1:nOri
-    fprintf('\t\to = %d\n', iOri);
+    % convert to frequency space
+    D = fftshift(fft2(ifftshift(I(:, :, :, iOri))));
     
+    %% retrieve domains
+    % flatten the array
+    D = reshape(D, [prod(imSz), nPhase]);
+    % solve the matrix
+    D = (M \ D')';
+    % reshape back to original image size
+    D = reshape(D, [imSz, nPhase]);
     
-    
+    for iPhase = 1:nPhase
+        O0 = parms.TransFunc(:, :, 1);
+        D0 = D(:, :, 1);
+        Om = parms.TransFunc(:, :, iPhase);
+        Dm = D(:, :, iPhase);
+        
+        %% shift the result in real-space
+        % translation in exponential form
+        [theta, radius] = cart2pol(kp(1, iPhase, iOri), kp(2, iPhase, iOri));
+        shift = radius * exp(1i * theta);
+        
+        % shift the transfer function
+        Om = fftshift(ifft2(ifftshift(Om)));
+        Om = Om .* shift;
+        Om = fftshift(fft2(ifftshift(Om)));
+        
+        % shift the domain
+        Dm = fftshift(ifft2(ifftshift(Dm)));
+        Dm = Dm .* shift;
+        Dm = fftshift(fft2(ifftshift(Dm)));
+        
+        %% apply the compensation factors
+        D0 = D0 .* Om;
+        Dm = Dm .* O0;
+        
+        %% linear regression for the coefficient
+        
+    end
 end
 
 %% reconstruction
+
+
+
 
 %% pre-allocate
 % buffer space for results from the frequency domain, each for the original

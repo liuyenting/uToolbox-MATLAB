@@ -34,44 +34,13 @@ for iOri = 1:nOri
     
     %% find peaks (frequencies)
     for iPhase = 2:nPhase
-        % transfer functions
-        O0 = parms.TransFunc(:, :, 1);
-        Om = parms.TransFunc(:, :, iPhase);
-        
-        % domains
-        D0 = D(:, :, 1);
-        Dm = D(:, :, iPhase);
-        
         %% estimate kp
-        X = fxcorr2(D0, Dm);
+        X = fxcorr2(D(:, :, 1), D(:, :, iPhase));
         
         % find the position of the peak
         [~, ind] = max(X(:));
         [y, x] = ind2sub(imSz, ind);
-        % convert to offset with the center
-        x = x - midpt(1);
-        y = y - midpt(2);
-        
-        %% cross-multiply the transfer function
-        % shift back to low frequency region
-        Om = circshift(Om, [-y, -x]);
-        Dm = circshift(Dm, [-y, -x]);
-        
-        % apply the transfer function
-        D0 = D0 .* Om;
-        Dm = Dm .* O0;
-        
-        % mask the region of interest
-        
-        
-        %% coarse kp
-        X = fxcorr2(D0, Dm);
-        X = abs(X);
-        
-        % find the position of the peak
-        [~, ind] = max(X(:));
-        [y, x] = ind2sub(imSz, ind);
-        
+               
         %% parabolic interpolation   
         % position offset from initial guess
         xo = parapeak([X(x-1, y), X(x, y), X(x+1, y)]);
@@ -86,7 +55,7 @@ for iOri = 1:nOri
         x = x - midpt(1);
         y = y - midpt(2);
 
-        kp(:, iPhase, iOri) = [x, y];
+        kp(:, iPhase-1, iOri) = [x, y];
     end
 end
 
