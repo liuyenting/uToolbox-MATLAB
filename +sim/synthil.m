@@ -1,6 +1,17 @@
 function IL = synthil(imSz, kp, parms)
 %SYNTHIL Synthesize the illumination pattern.
-%   Detailed explanation goes here
+%   
+%   IL = SYNTHIL(IMSZ, KP, PARMS) generates the SIM illumintaion pattern IL
+%   of size IMSZ using frequency information KP and experiment setup in
+%   PARMS.
+%
+%   The following parameters should be included in the PARMS:
+%   'Phases'            Number of phase shifts, this dictates whether 2-D 
+%                       or 3-D SIM is requested.
+%   'PixelSize'         Effective pixel size of the camera in nm.
+%   'RefractiveIndex'   Refractive index of the medium between lens and the 
+%                       sample.
+%   'Wavelength'        Wavelength of the excitation laser in nm.
 
 %% parameters
 nPhase = parms.Phases;
