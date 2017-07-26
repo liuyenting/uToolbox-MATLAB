@@ -81,7 +81,7 @@ for iOri = 1:nOri
         vy = vy - midpt(2);
         % distance map
         DM0 = hypot(vx, vy);
-        DMm = hypot(vx + kx, vy + ky);
+        DMm = hypot(vx - kx, vy - ky);
         
         % cutoff frequency
         f = 2*parms.NA / parms.Wavelength;
@@ -106,10 +106,11 @@ for iOri = 1:nOri
             s = '';
         end
         t = sprintf('d_%d, m_%d%s', iOri, m, s);
-        subplot(nOri, nPhase, (iOri-1)*nPhase+iPhase-1);
+        subplot(nOri, nPhase-1, (iOri-1)*(nPhase-1)+iPhase-1);
         imagesc(mask);
             axis image;
             title(t);
+        drawnow;
        
         D0 = D0 .* mask;
         Dm = Dm .* mask;

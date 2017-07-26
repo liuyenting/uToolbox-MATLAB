@@ -22,11 +22,11 @@ end
 M = spectramat(parms.Phases, parms.I0, parms.I1);
 
 % generate transfer functions if we don't have one yet
-if isempty(parms.TransFunc)
+if isempty(parms.TransFunc) || true
     parms.TransFunc = sim.psf2tf(imSz, parms.PSF, M, parms);
 end
 
-if isempty(kp)
+if isempty(kp) || true
     % create projection view along orientations and phases
     Ip = sim.wfproj(I, parms);
     % find the the pattern wave vector for each orientation
