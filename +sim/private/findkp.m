@@ -41,11 +41,23 @@ for iOri = 1:nOri
         
         % preview
         figure(hPre);
-        subplot(nOri, nPhase-1, (iOri-1)*nOri+iPhase-1);
+        % generate title string
+        m = floor(iPhase/2);
+        if iPhase > 1
+            if mod(iPhase, 2) == 0
+                s = '^-';
+            else
+                s = '^+';
+            end
+        else
+            s = '';
+        end
+        t = sprintf('d_%d, m_%d%s', iOri, m, s);
+        subplot(nOri, nPhase-1, (iOri-1)*(nPhase-1)+iPhase-1);
         imagesc(abs(X));
             axis image;
             colormap(gray);
-            title(sprintf('O%d P%d', iOri, iPhase-1));
+            title(t);
         
         % find the position of the peak
         [~, ind] = max(X(:));
