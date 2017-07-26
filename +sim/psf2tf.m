@@ -89,7 +89,7 @@ if parms.Debug
         t = sprintf('m_%d%s', m, s);
         
         subplot(1, nPhase, iPhase);
-        imagesc(abs(D(:, :, iPhase)));
+        imagesc(abs(D(:, :, iPhase)).^0.5);
             axis image;
             title(t);
     end

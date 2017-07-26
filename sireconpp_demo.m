@@ -11,8 +11,8 @@ clearvars -global;
 
 %TODO remove OS dependent test code
 if ispc
-    srcDir = 'D:\\Andy\\5P-2D-SIM\\data';
-    psfFileName = 'D:\\Andy\\5P-2D-SIM\\psf_488nm.tif';
+    srcDir = 'D:\\Andy\\07252017_SIMforAndy\\cell3_3DSIM_obj';
+    psfFileName = 'D:\\Andy\\07252017_SIMforAndy\\PSF3_3DSIM_obj\\RAWpsf3a3DSIM_ch0_561nm_cropped.tif';
 else
     srcDir = 'data/5P-2D-SIM/data';
     psfFileName = 'data/5P-2D-SIM/psf_488nm.tif';
@@ -101,26 +101,45 @@ end
 
 %% load the file list
 %TODO load 488nm only for now
-imds = imageDatastore(fullfile(srcDir, '*488*.tif*'), ...
+imds = imageDatastore(fullfile(srcDir, '*c3a*.tif*'), ...
                       'ReadFcn', @tiff.TIFFStack);
 
 %% preload the PSF
+nOri = siparms.Orientations;
+nPhases = siparms.Phases;
+
 Ipsf = tiff.imread(psfFileName);
 Ipsf = single(Ipsf);
 
 % re-order the stack to orientation-wise and phase-wise
-Ipsf = sim.opmajor(Ipsf, siparms.Orientations, siparms.Phases);
+Ipsf = sim.opmajor(Ipsf, nOri, nPhases);
 
-% remove the Z dimension
 psfSz = size(Ipsf);
+psfnz = psfSz(3);
+% select the mid-plane for 5P-2D-SIM
+Ipsf = Ipsf(:, :, floor(psfnz/2)+1, :, :);
+% remove the Z dimension
 psfSz = psfSz(1:2);
-Ipsf = reshape(Ipsf, [psfSz, siparms.Phases, siparms.Orientations]);
+Ipsf = reshape(Ipsf, [psfSz, nPhases, nOri]);
 
-% % center the PSF
-% Ipsf = image.centerpsf(Ipsf);
+% center the PSF
+for iOri = 1:nOri
+    for iPhase = 1:nPhases
+        Ipsf(:, :, iPhase, iOri) = image.centerpsf(Ipsf(:, :, iPhase, iOri));
+    end
+end
 
-% % normalize PSF, ensure kernel sum is 1
-% Ipsf = Ipsf / sum(Ipsf(:));
+if siparms.Debug
+    figure('Name', 'PSF', 'NumberTitle', 'off');
+    for iOri = 1:nOri
+        for iPhase = 1:nPhases
+            subplot(nOri, nPhases, (iOri-1)*nOri+iPhase);
+            imagesc(Ipsf(:, :, iPhase, iOri));
+                axis image;
+                title(sprintf('O%d P%d', iOri, iPhase));
+        end
+    end
+end
 
 % save into SI parameter
 siparms.PSF = Ipsf;
@@ -138,6 +157,7 @@ profile off;
 tOuter = tic;
 while hasdata(imds)
     tInner = tic;
+    fprintf('\n');
     
     % load the file
     [I, info] = read(imds);
@@ -164,7 +184,7 @@ while hasdata(imds)
     fclose('all');
     
     tElapse = toc(tInner);
-    fprintf('\t%.3fs elapsed\n', tElapse);
+    fprintf('%.3fs elapsed\n', tElapse);
 end
 tElapse = toc(tOuter);
 fprintf('+++ %.3fs to complete the time lapse +++\n', tElapse);

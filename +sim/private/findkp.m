@@ -15,6 +15,8 @@ nPhase = parms.Phases;
 % midpoint of current image size
 midpt = floor(imSz/2)+1;
 
+hPre = figure('Name', 'XCorr for Kp Estimation', 'NumberTitle', 'off');
+
 %% pre-allocate
 % initialize the kp
 kp = zeros([2, nPhase-1, nOri], 'single');
@@ -37,6 +39,14 @@ for iOri = 1:nOri
         %% estimate kp
         X = fxcorr2(D(:, :, 1), D(:, :, iPhase));
         
+        % preview
+        figure(hPre);
+        subplot(nOri, nPhase-1, (iOri-1)*nOri+iPhase-1);
+        imagesc(abs(X));
+            axis image;
+            colormap(gray);
+            title(sprintf('O%d P%d', iOri, iPhase-1));
+        
         % find the position of the peak
         [~, ind] = max(X(:));
         [y, x] = ind2sub(imSz, ind);
@@ -49,6 +59,11 @@ for iOri = 1:nOri
         % exact position, remove the position offset
         x = x - xo;
         y = y - yo;
+        
+        % preview
+        hold on;
+        plot(x, y, 'oy');
+        drawnow;
         
         %% from position to shift
         % convert to offset with the center
@@ -85,7 +100,8 @@ sz = max(size(A), size(B));
 f1 = fftshift(fft2(ifftshift(A), sz(1), sz(2)));
 f2 = fftshift(fft2(ifftshift(B), sz(1), sz(2)));
 fx = f1 .* f2;
-C = fftshift(ifft2(ifftshift(fx), 'symmetric'));
+% C = fftshift(ifft2(ifftshift(fx), 'symmetric'));
+C = fftshift(ifft2(ifftshift(fx)));
 
 end
 

@@ -11,7 +11,7 @@ volSz = size(I);
 imSz = volSz(1:2);
 %DEBUG process single layer only
 if parms.Debug
-    offset = 42;
+    offset = 41;
     nz = 1;
 else
     nz = volSz(3);
@@ -42,7 +42,7 @@ J = zeros([parms.RetrievalInterpRatio*imSz, nz], 'single');
 for iz = 1:nz
     tStart = tic;
     
-    fprintf('\tz = %d\n', iz);
+    fprintf('z = %d\n', iz);
     
     % extract the layer
     %DEBUG process single layer only
@@ -61,7 +61,7 @@ for iz = 1:nz
     J(:, :, iz) = sireconppcore(L, M, kp, parms);
     
     tElapsed = toc(tStart);
-    fprintf('\t%.3fs\n\n', tElapsed);
+    fprintf('%.3fs\n\n', tElapsed);
 end
 
 end

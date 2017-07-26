@@ -19,14 +19,12 @@ rSz = parms.RetrievalInterpRatio*imSz;
 
 %% pre-allocate
 TF = zeros([imSz, nPhase], 'single');
-s = zeros([nPhase, nOri], 'single');
+k0 = zeros([nPhase, nOri], 'single');
 
 TF(:, :, 1) = parms.TransFunc(:, :, 1); 
 
-hMask = figure('Name', 'Mask', 'NumberTitle', 'off');
-
 %% find initial phase
-if parms.Debug && false
+if parms.Debug
     dispFlag = 'iter-detailed';
 else
     dispFlag = 'none';
@@ -49,13 +47,17 @@ for iOri = 1:nOri
         Om = parms.TransFunc(:, :, iPhase);
         Dm = D(:, :, iPhase);
         
+        % grids for the relative phase shift matrix
+        [vx, vy] = meshgrid(1:imSz(1), 1:imSz(2));
+        midpt = floor(imSz/2)+1;
+        vx = (vx - midpt(1)) / imSz(1);
+        vy = (vy - midpt(2)) / imSz(2);
+        
         %% shift the result in real-space
         kx = kp(1, iPhase-1, iOri);
         ky = kp(2, iPhase-1, iOri);
         
-        % translation in exponential form
-        [theta, radius] = cart2pol(kx, ky);
-        shift = radius * exp(1i * theta);
+        shift = exp(-1i * 2*pi * (kx*vx + ky*vy));
         
         % shift the transfer function
         Om = fftshift(ifft2(ifftshift(Om)));
@@ -93,14 +95,6 @@ for iOri = 1:nOri
         D0 = D0 .* mask;
         Dm = Dm .* mask;
         
-        if parms.Debug
-            figure(hMask);
-            subplot(nOri, nPhase-1, iPhase-1);
-            imagesc(abs(D0).^0.1);
-                axis image;
-            drawnow;
-        end
-        
         %% linear regression for the coefficient
         options = optimoptions(@lsqnonlin, ...
                                'Display', dispFlag, ...
@@ -110,11 +104,146 @@ for iOri = 1:nOri
         fprintf('\ts = %.4f * exp(1i * %.4f)\n', st(1), st(2));
         
         %% save the constant coefficient
-        s(iPhase, iOri) = st(1) * exp(1i * st(2));
+        k0(iPhase, iOri) = st(1) * exp(1i * st(2));
     end
 end
 
-%% reconstruction
+%% integrate the coefficients
+% average the coefficients along the orientation
+k0 = mean(k0, 2);
+
+% integrate the initial phase shifts
+TF(:, :, 2:end) = TF(:, :, 2:end) .* reshape(k0(2:end), 1, 1, []);
+
+%% multiply the transfer function
+% the original apodization function
+A = genapomask(imSz, 0.8);
+
+% buffer space for the Wiener filter functions
+C = zeros(imSz, 'single');
+% temporary padded result
+Tp = zeros(rSz, 'single');
+
+% merged result
+R = zeros(rSz, 'single');
+
+% filter function
+for iOri = 1:nOri
+    for iPhase = 1:nPhase
+        %% variables
+        if iPhase > 1
+            kx = kp(1, iPhase-1, iOri);
+            ky = kp(2, iPhase-1, iOri);
+        else
+            kx = 0; 
+            ky = 0;
+        end
+        Om = TF(:, :, iPhase);
+        
+        % grids for the relative phase shift matrix
+        [vx, vy] = meshgrid(1:imSz(1), 1:imSz(2));
+        midpt = floor(imSz/2)+1;
+        vx = (vx - midpt(1)) / imSz(1);
+        vy = (vy - midpt(2)) / imSz(2);
+        
+        %% denominator
+        for iiOri = 1:nOri
+            for iiPhase = 1:nPhase
+                fprintf('d=%d, m=%d, d''=%d, m''=%d\n', iOri, iPhase, iiOri, iiPhase);
+                if iiPhase > 1
+                    kix = kp(1, iiPhase-1, iiOri);
+                    kiy = kp(2, iiPhase-1, iiOri);
+                else
+                    kix = 0; 
+                    kiy = 0;
+                end
+                
+                % calcualte the phase shift
+                kdx = kix - kx;
+                kdy = kiy - ky;
+                
+                shift = exp(-1i * 2*pi * (kdx*vx + kdy*vy));
+
+                % shift the transfer function
+                Oms = fftshift(ifft2(ifftshift(Om)));
+                Oms = Oms .* shift;
+                Oms = fftshift(fft2(ifftshift(Oms)));
+
+                % squared absolute value
+                Oms = abs(Oms).^2;
+                % sum the result
+                C = C + Oms;
+            end
+        end
+        % apply the Wiener coefficient
+        C = C + (parms.WienerConstant)^2;       
+    end
+end
+
+for iOri = 1:nOri
+    for iPhase = 1:nPhase
+        %% variables
+        if iPhase > 1
+            kx = kp(1, iPhase-1, iOri);
+            ky = kp(2, iPhase-1, iOri);
+        else
+            kx = 0; 
+            ky = 0;
+        end
+        Om = TF(:, :, iPhase);
+        Dm = D(:, :, iPhase);
+        
+        % grids for the relative phase shift matrix
+        [vx, vy] = meshgrid(1:imSz(1), 1:imSz(2));
+        midpt = floor(imSz/2)+1;
+        vx = (vx - midpt(1)) / imSz(1);
+        vy = (vy - midpt(2)) / imSz(2);
+        
+        %% nominator
+        shift = exp(-1i * 2*pi * -(kx*vx + ky*vy));
+
+        % shift the transfer function
+        As = fftshift(ifft2(ifftshift(A)));
+        As = As .* shift;
+        As = fftshift(fft2(ifftshift(As)));
+
+        % generate the nominator (negative sign)
+        N = conj(Om) .* As;
+        
+        % apply the transfer function
+        T = (N./C) .* Dm;
+        
+        % pad the result to center
+        li = floor((rSz-imSz)/2)+1;
+        ui = li+imSz-1;
+        Tp(li(1):ui(1), li(2):ui(2)) = T;
+        
+        % grids for the relative phase shift matrix
+        [vx, vy] = meshgrid(1:rSz(1), 1:rSz(2));
+        midpt = floor(rSz/2)+1;
+        vx = (vx - midpt(1)) / rSz(1);
+        vy = (vy - midpt(2)) / rSz(2);
+        
+        shift = exp(-1i * 2*pi * -(kx*vx + ky*vy));
+        
+        % shift in real space with complex gradient
+        Tp = fftshift(ifft2(ifftshift(Tp)));
+        Tp = Tp .* shift;
+        Tp = fftshift(fft2(ifftshift(Tp)));
+        
+        %% add the result
+        R = R + Tp;
+    end
+end
+
+%% revert back to real space and show the result
+R = fftshift(ifft2(ifftshift(R)));
+
+figure('Name', 'Result', 'NumberTitle', 'off');
+imagesc(abs(R));
+    axis image;
+    colormap(gray);
+disp('DONE');
 
 
 
