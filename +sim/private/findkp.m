@@ -39,6 +39,9 @@ for iOri = 1:nOri
         %% estimate kp
         X = fxcorr2(D(:, :, 1), D(:, :, iPhase));
         
+        % Using magnitude since we can't compare complex numbers.
+        X = abs(X);
+        
         % preview
         figure(hPre);
         % generate title string
@@ -54,7 +57,7 @@ for iOri = 1:nOri
         end
         t = sprintf('d_%d, m_%d%s', iOri, m, s);
         subplot(nOri, nPhase-1, (iOri-1)*(nPhase-1)+iPhase-1);
-        imagesc(abs(X));
+        imagesc(X);
             axis image;
             colormap(gray);
             title(t);
@@ -65,12 +68,12 @@ for iOri = 1:nOri
                
         %% parabolic interpolation   
         % position offset from initial guess
-        xo = parapeak([X(x-1, y), X(x, y), X(x+1, y)]);
-        yo = parapeak([X(x, y-1), X(x, y), X(x, y+1)]);
+        xo = parapeak([X(y, x-1), X(y, x), X(y, x+1)]);
+        yo = parapeak([X(y-1, x), X(y, x), X(y+1, x)]);
 
         % exact position, remove the position offset
-        x = x - xo;
-        y = y - yo;
+        x = x + xo;
+        y = y + yo;
         
         % preview
         hold on;
@@ -154,5 +157,9 @@ end
 %   x = -B/(2*A)
 %     = -(1/2)*(c-a)/(a+c-2*b)
 C = -(vars(3)-vars(1))/(vars(1)+vars(3)-2*vars(2)) / 2;
+
+% Offset should within (-1, 1), otherwise, estimated peak has deviated too
+% much!
+assert(abs(C) < 1);
 
 end
