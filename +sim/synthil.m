@@ -17,7 +17,7 @@ else
           'Unsupported type of SIM data source.');
 end
 
-psfSz = size(PSF);
+psfSz = size(parms.PSF);
 
 pxSz = parms.PixelSize;
 
