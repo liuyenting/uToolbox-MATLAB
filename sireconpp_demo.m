@@ -14,8 +14,8 @@ if ispc
     srcDir = 'D:\\Andy\\5P-2D-SIM\\data';
     psfFileName = 'D:\\Andy\\5P-2D-SIM\\psf_488nm.tif';
 else
-    srcDir = 'data/sim/06302017_SIM/Tan1_3_3DSIM';
-    psfFileName = 'data/sim/06302017_SIM/PSF/PSF_NA1p1_520nm_x100nm.tif';
+    srcDir = 'data/5P-2D-SIM/data';
+    psfFileName = 'data/5P-2D-SIM/psf_488nm.tif';
 
     % prepend the root
     srcDir = fullfile(userpath, srcDir);

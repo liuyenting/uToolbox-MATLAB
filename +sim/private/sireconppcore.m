@@ -23,6 +23,8 @@ s = zeros([nPhase, nOri], 'single');
 
 TF(:, :, 1) = parms.TransFunc(:, :, 1); 
 
+hMask = figure('Name', 'Mask', 'NumberTitle', 'off');
+
 %% find initial phase
 if parms.Debug && false
     dispFlag = 'iter-detailed';
@@ -87,13 +89,17 @@ for iOri = 1:nOri
         
         mask = zeros(imSz, 'single');
         mask((DM0 < r) & (DMm < r)) = 1;
-        
-        figure('Name', 'Mask', 'NumberTitle', 'off');
-        imagesc(mask);
-            axis image;
-            
+       
         D0 = D0 .* mask;
         Dm = Dm .* mask;
+        
+        if parms.Debug
+            figure(hMask);
+            subplot(nOri, nPhase-1, iPhase-1);
+            imagesc(abs(D0).^0.1);
+                axis image;
+            drawnow;
+        end
         
         %% linear regression for the coefficient
         options = optimoptions(@lsqnonlin, ...
