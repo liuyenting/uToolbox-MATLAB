@@ -21,8 +21,6 @@ rSz = parms.RetrievalInterpRatio*imSz;
 TF = zeros([imSz, nPhase], 'single');
 k0 = zeros([nPhase, nOri], 'single');
 
-TF(:, :, 1) = parms.TransFunc(:, :, 1); 
-
 %% find initial phase
 if parms.Debug
     dispFlag = 'iter-detailed';
@@ -112,8 +110,9 @@ end
 % average the coefficients along the orientation
 k0 = mean(k0, 2);
 
+TF(:, :, 1) = parms.TransFunc(:, :, 1); 
 % integrate the initial phase shifts
-TF(:, :, 2:end) = TF(:, :, 2:end) .* reshape(k0(2:end), 1, 1, []);
+TF(:, :, 2:end) = parms.TransFunc(:, :, 2:end) .* reshape(k0(2:end), 1, 1, []);
 
 %% multiply the transfer function
 % the original apodization function
@@ -224,7 +223,7 @@ for iOri = 1:nOri
         vx = (vx - midpt(1)) / rSz(1);
         vy = (vy - midpt(2)) / rSz(2);
         
-        shift = exp(-1i * 2*pi * -(kx*vx + ky*vy));
+        shift = exp(-1i * 2*pi * -(kx/imSz(1)*vx + ky/imSz(2)*vy));
         
         % shift in real space with complex gradient
         Tp = fftshift(ifft2(ifftshift(Tp)));
