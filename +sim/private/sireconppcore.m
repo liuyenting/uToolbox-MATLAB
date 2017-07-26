@@ -21,6 +21,8 @@ rSz = parms.RetrievalInterpRatio*imSz;
 TF = zeros([imSz, nPhase], 'single');
 k0 = zeros([nPhase, nOri], 'single');
 
+hMask = figure('Name', 'Mask', 'NumberTitle', 'off');
+
 %% find initial phase
 if parms.Debug
     dispFlag = 'iter-detailed';
@@ -89,6 +91,25 @@ for iOri = 1:nOri
         
         mask = zeros(imSz, 'single');
         mask((DM0 < r) & (DMm < r)) = 1;
+        
+        % preview mask
+        figure(hMask);
+        % generate title string
+        m = floor(iPhase/2);
+        if iPhase > 1
+            if mod(iPhase, 2) == 0
+                s = '^-';
+            else
+                s = '^+';
+            end
+        else
+            s = '';
+        end
+        t = sprintf('d_%d, m_%d%s', iOri, m, s);
+        subplot(nOri, nPhase, (iOri-1)*nPhase+iPhase-1);
+        imagesc(mask);
+            axis image;
+            title(t);
        
         D0 = D0 .* mask;
         Dm = Dm .* mask;
