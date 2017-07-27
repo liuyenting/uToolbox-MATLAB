@@ -116,15 +116,20 @@ for iOri = 1:nOri
         Dm = Dm .* mask;
         
         %% linear regression for the coefficient
-        options = optimoptions(@lsqnonlin, ...
-                               'Display', dispFlag, ...
-                               'FiniteDifferenceType', 'central', ...
-                               'FiniteDifferenceStepSize', [1e-2, 1e-3]);
-        st = lsqnonlin(@(s)(errfunc(s, D0, Dm)), [1, 0], [], [], options);
-        fprintf('\ts = %.4f * exp(1i * %.4f)\n', st(1), st(2));
+%         options = optimoptions(@lsqnonlin, ...
+%                                'Display', dispFlag, ...
+%                                'FiniteDifferenceType', 'central', ...
+%                                'FiniteDifferenceStepSize', [1e-2, 1e-3]);
+%         st = lsqnonlin(@(s)(errfunc(s, D0, Dm)), [1, 0], [], [], options);
+        nom = conj(Dm) .* D0;
+        nom = sum(nom(:));
+        den = abs(Dm).^2;
+        den = sum(den(:));
+        s = nom / den;
+        fprintf('\ts = %.4f * exp(1i * %.4f)\n', real(s), imag(s));
         
         %% save the constant coefficient
-        k0(iPhase, iOri) = st(1) * exp(1i * st(2));
+        k0(iPhase, iOri) = s;
     end
 end
 
@@ -170,7 +175,6 @@ for iOri = 1:nOri
         %% denominator
         for iiOri = 1:nOri
             for iiPhase = 1:nPhase
-                fprintf('d=%d, m=%d, d''=%d, m''=%d\n', iOri, iPhase, iiOri, iiPhase);
                 if iiPhase > 1
                     kix = kp(1, iiPhase-1, iiOri);
                     kiy = kp(2, iiPhase-1, iiOri);
@@ -221,7 +225,7 @@ for iOri = 1:nOri
         vy = (vy - midpt(2)) / imSz(2);
         
         %% nominator
-        shift = exp(-1i * 2*pi * -(kx*vx + ky*vy));
+        shift = exp(-1i * 2*pi * (kx*vx + ky*vy));
 
         % shift the transfer function
         As = fftshift(ifft2(ifftshift(A)));
@@ -242,10 +246,10 @@ for iOri = 1:nOri
         % grids for the relative phase shift matrix
         [vx, vy] = meshgrid(1:rSz(1), 1:rSz(2));
         midpt = floor(rSz/2)+1;
-        vx = (vx - midpt(1)) / rSz(1);
-        vy = (vy - midpt(2)) / rSz(2);
+        vx = (vx - midpt(1)) / imSz(1);
+        vy = (vy - midpt(2)) / imSz(2);
         
-        shift = exp(-1i * 2*pi * -(kx/imSz(1)*vx + ky/imSz(2)*vy));
+        shift = exp(-1i * 2*pi * (kx*vx + ky*vy));
         
         % shift in real space with complex gradient
         Tp = fftshift(ifft2(ifftshift(Tp)));
