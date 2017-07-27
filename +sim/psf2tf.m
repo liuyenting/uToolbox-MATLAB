@@ -18,13 +18,20 @@ D = zeros([imSz, nPhase], 'single');
 TF = zeros([imSz, nPhase], 'single');
 
 %% retrieve domains (bands separation)
+% denominator
+[vx, vy] = meshgrid(1:psfSz(1), 1:psfSz(2));
+midpt = floor(psfSz/2)+1;
+vx = vx - midpt(1);
+vy = vy - midpt(2);
+den = 2*cos(2*pi*vx/psfSz(1)) + 2*cos(2*pi*vy/psfSz(2)) - 4;
+% reset the center in order to be well-defined
+den(midpt(2), midpt(1)) = 1;
+
 % retrieve the reciprocal space images
 for iPhase = 1:nPhase
     T = PSF(:, :, iPhase);
     
-    A = filter.tukeywin1(psfSz(1), 0.8);
-    A = A * A.';
-    T = T .* A;
+    T = T - mean(T);
     
     D(:, :, iPhase) = fftshift(fft2(ifftshift(T), imSz(2), imSz(1)));
 end
@@ -55,8 +62,8 @@ for iPhase = 2:2:nPhase
     fprintf('\tk0 (m%d) = %.4f\n', iPhase/2, s);
     
     % apply the cancellations
-    D(:, :, iPhase) = exp(-1i*s)*Dm;
-    D(:, :, iPhase+1) = exp(1i*s)*Dp;
+    D(:, :, iPhase) = Dm; %exp(-1i*s)*Dm;
+    D(:, :, iPhase+1) = Dp; %exp(1i*s)*Dp;
 end
 
 %% average and LPF
@@ -79,7 +86,7 @@ for iPhase = 1:nPhase
     % create radial profile
     % Note: Due to the limitation of radial sampler, only square image is
     % functional for now.
-    TF(:, :, iPhase) = statistics.radialmean(T, midpt, floor(r));
+    TF(:, :, iPhase) = T; %statistics.radialmean(T, midpt, floor(r));
 end
 
 if parms.Debug

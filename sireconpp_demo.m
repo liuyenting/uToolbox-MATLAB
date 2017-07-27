@@ -56,7 +56,7 @@ siparms.ApodizeRatio = 0.8;
 siparms.RetrievalInterpRatio = 2;
 
 % generalized Wiener filter
-siparms.WienerConstant = 0.25;
+siparms.WienerConstant = 1e-2;
 
 %% verify the input
 % check whether the input directory exsists

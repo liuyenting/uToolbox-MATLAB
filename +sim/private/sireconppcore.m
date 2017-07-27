@@ -19,7 +19,7 @@ rSz = parms.RetrievalInterpRatio*imSz;
 
 %% pre-allocate
 TF = zeros([imSz, nPhase], 'single');
-k0 = zeros([nPhase, nOri], 'single');
+k0 = zeros([nPhase-1, nOri], 'single');
 
 hMask = figure('Name', 'Mask', 'NumberTitle', 'off');
 
@@ -61,10 +61,10 @@ for iOri = 1:nOri
         u0i = ui - [kx, ky];
         
         Om = zeros(imSz, 'single');
-        Om(li(2):ui(2), li(1):ui(1)) = parms.TransFunc(l0i(2):u0i(2), l0i(1):u0i(1), iPhase);
+        Om(li(2):ui(2), li(1):ui(1)) = parms.TransFunc(l0i(2):u0i(2), l0i(1):u0i(1), iPhase-1);
         
         Dm = zeros(imSz, 'single');
-        Dm(li(2):ui(2), li(1):ui(1)) = D(l0i(2):u0i(2), l0i(1):u0i(1), iPhase);
+        Dm(li(2):ui(2), li(1):ui(1)) = D(l0i(2):u0i(2), l0i(1):u0i(1), iPhase-1);
 
         %% apply the compensation factors
         D0 = D0 .* Om;
@@ -103,7 +103,7 @@ for iOri = 1:nOri
             s = '';
         end
         t = sprintf('d_%d, m_%d%s', iOri, m, s);
-        subplot(nOri, nPhase-1, (iOri-1)*(nPhase-1)+iPhase-1);
+        subplot(nOri, nPhase, (iOri-1)*(nPhase-1)+iPhase-1);
         imagesc(mask);
             axis image;
             title(t);
@@ -124,7 +124,7 @@ for iOri = 1:nOri
         fprintf('\ts = %.4f * exp(1i * %.4f)\n', real(s), imag(s));
         
         %% save the constant
-        k0(iPhase, iOri) = s;
+        k0(iPhase-1, iOri) = s;
     end
 end
 
@@ -134,16 +134,14 @@ k0 = mean(k0, 2);
 
 TF(:, :, 1) = parms.TransFunc(:, :, 1); 
 % integrate the initial phase shifts
-TF(:, :, 2:end) = parms.TransFunc(:, :, 2:end) .* reshape(k0(2:end), 1, 1, []);
+TF(:, :, 2:end) = parms.TransFunc(:, :, 2:end) .* reshape(k0, 1, 1, []);
 
 %% multiply the transfer function
 % the original apodization function
-A = genapomask(imSz, 0.8);
+A = genapomask(imSz, 1);
 
 % buffer space for the Wiener filter functions
 C = zeros(imSz, 'single');
-% temporary padded result
-Tp = zeros(rSz, 'single');
 
 % merged result
 R = zeros(rSz, 'single');
@@ -231,6 +229,10 @@ for iOri = 1:nOri
         % shift in real space with complex gradient
         Tp = fftshift(ifft2(ifftshift(Tp)));
         
+        figure;
+        imagesc(abs(Tp)); axis image;
+        drawnow;
+        
         % grids for the relative phase shift matrix
         [vx, vy] = meshgrid(1:rSz(1), 1:rSz(2));
         midpt = floor(rSz/2)+1;
@@ -253,10 +255,10 @@ imagesc(abs(R).^0.1);
     axis image;
     title('Frequency Domain');
     
-J = fftshift(ifft2(ifftshift(R)));
+J = (ifft2(ifftshift(R)));
 
 subplot(1, 2, 2);
-imagesc(abs(J));
+imagesc(real(J));
     axis image;
     title('Time Domain');
     
