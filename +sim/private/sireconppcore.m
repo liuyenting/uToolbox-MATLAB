@@ -59,15 +59,40 @@ for iOri = 1:nOri
         
         shift = exp(-1i * 2*pi * (kx*vx + ky*vy));
         
-        % shift the transfer function
-        Om = fftshift(ifft2(ifftshift(Om)));
-        Om = Om .* shift;
-        Om = fftshift(fft2(ifftshift(Om)));
+        %DEBUG test for pixel-wise shifting
+        kxr = round(kx); 
+        kyr = round(ky);
         
-        % shift the domain
-        Dm = fftshift(ifft2(ifftshift(Dm)));
-        Dm = Dm .* shift;
-        Dm = fftshift(fft2(ifftshift(Dm)));
+        %TODO fix the generalized position shifting schema
+        li = 1 + [kxr, kyr];
+        li(li < 1) = 1;
+        ui = imSz + [kxr, kyr];
+        ui(ui > imSz) = imSz;
+        mvSz = ui-li+1;
+        
+        % shift x
+        Om(:, 1:end-kxr-1) = Om(:, 1+kxr+1:end);
+        Om(:, end-kxr:end) = 0;
+        % shift y
+        Om(1:end-kyr-1, :) = Om(1+kyr+1:end, :);
+        Om(end-kyr:end, :) = 0;
+        
+%         % shift the transfer function
+%         Om = fftshift(ifft2(ifftshift(Om)));
+%         Om = Om .* shift;
+%         Om = fftshift(fft2(ifftshift(Om)));
+        
+        % shift x
+        Dm(:, 1:end-kxr-1) = Dm(:, 1+kxr+1:end);
+        Dm(:, end-kxr:end) = 0;
+        % shift y
+        Dm(1:end-kyr-1, :) = Dm(1+kyr+1:end, :);
+        Dm(end-kyr:end, :) = 0;
+        
+%         % shift the domain
+%         Dm = fftshift(ifft2(ifftshift(Dm)));
+%         Dm = Dm .* shift;
+%         Dm = fftshift(fft2(ifftshift(Dm)));
         
         %% apply the compensation factors
         D0 = D0 .* Om;
@@ -121,14 +146,18 @@ for iOri = 1:nOri
 %                                'FiniteDifferenceType', 'central', ...
 %                                'FiniteDifferenceStepSize', [1e-2, 1e-3]);
 %         st = lsqnonlin(@(s)(errfunc(s, D0, Dm)), [1, 0], [], [], options);
+
+        % nominator
         nom = conj(Dm) .* D0;
         nom = sum(nom(:));
+        % denominator
         den = abs(Dm).^2;
         den = sum(den(:));
+        % constant complex coefficient
         s = nom / den;
         fprintf('\ts = %.4f * exp(1i * %.4f)\n', real(s), imag(s));
         
-        %% save the constant coefficient
+        %% save the constant
         k0(iPhase, iOri) = s;
     end
 end
@@ -188,11 +217,22 @@ for iOri = 1:nOri
                 kdy = kiy - ky;
                 
                 shift = exp(-1i * 2*pi * (kdx*vx + kdy*vy));
+                
+                kdxr = round(kdx);
+                kdyr = round(kdy);
+                
+                Oms = Om;
+                % shift x
+                Oms(:, 1:end-kdxr-1) = Oms(:, 1+kdxr+1:end);
+                Oms(:, end-kdxr:end) = 0;
+                % shift y
+                Oms(1:end-kdyr-1, :) = Oms(1+kdyr+1:end, :);
+                Oms(end-kdyr:end, :) = 0;
 
-                % shift the transfer function
-                Oms = fftshift(ifft2(ifftshift(Om)));
-                Oms = Oms .* shift;
-                Oms = fftshift(fft2(ifftshift(Oms)));
+%                 % shift the transfer function
+%                 Oms = fftshift(ifft2(ifftshift(Om)));
+%                 Oms = Oms .* shift;
+%                 Oms = fftshift(fft2(ifftshift(Oms)));
 
                 % squared absolute value
                 Oms = abs(Oms).^2;
@@ -262,12 +302,19 @@ for iOri = 1:nOri
 end
 
 %% revert back to real space and show the result
+figure('Name', 'Result', 'NumberTitle', 'off');
+subplot(1, 2, 1);
+imagesc(abs(R).^0.1);
+    axis image;
+    title('Frequency Domain');
+    
 R = fftshift(ifft2(ifftshift(R)));
 
-figure('Name', 'Result', 'NumberTitle', 'off');
+subplot(1, 2, 2);
 imagesc(abs(R));
     axis image;
-    colormap(gray);
+    title('Time Domain');
+    
 disp('DONE');
 
 
