@@ -218,7 +218,12 @@ for iOri = 1:nOri
         N = conj(Om) .* As;
         
         % apply the transfer function
-        T = (N./C) .* Dm;
+%         T = (N./C) .* Dm;
+        T = Dm;
+        if iPhase > 1
+            t = k0(iPhase, iOri);
+            T = T .* exp(1i * atan(imag(t)/real(t)));
+        end
         
         % pad the result to center
         li = floor((rSz-imSz)/2)+1;
@@ -238,7 +243,15 @@ for iOri = 1:nOri
         midpt = floor(rSz/2)+1;
         vx = (vx - midpt(1)) / rSz(1);
         vy = (vy - midpt(2)) / rSz(2);
-        shift = exp(-1i * 2*pi * -(kx*vx + ky*vy));
+        
+        if iPhase > 1
+            kx = kp(1, iPhase-1, iOri);
+            ky = kp(2, iPhase-1, iOri);
+        else
+            kx = 0; 
+            ky = 0;
+        end
+        shift = exp(-1i * 2*pi * (kx*vx + ky*vy));
         Tp = Tp .* shift;
         
         Tp = fftshift(fft2(ifftshift(Tp)));
