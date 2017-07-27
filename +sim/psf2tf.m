@@ -7,6 +7,7 @@ function TF = psf2tf(imSz, PSF, M, parms)
 nPhase = parms.Phases;
 
 psfSz = size(PSF);
+psfSz = psfSz(1:2);
 
 pxSz = parms.PixelSize;
 
@@ -19,8 +20,13 @@ TF = zeros([imSz, nPhase], 'single');
 %% retrieve domains (bands separation)
 % retrieve the reciprocal space images
 for iPhase = 1:nPhase
-    D(:, :, iPhase) = fftshift(fft2(ifftshift(PSF(:, :, iPhase)), ...
-                                    imSz(2), imSz(1)));
+    T = PSF(:, :, iPhase);
+    
+    A = filter.tukeywin1(psfSz(1), 0.8);
+    A = A * A.';
+    T = T .* A;
+    
+    D(:, :, iPhase) = fftshift(fft2(ifftshift(T), imSz(2), imSz(1)));
 end
 
 % flatten the array
@@ -53,19 +59,23 @@ for iPhase = 2:2:nPhase
     D(:, :, iPhase+1) = exp(1i*s)*Dp;
 end
 
-%% bead mask
-%TODO compensate for non-deal point source
-
 %% average and LPF
 % cutoff frequency
 f = 2*parms.NA / parms.Wavelength;
 % cut-off radius in pixel
 r = f * (imSz.*pxSz);
 
+[vx, vy] = meshgrid(1:imSz(1), 1:imSz(2));
 midpt = floor(imSz/2)+1;
+vx = vx - midpt(1);
+vy = vy - midpt(2);
+dist = hypot(vx, vy);
+
+% midpt = floor(imSz/2)+1;
 for iPhase = 1:nPhase
     T = D(:, :, iPhase);
     
+    T(dist > min(r)) = 0;
     % create radial profile
     % Note: Due to the limitation of radial sampler, only square image is
     % functional for now.
@@ -88,10 +98,13 @@ if parms.Debug
         end
         t = sprintf('m_%d%s', m, s);
         
-        subplot(1, nPhase, iPhase);
-        imagesc(abs(D(:, :, iPhase)).^0.5);
+        subplot(2, nPhase, iPhase);
+        imagesc(abs(D(:, :, iPhase)).^0.1);
             axis image;
             title(t);
+        subplot(2, nPhase, iPhase+nPhase);
+        imagesc(abs(TF(:, :, iPhase)).^0.1);
+            axis image;
     end
 end
 
