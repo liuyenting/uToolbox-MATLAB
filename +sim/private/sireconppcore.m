@@ -44,49 +44,28 @@ for iOri = 1:nOri
     for iPhase = 2:nPhase
         O0 = parms.TransFunc(:, :, 1);
         D0 = D(:, :, 1);
-%         Om = parms.TransFunc(:, :, iPhase);
-%         Dm = D(:, :, iPhase);
-        
-%         % grids for the relative phase shift matrix
-%         [vx, vy] = meshgrid(1:imSz(1), 1:imSz(2));
-%         midpt = floor(imSz/2)+1;
-%         vx = (vx - midpt(1)) / imSz(1);
-%         vy = (vy - midpt(2)) / imSz(2);
         
         %% shift the result in real-space
         kx = kp(1, iPhase-1, iOri);
+        kx = round(kx); 
         ky = kp(2, iPhase-1, iOri);
+        ky = round(ky);
         
-%         shift = exp(-1i * 2*pi * (kx*vx + ky*vy));
-        
-        %DEBUG test for pixel-wise shifting
-        kxr = round(kx); 
-        kyr = round(ky);
-        
-        li = 1 + [kxr, kyr];
+        % translated frame
+        li = 1 + [kx, ky];
         li(li < 1) = 1;
-        ui = imSz + [kxr, kyr];
+        ui = imSz + [kx, ky];
         ui(ui > imSz) = imSz(1);
-        
-        l0i = li - [kxr, kyr];
-        u0i = ui - [kxr, kyr];
+        % original frame
+        l0i = li - [kx, ky];
+        u0i = ui - [kx, ky];
         
         Om = zeros(imSz, 'single');
         Om(li(2):ui(2), li(1):ui(1)) = parms.TransFunc(l0i(2):u0i(2), l0i(1):u0i(1), iPhase);
         
-%         % shift the transfer function
-%         Om = fftshift(ifft2(ifftshift(Om)));
-%         Om = Om .* shift;
-%         Om = fftshift(fft2(ifftshift(Om)));
-        
         Dm = zeros(imSz, 'single');
         Dm(li(2):ui(2), li(1):ui(1)) = D(l0i(2):u0i(2), l0i(1):u0i(1), iPhase);
-        
-%         % shift the domain
-%         Dm = fftshift(ifft2(ifftshift(Dm)));
-%         Dm = Dm .* shift;
-%         Dm = fftshift(fft2(ifftshift(Dm)));
-        
+
         %% apply the compensation factors
         D0 = D0 .* Om;
         Dm = Dm .* O0;
@@ -188,12 +167,6 @@ for iOri = 1:nOri
         end
         Om = TF(:, :, iPhase);
         
-%         % grids for the relative phase shift matrix
-%         [vx, vy] = meshgrid(1:imSz(1), 1:imSz(2));
-%         midpt = floor(imSz/2)+1;
-%         vx = (vx - midpt(1)) / imSz(1);
-%         vy = (vy - midpt(2)) / imSz(2);
-        
         %% denominator
         for iiOri = 1:nOri
             for iiPhase = 1:nPhase
@@ -206,30 +179,21 @@ for iOri = 1:nOri
                 end
                 
                 % calcualte the phase shift
-                kdx = kix - kx;
-                kdy = kiy - ky;
-                
-%                 shift = exp(-1i * 2*pi * (kdx*vx + kdy*vy));
-                
-                %DEBUG test for pixel-wise shifting
-                kxr = round(kdx); 
-                kyr = round(kdy);
+                kix = kix - kx;
+                kix = round(kix);
+                kiy = kiy - ky;
+                kiy = round(kiy);
 
-                li = 1 + [kxr, kyr];
+                li = 1 + [kix, kiy];
                 li(li < 1) = 1;
-                ui = imSz + [kxr, kyr];
+                ui = imSz + [kix, kiy];
                 ui(ui > imSz) = imSz(1);
 
-                l0i = li - [kxr, kyr];
-                u0i = ui - [kxr, kyr];
+                l0i = li - [kix, kiy];
+                u0i = ui - [kix, kiy];
                 
                 Oms = zeros(imSz, 'single');
                 Oms(li(2):ui(2), li(1):ui(1)) = Om(l0i(2):u0i(2), l0i(1):u0i(1));
-                
-%                 % shift the transfer function
-%                 Oms = fftshift(ifft2(ifftshift(Om)));
-%                 Oms = Oms .* shift;
-%                 Oms = fftshift(fft2(ifftshift(Oms)));
 
                 % squared absolute value
                 Oms = abs(Oms).^2;
@@ -240,45 +204,23 @@ for iOri = 1:nOri
         % apply the Wiener coefficient
         C = C + (parms.WienerConstant)^2;       
 
-        %% variables
-        if iPhase > 1
-            kx = kp(1, iPhase-1, iOri);
-            ky = kp(2, iPhase-1, iOri);
-        else
-            kx = 0; 
-            ky = 0;
-        end
         Om = TF(:, :, iPhase);
         Dm = D(:, :, iPhase);
         
-%         % grids for the relative phase shift matrix
-%         [vx, vy] = meshgrid(1:imSz(1), 1:imSz(2));
-%         midpt = floor(imSz/2)+1;
-%         vx = (vx - midpt(1)) / imSz(1);
-%         vy = (vy - midpt(2)) / imSz(2);
-        
-        %DEBUG test for pixel-wise shifting
-        kxr = round(kx); 
-        kyr = round(ky);
+        kx = round(kx); 
+        ky = round(ky);
 
-        li = 1 + [kxr, kyr];
+        li = 1 + [kx, ky];
         li(li < 1) = 1;
-        ui = imSz + [kxr, kyr];
+        ui = imSz + [kx, ky];
         ui(ui > imSz) = imSz(1);
 
-        l0i = li - [kxr, kyr];
-        u0i = ui - [kxr, kyr];
+        l0i = li - [kx, ky];
+        u0i = ui - [kx, ky];
         
         %% nominator
-%         shift = exp(-1i * 2*pi * (kx*vx + ky*vy));
-    
         As = zeros(imSz, 'single');
         As(li(2):ui(2), li(1):ui(1)) = A(l0i(2):u0i(2), l0i(1):u0i(1));
-            
-%         % shift the transfer function
-%         As = fftshift(ifft2(ifftshift(A)));
-%         As = As .* shift;
-%         As = fftshift(fft2(ifftshift(As)));
 
         % generate the nominator (negative sign)
         N = conj(Om) .* As;
@@ -290,9 +232,7 @@ for iOri = 1:nOri
         li = floor((rSz-imSz)/2)+1;
         ui = li+imSz-1;
         Tp(li(1):ui(1), li(2):ui(2)) = T;
-        
-        
-        
+
         % shift in real space with complex gradient
         Tp = fftshift(ifft2(ifftshift(Tp)));
         
