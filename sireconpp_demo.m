@@ -52,11 +52,11 @@ siparms.PostDeconv = 5;
 siparms.PadSize = 10;
 
 % phase retrieval
-siparms.ApodizeRatio = 0.5;
+siparms.ApodizeRatio = 0.8;
 siparms.RetrievalInterpRatio = 2;
 
 % generalized Wiener filter
-siparms.WienerConstant = 1e-3;
+siparms.WienerConstant = 0.25;
 
 %% verify the input
 % check whether the input directory exsists
