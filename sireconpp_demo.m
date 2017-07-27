@@ -11,8 +11,8 @@ clearvars -global;
 
 %TODO remove OS dependent test code
 if ispc
-    srcDir = 'D:\\Andy\\07252017_SIMforAndy\\cell3_3DSIM_obj';
-    psfFileName = 'D:\\Andy\\07252017_SIMforAndy\\PSF3_3DSIM_obj\\RAWpsf3a3DSIM_ch0_561nm_cropped.tif';
+    srcDir = 'Z:\\Andy\\simrecon\\data\\07252017_SIMforAndy\\cell3_3DSIM_obj';
+    psfFileName = 'Z:\\Andy\\simrecon\\data\\07252017_SIMforAndy\\PSF3_3DSIM_obj\\RAWpsf3a3DSIM_ch0_stack0000_561nm_0000000msec_0002749615msecAbs_cropped.tif';
 else
     srcDir = 'data/07252017_SIMforAndy/cell3_3DSIM_obj';
     psfFileName = 'data/07252017_SIMforAndy/PSF3_3DSIM_obj/RAWpsf3a3DSIM_ch0_561nm_cropped.tif';
@@ -56,7 +56,7 @@ siparms.ApodizeRatio = 0.8;
 siparms.RetrievalInterpRatio = 2;
 
 % generalized Wiener filter
-siparms.WienerConstant = 0.25;
+siparms.WienerConstant = 1e-2;
 
 %% verify the input
 % check whether the input directory exsists
@@ -125,7 +125,9 @@ Ipsf = reshape(Ipsf, [psfSz, nPhases, nOri]);
 % center the PSF
 for iOri = 1:nOri
     for iPhase = 1:nPhases
-        Ipsf(:, :, iPhase, iOri) = image.centerpsf(Ipsf(:, :, iPhase, iOri));
+        T = image.centerpsf(Ipsf(:, :, iPhase, iOri));
+        T = T / sum(T(:));
+        Ipsf(:, :, iPhase, iOri) = T;
     end
 end
 
