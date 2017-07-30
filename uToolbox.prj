@@ -1,0 +1,98 @@
+<deployment-project plugin="plugin.toolbox" plugin-version="1.0">
+  <configuration file="/Users/Andy/Documents/MATLAB/uToolbox/uToolbox.prj" location="/Users/Andy/Documents/MATLAB/uToolbox" name="uToolbox" target="target.toolbox" target-name="Package Toolbox">
+    <param.appname>uToolbox</param.appname>
+    <param.authnamewatermark>Liu, Yen-Ting</param.authnamewatermark>
+    <param.email>ytliu@sinica.edu.tw</param.email>
+    <param.company>Academia Sinica, RCAS</param.company>
+    <param.summary />
+    <param.description />
+    <param.screenshot />
+    <param.version>1.0</param.version>
+    <param.output>${PROJECT_ROOT}/uToolbox.mltbx</param.output>
+    <param.products.name />
+    <param.products.id />
+    <param.products.version />
+    <param.platforms />
+    <param.guid>617296b0-cad7-4a90-98c7-2687017e1a7c</param.guid>
+    <param.exclude.filters />
+    <param.examples />
+    <param.demosxml />
+    <param.apps />
+    <param.docs />
+    <param.matlabpath.excludes />
+    <param.javaclasspath.excludes />
+    <unset>
+      <param.summary />
+      <param.description />
+      <param.screenshot />
+      <param.version />
+      <param.output />
+      <param.products.name />
+      <param.products.id />
+      <param.products.version />
+      <param.platforms />
+      <param.exclude.filters />
+      <param.examples />
+      <param.demosxml />
+      <param.apps />
+      <param.docs />
+      <param.matlabpath.excludes />
+      <param.javaclasspath.excludes />
+    </unset>
+    <fileset.rootdir>
+      <file>/Users/Andy/Documents/MATLAB/uToolbox</file>
+    </fileset.rootdir>
+    <fileset.rootfiles>
+      <file>${PROJECT_ROOT}/+amira</file>
+      <file>${PROJECT_ROOT}/+display</file>
+      <file>${PROJECT_ROOT}/+filter</file>
+      <file>${PROJECT_ROOT}/+images</file>
+      <file>${PROJECT_ROOT}/+io</file>
+      <file>${PROJECT_ROOT}/+localize</file>
+      <file>${PROJECT_ROOT}/+matlab</file>
+      <file>${PROJECT_ROOT}/+postproc</file>
+      <file>${PROJECT_ROOT}/+resolution</file>
+      <file>${PROJECT_ROOT}/+sim</file>
+      <file>${PROJECT_ROOT}/+simulate</file>
+      <file>${PROJECT_ROOT}/+slm</file>
+      <file>${PROJECT_ROOT}/+statistics</file>
+      <file>${PROJECT_ROOT}/+threshold</file>
+      <file>${PROJECT_ROOT}/+tiff</file>
+      <file>${PROJECT_ROOT}/.DS_Store</file>
+      <file>${PROJECT_ROOT}/.git</file>
+      <file>${PROJECT_ROOT}/.gitignore</file>
+      <file>${PROJECT_ROOT}/batchshear.m</file>
+      <file>${PROJECT_ROOT}/batchshear_hetero.m</file>
+      <file>${PROJECT_ROOT}/npc</file>
+      <file>${PROJECT_ROOT}/sireconpp_demo.m</file>
+    </fileset.rootfiles>
+    <fileset.depfun.included>
+      <file>${MATLAB_ROOT}/toolbox/local/userpath.m</file>
+    </fileset.depfun.included>
+    <fileset.depfun.excluded />
+    <fileset.package />
+    <build-deliverables>
+      <file location="/Users/Andy/Documents/MATLAB/uToolbox" name="uToolbox.mltbx" optional="false">/Users/Andy/Documents/MATLAB/uToolbox/uToolbox.mltbx</file>
+    </build-deliverables>
+    <workflow />
+    <matlab>
+      <root>/Applications/MATLAB_R2017a.app</root>
+      <toolboxes />
+    </matlab>
+    <platform>
+      <unix>true</unix>
+      <mac>true</mac>
+      <windows>false</windows>
+      <win2k>false</win2k>
+      <winxp>false</winxp>
+      <vista>false</vista>
+      <linux>false</linux>
+      <solaris>false</solaris>
+      <osver>10.12.5</osver>
+      <os32>false</os32>
+      <os64>true</os64>
+      <arch>maci64</arch>
+      <matlab>true</matlab>
+    </platform>
+  </configuration>
+</deployment-project>

@@ -1,0 +1,23 @@
+<productinfo xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xsi:noNamespaceSchemaLocation="optional">
+    <?xml-stylesheet type="text/xsl"href="optional"?>
+    <!-- Copyright 2017 Liu, Yen-Ting-->
+    
+    <matlabrelease>R2016a</matlabrelease>
+    
+    <!-- The name element appears in the Contents pane. -->
+    <name>uToolbox</name>
+    
+    <!-- The type element that identifies this package: -->
+    <!-- matlab, toolbox, simulink, blockset, links_targets  -->
+    <type>toolbox</type>
+    
+    <!-- (Not used) -->
+    <icon></icon>
+    
+    <!-- Relative path to help (HTML) folder. -->
+    <help_location>html</help_location>
+    
+    <!-- (Ignored in R2015a and later) -->
+    <help_contents_icon></help_contents_icon>
+</productinfo>
