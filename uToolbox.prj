@@ -18,7 +18,7 @@
     <param.examples />
     <param.demosxml />
     <param.apps />
-    <param.docs />
+    <param.docs>${PROJECT_ROOT}/info.xml</param.docs>
     <param.matlabpath.excludes />
     <param.javaclasspath.excludes />
     <unset>
@@ -35,7 +35,6 @@
       <param.examples />
       <param.demosxml />
       <param.apps />
-      <param.docs />
       <param.matlabpath.excludes />
       <param.javaclasspath.excludes />
     </unset>
@@ -63,6 +62,8 @@
       <file>${PROJECT_ROOT}/.gitignore</file>
       <file>${PROJECT_ROOT}/batchshear.m</file>
       <file>${PROJECT_ROOT}/batchshear_hetero.m</file>
+      <file>${PROJECT_ROOT}/html</file>
+      <file>${PROJECT_ROOT}/info.xml</file>
       <file>${PROJECT_ROOT}/npc</file>
       <file>${PROJECT_ROOT}/sireconpp_demo.m</file>
     </fileset.rootfiles>
