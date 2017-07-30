@@ -157,41 +157,53 @@ classdef VolView < handle
             this = event.AffectedObject;
 
             switch source.Name
-            case 'voxelSize'
-                disp('update "voxelSize"');
+                case 'voxelSize'
+                    disp('update "voxelSize"');
 
-                this.updateLayout();
-                this.updateAspectRatio();
-            case 'volumeSize'
-                disp('update "volumeSize"');
+                    this.updateLayout();
+                    this.updateAspectRatio();
+                case 'volumeSize'
+                    disp('update "volumeSize"');
 
-                %DEBUG...
-                sz = this.volumeSize;
-                fprintf('volume = %dx%dx%d\n', sz(1), sz(2), sz(3));
-                %...DEBUG
-                this.updateLayout();
-                this.updateAxes();
-            case 'data'
-                disp('update "data"');
+                    %DEBUG...
+                    sz = this.volumeSize;
+                    fprintf('volume = %dx%dx%d\n', sz(1), sz(2), sz(3));
+                    %...DEBUG
+                    this.updateLayout();
+                    this.updateAxes();
+                case 'data'
+                    disp('update "data"');
 
-                % update volume size
-                this.volumeSize = size(this.data);
-                % update the display
-                this.updateMultiView();
-                this.updateAxes();
-            case 'cursorPos'
-                disp('update "cursorPos"');
+                    % update volume size
+                    this.volumeSize = size(this.data);
+                    % update the display
+                    this.updateMultiView();
+                    this.updateAxes();
+                case 'cursorPos'
+                    disp('update "cursorPos"');
 
-                this.updateCrosshair();
-                this.updateMultiView();
-                this.updateAxes();
+                    this.updateCrosshair();
+                    this.updateMultiView();
+                    this.updateAxes();
             end
         end
         
         function mouseDown(source, event)
+            % primary object
+            this = event.AffectedObject;
+            
             h = gca;
-            c = get(h, 'CurrentPoint');
+            cNew = get(h, 'CurrentPoint');
             disp(['clicked @ ', h.Tag, '!']);
+            
+            %cOld = this.
+            % generate new cursor position
+            switch h.Tag
+                case 'XY'
+                    
+                case 'YZ'
+                case 'XZ'
+            end
         end
     end
 
