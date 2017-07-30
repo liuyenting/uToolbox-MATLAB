@@ -1,10 +1,5 @@
 function varargout = imread(path, nowarn)
 
-if nargout == 0
-    error('tiff:imread', ...
-          'At least one output argument is required.');
-end
-
 %% Suppress warnings from libtiff.
 if nargin == 1
     nowarn = false;
@@ -35,7 +30,7 @@ elseif nargout == 4
     varargout{3} = ny;
     varargout{4} = nz;
 elseif nargout ~= 1
-    warning('tiff:imread', ...
+    warning(generatemsgid('TooManyOutput'), ...
             'Invalid output arguments schema, only data is returned.');
 end
 
