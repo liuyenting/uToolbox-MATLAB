@@ -3,10 +3,21 @@ function batchshear
 %   BATCHSHEAR will first ask for input and output directory and then
 %   perform the operation.
 
-% Acquisition paramters.
-acqParam.ObjectiveAngle = 32.8; % [deg]
-acqParam.ZStepWidth = 0.5;      % [um]
-acqParam.PixelWidth = 0.102;    % [um]
+prompt = {'Objective angle (degree)', ...
+          'Z step size (um)', ...
+          'Pixel size (um)'};
+title = 'Acquisition Parameters';
+defAns = {'32.8', '0.5', '0.102'};
+answer = inputdlg(prompt, title, 1, defAns);
+
+if isempty(answer)
+    return;
+end
+
+% acquisition paramters
+acqParam.ObjectiveAngle = str2double(answer{1});   % [deg]
+acqParam.ZStepWidth = str2double(answer{2});       % [um]
+acqParam.PixelWidth = str2double(answer{3});       % [um]
 
 %% Verify input.
 % Ask for directory.
