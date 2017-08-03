@@ -1,4 +1,4 @@
-classdef Shear < util.cppbridge.CppBridge
+classdef Shear < matlab.cppbridge.CppBridge
     %SHEAR Shearing wrapper class.
 
     properties (Constant, Access = private, Hidden = true)
@@ -13,7 +13,7 @@ classdef Shear < util.cppbridge.CppBridge
 
     methods
         function this = Shear()
-            this@util.cppbridge.CppBridge(mfilename('fullpath'), ...
+            this@matlab.cppbridge.CppBridge(mfilename('fullpath'), ...
                                           postproc.Shear.MEX_NAME);
         end
 

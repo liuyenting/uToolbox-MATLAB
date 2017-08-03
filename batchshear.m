@@ -19,9 +19,20 @@ acqParam.ObjectiveAngle = str2double(answer{1});   % [deg]
 acqParam.ZStepWidth = str2double(answer{2});       % [um]
 acqParam.PixelWidth = str2double(answer{3});       % [um]
 
-%TODO integrate heterogenous operation
+% hetero images
+% Construct a questdlg with three options
+answer = questdlg('Are the images all of same size?', ...
+                  'Heterogeneous Data', ...
+                  'Yes', 'No', 'Yes');
+% Handle response
+switch answer
+    case 'Yes'
+        isHetero = false;
+    case 'No'
+        isHetero = true;
+end
 
-%% Verify input.
+%% verify inputs
 % Ask for directory.
 inDir = uigetdir('C:\', 'Where are the original data?');
 outDir = uigetdir(inDir, 'Where to store the result?');
@@ -53,17 +64,19 @@ else
     end
 end
 
-%% Load the file list.
+%% load the file list
 list = dir(fullfile(inDir, '*.tif*'));
 list = {list.name};
 
-%% Iterate through files.
+%% iterate through files
 % Ignore warnings for unknown tags.
 warning('off', 'MATLAB:imagesci:tiffmexutils:libtiffWarning');
 
-% Create the shearing object.
-shObj = postproc.Shear();
-shObj.setacqparam(acqParam);
+if ~isHetero
+    % create the shearing object for sharing
+    shObj = postproc.Shear();
+    shObj.setacqparam(acqParam);
+end
 
 nFile = numel(list);
 tOuter = tic; tAverage = 0;
@@ -78,17 +91,26 @@ for iFile = 1:nFile
     oldImg = oldImgStack(:);
     oldImg = reshape(oldImg, nx, ny, nz);
     
-    %% Begin processing.
+    %% processing
+    if isHetero
+        % renew the shearing object everytime
+        shObj = postproc.Shear();
+        shObj.setacqparam(acqParam);
+    end
+
     shObj.loadstack(oldImg);
     shObj.execute();
     newImg = shObj.retrieveresult();
     
-    %% Save the result.
+    %% save the result
+    % desired output is uint16 
+    %TODO probe the input image type and cast to it
     newImg = uint16(newImg);
     
     outFilePath = fullfile(outDir, fileName);
     tiff.imsave(newImg, outFilePath, true);
     
+    %TODO debug the reason why files are not properly close by +tiff (dep)
     fclose('all');
     
     tElapse = toc(tInner);
@@ -101,6 +123,12 @@ for iFile = 1:nFile
     strEta = datestr(tEta/86400, 'HH:MM:SS');
     fprintf('%d file processed, %f seconds elapsed, ETA %s\n', ...
             iFile, tElapse, strEta);
+        
+    %% free the resources
+    if isHetero
+        % force invoke the destructor
+        delete(shObj)
+    end
 end
 tElapse = toc(tOuter);
 fprintf('%f seconds to process the incoming data\n', tElapse);
