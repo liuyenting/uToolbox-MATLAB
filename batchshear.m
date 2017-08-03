@@ -19,6 +19,8 @@ acqParam.ObjectiveAngle = str2double(answer{1});   % [deg]
 acqParam.ZStepWidth = str2double(answer{2});       % [um]
 acqParam.PixelWidth = str2double(answer{3});       % [um]
 
+%TODO integrate heterogenous operation
+
 %% Verify input.
 % Ask for directory.
 inDir = uigetdir('C:\', 'Where are the original data?');
