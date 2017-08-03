@@ -1,4 +1,4 @@
-function I = imread(filename)
+function I = imread(filename, varargin)
 %IMREAD
 %
 %   TBA
@@ -8,8 +8,16 @@ function I = imread(filename)
 %   This function is only capable of reading simple TIFF image file.
 
 %% parameters
-% ignore warnings for unknown tags
-warning('off', 'MATLAB:imagesci:tiffmexutils:libtiffWarning');
+p = inputParser;
+addOptional(p, 'ShowWarnings', false);
+parse(p, varargin{:});
+
+isShowWarn = p.Results.ShowWarnings;
+
+if ~isShowWarn
+    % ignore warnings for unknown tags
+    warning('off', 'MATLAB:imagesci:tiffmexutils:libtiffWarning');
+end
 
 %% pre-allocate
 tiffObj = Tiff(filename, 'r');
@@ -69,7 +77,9 @@ end
 % release the file
 tiffObj.close();
 
-% re-enable the warning
-warning('on', 'MATLAB:imagesci:tiffmexutils:libtiffWarning');
+if ~isShowWarn
+    % re-enable the warning
+    warning('on', 'MATLAB:imagesci:tiffmexutils:libtiffWarning');
+end
 
 end
