@@ -6,7 +6,7 @@ function b = islicensed(tbname)
 %
 %   See also: LISTPRODUCT
 
-tblist = util.license.listproduct;
+tblist = matlab.license.listproduct;
 for n = tblist
     if strcmp(n, tbname)
         flex = name2flex(tbname);
