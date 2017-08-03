@@ -16,7 +16,7 @@ function poolsize = startparallel(varargin)
 %
 %   See also: PARPOOL
 
-if ~util.license.islicensed('Parallel Computing Toolbox')
+if ~matlab.license.islicensed('Parallel Computing Toolbox')
     warning('util:startparallel', ...
             'Parallel Computing Toolbox is required! Ignore request.');
     return;
@@ -38,7 +38,7 @@ if isempty(poolobj)
 else
     restart = true;
     % verify the profile and the size match the requirement
-    if ~strcmp(util.parallel.currprofile, profile)
+    if ~strcmp(matlab.parallel.currprofile, profile)
         warning('util:parallel:startparallel', 'Profile mismatch.');
     else    
         poolsize = poolobj.NumWorkers;
