@@ -24,8 +24,8 @@ classdef CppBridge < handle
 
             %% Test the MEX file availability.
             [clsDir, ~, ~] = fileparts(clsPath);
-            if ~util.cppbridge.CppBridge.ismexcompiled(clsDir, mexName)
-                util.cppbridge.CppBridge.compilemex(clsDir, mexName);
+            if ~matlab.cppbridge.CppBridge.ismexcompiled(clsDir, mexName)
+                matlab.cppbridge.CppBridge.compilemex(clsDir, mexName);
             end
 
             %% Retrieve the function handle.
@@ -51,7 +51,7 @@ classdef CppBridge < handle
             mexName = [mexName, '.', mexext];
             mexPath = fullfile(clsDir, 'private', mexName);
             b = exist(mexPath, 'file') && ...
-                    ~util.cppbridge.CppBridge.FORCE_COMPILE;
+                    ~matlab.cppbridge.CppBridge.FORCE_COMPILE;
         end
 
         function compilemex(clsDir, mexName)
@@ -72,7 +72,7 @@ classdef CppBridge < handle
             end
 
             %% Generate object file of the C++/MATLAB bridge.
-            brdIncPath = util.cppbridge.CppBridge.compilebridge(targetDir);
+            brdIncPath = matlab.cppbridge.CppBridge.compilebridge(targetDir);
 
             %% Setup compile paramter.
             % CUDA path is hard coded for SDK v7.5, CUDA_INC_PATH is not
@@ -80,7 +80,7 @@ classdef CppBridge < handle
             % ourselves.
             cudaIncPath = fullfile(getenv('CUDA_PATH_V8_0'), 'include');
             if exist(cudaIncPath, 'dir') ~= 7
-                error(util.cppbridge.CppBridge.MSGID, ...
+                error(matlab.cppbridge.CppBridge.MSGID, ...
                       'CUDA_PATH is not properly configured.');
             else
                 cudaIncPath = ['-I"', cudaIncPath, '"'];
