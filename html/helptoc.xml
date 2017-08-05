@@ -13,6 +13,7 @@
         <!-- DEMOS, RELEASE_NOTES --> 
         <!-- Icon images used for these entries are also stored in -->
         <!-- matlabroot/toolbox/matlab/icons -->
+        
         <!-- A Getting Started Guide usually comes first -->
         <tocitem target="mytbx_gs_top.html" image="HelpIcon.GETTING_STARTED">
             Getting Started with the MyToolbox Toolbox
@@ -26,6 +27,7 @@
                 </tocitem>
             </tocitem>
         </tocitem>
+        
         <!-- User Guide comes next -->
         <tocitem target="mytbx_ug_intro.html" 
             image="HelpIcon.USER_GUIDE">MyToolbox User Guide
@@ -38,6 +40,7 @@
                 </tocitem>
             </tocitem>
         </tocitem>
+        
         <!-- Function reference next -->
         <!-- First item is page describing function categories, if any -->
         <tocitem target="helpfuncbycat.html" 
@@ -61,10 +64,12 @@
                 <!-- ... -->
             </tocitem>
         </tocitem>
+        
         <!-- Optional List of Examples, with hyperlinks to examples in other files -->
         <tocitem target="mytbx_example.html" 
                  image="HelpIcon.HelpIcon.EXAMPLES">Mytoolbox Examples
         </tocitem>
+        
         <!-- Optional link or links to your or other Web sites -->
         <tocitem target="http://www.mathworks.com" 
                  image="$toolbox/matlab/icons/webicon.gif">
