@@ -19,12 +19,18 @@ acqParam.ObjectiveAngle = str2double(answer{1});   % [deg]
 acqParam.ZStepWidth = str2double(answer{2});       % [um]
 acqParam.PixelWidth = str2double(answer{3});       % [um]
 
+%% ask for directories and image type
+inDir = uigetdir('C:\', 'Where are the original data?');
+% check whether the input directory exists
+if exist(inDir, 'dir') ~= 7
+    error('postproc:batchshear', ...
+          'Input directory does not exist.');
+end
+
 % hetero images
-% Construct a questdlg with three options
 answer = questdlg('Are the images all of same size?', ...
                   'Heterogeneous Data', ...
                   'Yes', 'No', 'Yes');
-% Handle response
 switch answer
     case 'Yes'
         isHetero = false;
@@ -32,18 +38,8 @@ switch answer
         isHetero = true;
 end
 
-%% verify inputs
-% Ask for directory.
-inDir = uigetdir('C:\', 'Where are the original data?');
 outDir = uigetdir(inDir, 'Where to store the result?');
-
-% Check whether the input directory exists.
-if exist(inDir, 'dir') ~= 7
-    error('postproc:batchshear', ...
-          'Input directory does not exist.');
-end
-
-% Check whether the output directory is empty.
+% check whether the output directory is empty
 if exist(outDir, 'dir') == 7
     content = dir(outDir);
     if numel(content) > 2
@@ -56,7 +52,7 @@ if exist(outDir, 'dir') == 7
         end
     end
 else
-    % Create the directory.
+    % create the directory
     status = mkdir(outDir);
     if ~status
         error('postproc:batchsehar', ...
@@ -93,7 +89,7 @@ for iFile = 1:nFile
     
     %% processing
     if isHetero
-        % renew the shearing object everytime
+        % renew the shearing object
         shObj = postproc.Shear();
         shObj.setacqparam(acqParam);
     end
