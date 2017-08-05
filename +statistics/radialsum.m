@@ -1,11 +1,11 @@
 function s = radialsum(I, smplratio)
 %RADIALSUM Calculate the radial sum of an image with interpolation.
 %
-%   TBA
+%   S = RADIALSUM(I, SMPLRATIO) performs readial sampling on I until
+%   field-of-view ratio of SMPLRATIO is reached. Output S is a linear
+%   array of the sampled result. SMPLRATIO is default to 0.5 (50%).
 %
 %   TODO use cutoff pixel position instead of ratio
-%
-%   See also RADIALSMPLR.
 
 %% parameters
 sz = size(I);
