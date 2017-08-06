@@ -42,12 +42,10 @@
       <file>/Users/Andy/Documents/MATLAB/uToolbox</file>
     </fileset.rootdir>
     <fileset.rootfiles>
-      <file>${PROJECT_ROOT}/+amira</file>
       <file>${PROJECT_ROOT}/+display</file>
       <file>${PROJECT_ROOT}/+filter</file>
       <file>${PROJECT_ROOT}/+images</file>
       <file>${PROJECT_ROOT}/+io</file>
-      <file>${PROJECT_ROOT}/+localize</file>
       <file>${PROJECT_ROOT}/+matlab</file>
       <file>${PROJECT_ROOT}/+postproc</file>
       <file>${PROJECT_ROOT}/+resolution</file>
@@ -56,14 +54,13 @@
       <file>${PROJECT_ROOT}/+slm</file>
       <file>${PROJECT_ROOT}/+statistics</file>
       <file>${PROJECT_ROOT}/+threshold</file>
-      <file>${PROJECT_ROOT}/+tiff</file>
       <file>${PROJECT_ROOT}/.DS_Store</file>
       <file>${PROJECT_ROOT}/.git</file>
       <file>${PROJECT_ROOT}/.gitignore</file>
       <file>${PROJECT_ROOT}/batchshear.m</file>
-      <file>${PROJECT_ROOT}/batchshear_hetero.m</file>
       <file>${PROJECT_ROOT}/html</file>
       <file>${PROJECT_ROOT}/info.xml</file>
+      <file>${PROJECT_ROOT}/localize</file>
       <file>${PROJECT_ROOT}/npc</file>
       <file>${PROJECT_ROOT}/sireconpp_demo.m</file>
     </fileset.rootfiles>
