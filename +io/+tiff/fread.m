@@ -1,7 +1,13 @@
 function [data, varargout] = fread(filename, varargin)
 %FREAD Read a TIFF file.
 %
-%   TBA
+%   DATA = FREAD(FILENAME) reads all the layers in specified FILENAME to
+%   DATA.
+%   [DATA, TAGS] = FREAD(FILENAME) outputs the tags that are used to parse
+%   the file.
+%   [...] = FREAD(FILENAME, 'Warnings', FLAG) uses FLAG to determine
+%   whether the warning messages from libtiff are shown or not. Warnings
+%   are default to hidden.
 %
 %   Note
 %   ----
