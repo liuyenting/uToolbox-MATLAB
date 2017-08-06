@@ -16,7 +16,7 @@ function [data, varargout] = fread(filename, varargin)
 
 %% parameters
 p = inputParser;
-addOptional(p, 'Warnings', false);
+addParameter(p, 'Warnings', false);
 parse(p, varargin{:});
 
 showWarnings = p.Results.Warnings;
@@ -43,16 +43,18 @@ nRow = tags.Height;
 
 % pixel format
 nDepth = tags.SamplesPerPixel;
-assert(nDepth == 1);
 
 % data type
-switch(tags.BitsPerSample)
+% Note: Assume all the sample are of sample type.
+switch(tags.BitsPerSample(1))
     case 8
         dataType = 'uint8';
     case 16
         dataType = 'uint16';
     case 32
         dataType = 'single';
+    case 64
+        dataType = 'double';
     otherwise
         error(generatemsgid('UnknownType'), 'Unknown pixel data type.');
 end
