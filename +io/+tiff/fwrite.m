@@ -1,13 +1,19 @@
-function imsave(I, outPath, overwrite)
-%IMSAVE Save as TIFF file.
-%   IMSAVE(I, OUTPATH) saves the image I to OUTPATH. If the file exists, it
+function fwrite(I, outPath, overwrite)
+%FWRITE Save as TIFF file.
+%
+%   FWRITE(I, OUTPATH) saves the image I to OUTPATH. If the file exists, it
 %   will show error message.
 %
 %   I can be either a 2-D array or a 3-D array. It will save as a TIFF
 %   stack if it is a 3-D array. Dimension larger then 3 is not allowed.
 %
-%   IMSAVE(I, OUTPATH, OVERWRITE) uses the OVERWRITE flag to indicate
+%   FWRITE(I, OUTPATH, OVERWRITE) uses the OVERWRITE flag to indicate
 %   whether target file needs to be overwritten.
+%
+%   Note
+%   ----
+%   This function is aimed for microscopy image types, which are grayscale
+%   by nature with mixing of IEEE floating point image formats.
 
 if nargin == 2
     overwrite = false;

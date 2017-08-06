@@ -1,85 +1,80 @@
-function I = imread(filename, varargin)
-%IMREAD
+function [data, varargout] = fread(filename, varargin)
+%FREAD Read a TIFF file.
 %
 %   TBA
 %
 %   Note
 %   ----
-%   This function is only capable of reading simple TIFF image file.
+%   This function is aimed for microscopy image types, which are grayscale
+%   by nature with mixing of IEEE floating point image formats.
 
 %% parameters
 p = inputParser;
-addOptional(p, 'ShowWarnings', false);
+addOptional(p, 'Warnings', false);
 parse(p, varargin{:});
 
-isShowWarn = p.Results.ShowWarnings;
+showWarnings = p.Results.Warnings;
 
-if ~isShowWarn
+if ~showWarnings
     % ignore warnings for unknown tags
     warning('off', 'MATLAB:imagesci:tiffmexutils:libtiffWarning');
 end
 
-%% pre-allocate
+%% read the tags
+% 4th parameters set to 0 to read all the IDF, in order to determine how 
+% many layers in this file.
+tags = matlab.io.internal.imagesci.tifftagsread(filename, 0, 0, 0);
+nLayer = numel(tags);
+% use the info from first layer ONLY
+tags = tags(1);
+
+%% parse the format
 tiffObj = Tiff(filename, 'r');
 
-% identify the dimension
-nCol = tiffObj.getTag('ImageWidth');
-nRow = tiffObj.getTag('ImageLength');
+% dimension
+nCol = tags.Width;
+nRow = tags.Height;
 
-%TODO allow multiple samples per pixel
-nDepth = tiffObj.getTag('SamplesPerPixel');
+% pixel format
+nDepth = tags.SamplesPerPixel;
 assert(nDepth == 1);
 
-nLayer = 0;
-while true
-    nLayer = nLayer+1;
-    if tiffObj.lastDirectory()
-        break;
-    else
-        tiffObj.nextDirectory();
-    end
-end
-% index values are one-based
-tiffObj.setDirectory(1);
-
-% identify the data type
-bps = tiffObj.getTag('BitsPerSample');
-if bps == 8
-    dataType = 'uint8';
-elseif bps == 16
-    dataType = 'uint16';
-elseif bps == 32
-    dataType = 'single';
-else
-    error(generatemsgid('UnknownType'), 'Unknown pixel data type.');
+% data type
+switch(tags.BitsPerSample)
+    case 8
+        dataType = 'uint8';
+    case 16
+        dataType = 'uint16';
+    case 32
+        dataType = 'single';
+    otherwise
+        error(generatemsgid('UnknownType'), 'Unknown pixel data type.');
 end
 
+%% pre-allocation
 % create the array
-I = zeros([nRow, nCol, nLayer, nDepth], dataType);
+data = zeros([nRow, nCol, nLayer, nDepth], dataType);
 
 %% load the data
-nLayer = 0;
-while true
-    nLayer = nLayer+1;
-    if tiffObj.lastDirectory()
-        break;
-    else
-        tiffObj.nextDirectory();
-    end
-end
 % index values are one-based
 for i = 1:nLayer
     tiffObj.setDirectory(i);
-    I(:, :, i, :) = tiffObj.read();
+    data(:, :, i, :) = tiffObj.read();
 end
 
 %% clean up 
 % release the file
 tiffObj.close();
 
-if ~isShowWarn
+if ~showWarnings
     % re-enable the warning
     warning('on', 'MATLAB:imagesci:tiffmexutils:libtiffWarning');
 end
+
+%% output the result
+if nargout > 1
+    varargout{1} = tags;
+end
+% additional output arguments are ignored
 
 end

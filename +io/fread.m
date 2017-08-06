@@ -1,4 +1,4 @@
-function [data, varargout] = imread(filename, varargin)
+function [data, varargout] = fread(filename, varargin)
 %FREAD Top-level function for reading image data from file.
 %
 %   DATA = FREAD(FILENAME) attempts to infer the format of the file from
@@ -8,7 +8,10 @@ function [data, varargout] = imread(filename, varargin)
 fext = lower(fext);
 
 if strcmp(fext, '.tif') || strcmp(fext, '.tiff')
-    data = io.tiff.imread(filename, varargin{:});
+    [data, tags] = io.tiff.fread(filename, varargin{:});
+    if nargout > 1
+        varargout{1} = tags;
+    end
 else
     error(generatemsgid('UnknownExt'), 'Unknown file format.');
 end
