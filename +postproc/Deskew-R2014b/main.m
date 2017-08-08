@@ -95,7 +95,7 @@ for fileIdx = 1:totalFiles
             
             % Generate noise template.
             noiseTemplate = noiseAverage*ones(1, width*height);
-            noiseTemplate = awgnoise(noiseTemplate, snr_db);
+            noiseTemplate = simulate.awgnoise(noiseTemplate, snr_db);
             
             % Reshape to image size.
             noiseTemplate = reshape(noiseTemplate, layerDim);
