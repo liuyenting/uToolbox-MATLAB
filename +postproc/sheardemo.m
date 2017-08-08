@@ -65,7 +65,7 @@ tic;
 newImg = uint16(newImg);
 [~, fileName, fileExt] = fileparts(oldImgName);
 newImgPath = [imgDir, fileName, '_sheared', fileExt]; 
-tiff.imsave(newImg, newImgPath, true);
+io.fwrite(newImg, newImgPath, true);
 
 tElapse = toc;
 fprintf(' [[[ %f seconds to save the result ]]]\n', tElapse);

@@ -9,10 +9,13 @@ function fwrite(data, filename, varargin)
 [~, ~, fext] = fileparts(filename);
 fext = lower(fext);
 
-if strcmp(fext, '.tif') || strcmp(fext, '.tiff')
-    io.tiff.fwrite(data, filename, varargin{:});
-else
-    error(generatemsgid('UnknownExt'), 'Unknown file format.');
+switch(fext)
+    case {'.tif', '.tiff'}
+        io.tiff.fwrite(data, filename, varargin{:});
+    case '.am'
+        error(generatemsgid('NotSupport'), 'Not supported yet.');
+    otherwise
+        error(generatemsgid('UnknownExt'), 'Unknown file format.');
 end
 
 end

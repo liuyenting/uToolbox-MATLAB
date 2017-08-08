@@ -9,13 +9,16 @@ function [data, varargout] = fread(filename, varargin)
 [~, ~, fext] = fileparts(filename);
 fext = lower(fext);
 
-if strcmp(fext, '.tif') || strcmp(fext, '.tiff')
-    [data, tags] = io.tiff.fread(filename, varargin{:});
-    if nargout > 1
-        varargout{1} = tags;
-    end
-else
-    error(generatemsgid('UnknownExt'), 'Unknown file format.');
+switch(fext)
+    case {'.tif', '.tiff'}
+        [data, tags] = io.tiff.fread(filename, varargin{:});
+        if nargout > 1
+            varargout{1} = tags;
+        end
+    case '.am'
+        error(generatemsgid('NotSupport'), 'Not supported yet.');
+    otherwise
+        error(generatemsgid('UnknownExt'), 'Unknown file format.');
 end
 
 end
