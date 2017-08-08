@@ -80,19 +80,25 @@ end
 % addtional info
 tags.Software = 'MATLAB uToolbox';
 
-%% Delete existed file.
+%% create new file
+% Stop the process if overwrite is not allowed.
 if exist(filename, 'file')
-    if overwrite
-        warning(generatemsgid('Delete'), 'Remove existed output file.');
-        delete(filename);
-    else
+    if ~overwrite
         error(generatemsgid('FileExists'), 'Output file exists.');
     end
 end
 
-%% create new file
-tiffObj = Tiff(filename, 'a');
+% determine BigTiff or not
+dataInf = whos('data');
+if dataInf.bytes > 2^32-1
+    mode = 'w8';
+else
+    mode = 'w';
+end
 
+% create the file ('w' implies existing file will be overwritten)
+tiffObj = Tiff(filename, mode);
+    
 %% write each layer of image to the file.
 for iz = 1:nz
     tiffObj.setTag(tags);
