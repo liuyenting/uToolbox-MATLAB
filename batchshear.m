@@ -61,6 +61,7 @@ else
 end
 
 %% load the file list
+%TODO use datastore instead of barebone directory list
 list = dir(fullfile(inDir, '*.tif*'));
 list = {list.name};
 
@@ -82,10 +83,7 @@ for iFile = 1:nFile
     fileName = list{iFile};
     inFilePath = fullfile(inDir, fileName);
     
-    oldImgStack = tiff.TIFFStack(inFilePath);
-    [nx, ny, nz] = size(oldImgStack);
-    oldImg = oldImgStack(:);
-    oldImg = reshape(oldImg, nx, ny, nz);
+    oldImg = io.fread(inFilePath);
     
     %% processing
     if isHetero
@@ -100,11 +98,10 @@ for iFile = 1:nFile
     
     %% save the result
     % desired output is uint16 
-    %TODO probe the input image type and cast to it
     newImg = uint16(newImg);
     
     outFilePath = fullfile(outDir, fileName);
-    tiff.imsave(newImg, outFilePath, true);
+    io.fwrite(newImg, outFilePath, true);
     
     %TODO debug the reason why files are not properly close by +tiff (dep)
     fclose('all');

@@ -102,13 +102,13 @@ end
 %% load the file list
 %TODO load 488nm only for now
 imds = imageDatastore(fullfile(srcDir, '*c3a*.tif*'), ...
-                      'ReadFcn', @tiff.TIFFStack);
+                      'ReadFcn', @io.fread);
 
 %% preload the PSF
 nOri = siparms.Orientations;
 nPhases = siparms.Phases;
 
-Ipsf = tiff.imread(psfFileName);
+Ipsf = io.fread(psfFileName);
 Ipsf = single(Ipsf);
 
 % re-order the stack to orientation-wise and phase-wise
@@ -180,7 +180,7 @@ while hasdata(imds)
     
     % save the volume
     fPath = fullfile(dstDir, [fName, '.', fExt]);
-    tiff.imsave(J, fPath);
+    io.fwrite(J, fPath);
     
     % cleanup
     fclose('all');
