@@ -103,9 +103,6 @@ for iFile = 1:nFile
     outFilePath = fullfile(outDir, fileName);
     io.fwrite(newImg, outFilePath, true);
     
-    %TODO debug the reason why files are not properly close by +tiff (dep)
-    fclose('all');
-    
     tElapse = toc(tInner);
     if tAverage == 0
         tAverage = tElapse;
