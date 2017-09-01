@@ -14,9 +14,12 @@ if ispc
     srcDir = 'Z:\\Andy\\simrecon\\data\\07252017_SIMforAndy\\cell3_3DSIM_obj';
     psfFileName = 'Z:\\Andy\\simrecon\\data\\07252017_SIMforAndy\\PSF3_3DSIM_obj\\RAWpsf3a3DSIM_ch0_stack0000_561nm_0000000msec_0002749615msecAbs_cropped.tif';
 else
-    srcDir = 'data/07252017_SIMforAndy/cell3_3DSIM_obj';
-    psfFileName = 'data/07252017_SIMforAndy/PSF3_3DSIM_obj/RAWpsf3a3DSIM_ch0_561nm_cropped.tif';
-
+    %srcDir = 'data/07252017_SIMforAndy/cell3_3DSIM_obj';
+    %psfFileName = 'data/07252017_SIMforAndy/PSF3_3DSIM_obj/RAWpsf3a3DSIM_ch0_561nm_cropped.tif';
+    
+    srcDir = 'data/08302017_SIM_test';
+    psfFileName = 'data/08302017_SIM_test/RAWsingle bead_445_zp1um_step_p15um_50ms_ch0_stack0000_445nm_0000000msec_0000318072msecAbs.tif';
+    
     % prepend the root
     srcDir = fullfile(userpath, srcDir);
     psfFileName = fullfile(userpath, psfFileName);
@@ -101,7 +104,7 @@ end
 
 %% load the file list
 %TODO load 488nm only for now
-imds = imageDatastore(fullfile(srcDir, '*c3a*.tif*'), ...
+imds = imageDatastore(fullfile(srcDir, '*'), ...
                       'ReadFcn', @io.fread);
 
 %% preload the PSF

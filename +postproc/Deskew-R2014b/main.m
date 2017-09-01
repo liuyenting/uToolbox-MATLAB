@@ -142,5 +142,3 @@ for fileIdx = 1:totalFiles
 end
 toc;
 warning('on', 'all');
-
-clearvars; 
