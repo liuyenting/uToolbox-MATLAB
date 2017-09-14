@@ -33,7 +33,7 @@ hCentroid = figure('Name', 'Centroid', 'NumberTitle', 'off');
 hHist = figure('Name', 'Histogram', 'NumberTitle', 'off');
 hRawDist = figure('Name', 'Raw Distance Distribution', 'NumberTitle', 'off');
 
-v = VideoWriter('movie_sphere_p.avi');
+v = VideoWriter('movie_sphere_grid_test.avi');
 v.FrameRate = 5;
 v.open();
 
@@ -201,10 +201,10 @@ while hasdata(imds)
     frame = getframe(gcf);
     v.writeVideo(frame);
     
-%     %DEBUG early termination
-%     if iFile >= 1
-%         break;
-%     end
+    %DEBUG early termination
+    if iFile >= 20
+        break;
+    end
 end
 
 % save the video 
