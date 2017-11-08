@@ -19,7 +19,7 @@ if nargin == 2
 end
 
 % generate Tukey window
-mask = tukeywin2(npx, tsz);
+mask = filter.tukeywin2(npx, 1/tsz);
 
 % mask the binned images
 A = A .* mask;
@@ -30,12 +30,12 @@ FA = fftshift(fft2(A));
 FB = fftshift(fft2(B));
 
 % numerator
-num = radialsum(FA.*conj(FB));
+num = statistics.radialsum(FA.*conj(FB));
 num = real(num);
 
 % denominator
-SA = radialsum(abs(FA).^2);
-SB = radialsum(abs(FB).^2);
+SA = statistics.radialsum(abs(FA).^2);
+SB = statistics.radialsum(abs(FB).^2);
 den = sqrt(abs(SA.*SB));
 
 % divided result
