@@ -1,18 +1,18 @@
 close all;
 clearvars -except data;
 
-import util.*;
+import matlab.*;
 
 % filePath = fullfile(userpath, 'frc_test_data', 'usaf1951', 'usaf1951_cam100nm_dp5um_fit.csv');
-filePath = fullfile(userpath, 'frc_test_data', '0605', '200.dat');
+filePath = 'F:\lu\cell6_frc\90.csv';
 
 % start the diary
-consolelogger('start', util.chfext(filePath, 'txt'));
+consolelogger('start', matlab.chfext(filePath, 'txt'));
 
 %% loading the data
 fprintf('\n -- loading data --\n');
 
-forceReload = false;
+forceReload = true;
 fprintf('path = "%s"\n', filePath);
 
 tic;
