@@ -1,7 +1,7 @@
 close all; clearvars;
 
 %% set data source
-dataDir = 'F:\cell4_zp5um_10ms_a2p5s_r7p5s_RFiSHp2aLFCYC+PmeI_clone_2_labeled';
+dataDir = 'F:\Aibillton\cell3_RFiSHFCC+GCamp6sCAAX_zp5um_20ms_interval3s_GFPonly_labeled';
 
 %% load data
 imds = imageDatastore(dataDir, 'ReadFcn', @io.fread);
@@ -33,7 +33,7 @@ hCentroid = figure('Name', 'Centroid', 'NumberTitle', 'off');
 hHist = figure('Name', 'Histogram', 'NumberTitle', 'off');
 hRawDist = figure('Name', 'Raw Distance Distribution', 'NumberTitle', 'off');
 
-v = VideoWriter('movie_sphere_grid_test.avi');
+v = VideoWriter('09142017_movie_sphere_grid_test.avi');
 v.FrameRate = 5;
 v.open();
 
@@ -43,9 +43,6 @@ while hasdata(imds)
     I = read(imds);
     I = double(I);
     iFile = iFile+1;
-    
-    %DEBUG crop X
-    I = I(11:end-10, :, :);
     
     %% find the coverslip
     S = sum(sum(I));
@@ -72,7 +69,7 @@ while hasdata(imds)
     %% find the centroid
     imSz = size(I);
     % generate the position grid
-    [vy, vx, vz] = meshgrid(1:imSz(2), 1:imSz(1), 1:imSz(3));
+    [vx, vy, vz] = meshgrid(1:imSz(2), 1:imSz(1), 1:imSz(3));
     
     % total weights, used the squeezed result
     W = sum(S);
@@ -80,6 +77,7 @@ while hasdata(imds)
     cx = vx.*I; cx = sum(cx(:))/W;
     cy = vy.*I; cy = sum(cy(:))/W;
     cz = vz.*I; cz = sum(cz(:))/W;
+    fprintf('Centroid (%f, %f, %f)\n', cx, cy, cz);
     % merge the result
     centroid = [cx, cy, cz];
     
@@ -143,7 +141,7 @@ while hasdata(imds)
     azDis = discretize(az, azBin);
     elDis = discretize(el, elBin);
     
-    % regional average distance (baseline)
+    % regional average distance
     d = zeros(size(zSph));
     for i = 1:n
         % index
@@ -151,11 +149,10 @@ while hasdata(imds)
         
         % extract distance
         val = r(i);
-%         val = 1;
         
         % add to the result (averaged)
         d(azi, eli) = d(azi, eli) + val;
-%         d(azi, eli) = val;
+        d(azi, eli) = d(azi, eli)/2;
     end
     
     drawnow;
@@ -182,7 +179,6 @@ while hasdata(imds)
         axis image; axis off;
     hold on;
     surf(xSph, ySph, zSph, Fr, 'LineStyle', 'none', 'FaceAlpha', 0.75);
-%     surf(xSph, ySph, zSph, d, 'LineStyle', 'none', 'FaceAlpha', 0.75);
         axis image; axis off;
         view([0, 30]);
     hold off;
@@ -201,10 +197,10 @@ while hasdata(imds)
     frame = getframe(gcf);
     v.writeVideo(frame);
     
-    %DEBUG early termination
-    if iFile >= 20
-        break;
-    end
+%     %DEBUG early termination
+%     if iFile >= 20
+%         break;
+%     end
 end
 
 % save the video 
