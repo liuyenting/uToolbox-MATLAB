@@ -33,8 +33,7 @@ end
 
 % hetero images
 answer = questdlg('Are the images all of same size?', ...
-                  'Heterogeneous Data', ...
-                  'Yes', 'No', 'Yes');
+                  'Heterogeneous Data', 'Yes', 'No', 'Yes');
 switch answer
     case 'Yes'
         isHetero = false;
@@ -42,7 +41,8 @@ switch answer
         isHetero = true;
 end
 
-outDir = uigetdir(inDir, 'Where to store the result?');
+% use parent directory of the input directory as start path
+outDir = uigetdir(fileparts(inDir), 'Where to store the result?');
 % check whether the output directory is empty
 if exist(outDir, 'dir') == 7
     content = dir(outDir);

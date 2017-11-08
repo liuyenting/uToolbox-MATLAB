@@ -1,18 +1,30 @@
+function res = runfrc(filePath)
+%RUNFRC A simple wrapper to perform one-time FRC.
+%
+%   RES = RUNFRC(FILEPATH) performs one-time FRC one specified FILEPATH and
+%   return the measured resolution RES.
+%
+%   See also: FRC
+
 close all;
-clearvars -except data;
 
-import util.*;
+% import the package
+import matlab.*;
 
-% filePath = fullfile(userpath, 'frc_test_data', 'usaf1951', 'usaf1951_cam100nm_dp5um_fit.csv');
-filePath = fullfile(userpath, 'frc_test_data', '0605', '200.dat');
+% use manually specified path if not provided
+if nargin == 0
+    [filename, pathname] = uigetfile({
+        '*.csv', 'CSV from ThunderSTORM'; ...
+        '*.dat', 'Format from the original paper'
+    }, 'Where is the coordinate file?');
+    filePath = fullfile(pathname, filename);
+end
 
 % start the diary
-consolelogger('start', util.chfext(filePath, 'txt'));
+consolelogger('start', matlab.chfext(filePath, 'txt'));
 
 %% loading the data
 fprintf('\n -- loading data --\n');
-
-forceReload = false;
 fprintf('path = "%s"\n', filePath);
 
 tic;
@@ -33,12 +45,8 @@ if strcmp(fext, '.csv')
 
     fprintf('%d columns in the dataset\n', length(header));
 
-    if exist('data', 'var') && ~forceReload
-        warning('resolution:frc_demo', 'Using preloaded data.');
-    else
-        % load the data
-        data = csvread(filePath, 1, 0);
-    end
+    % load the data
+    data = csvread(filePath, 1, 0);
     fprintf('... %d samples loaded\n', size(data, 1));
 elseif strcmp(fext, '.dat')
     fprintf('loading DAT file\n');
