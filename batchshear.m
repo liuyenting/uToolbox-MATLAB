@@ -101,7 +101,7 @@ for iFile = 1:nFile
     newImg = uint16(newImg);
     
     outFilePath = fullfile(outDir, fileName);
-    io.fwrite(newImg, outFilePath, true);
+    io.fwrite(newImg, outFilePath, 'Overwrite', true);
     
     %TODO debug the reason why files are not properly close by +tiff (dep)
     fclose('all');
